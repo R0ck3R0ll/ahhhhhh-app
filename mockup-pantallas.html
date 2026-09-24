@@ -91,9 +91,9 @@
   main.screen-container{
     flex:1;
     overflow-y:auto;
-    padding:18px 18px 100px;
+    padding:18px 18px 20px;
   }
-  .screen{ display:none; flex-direction:column; gap:20px; }
+  .screen{ display:none; flex-direction:column; gap:20px; min-height:100%; }
   .screen.active{ display:flex; }
 
   h2.section-title{
@@ -120,6 +120,7 @@
   .alert svg{ flex:none; margin-top:2px; }
   .alert .alert-title{ font-weight:600; font-size:13.5px; }
   .alert .alert-body{ font-size:13px; margin-top:2px; line-height:1.4; color:var(--alert-body-text); }
+  .alert{ margin-top:auto; }
 
   /* ---- Today: franja horaria ---- */
   @keyframes needlePulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(43,41,37,.5); } 70%{ box-shadow:0 0 0 10px rgba(43,41,37,0); } }
@@ -141,6 +142,35 @@
   .day-strip .now-dot{ position:absolute; border-radius:50%; background:var(--text); transform:translateX(-50%); animation:needlePulse 2s ease-out infinite; }
   .day-strip .now-label{ position:absolute; transform:translateX(-50%); font-size:10px; font-weight:700; color:var(--text); white-space:nowrap; }
   .day-strip-scale{ display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; }
+
+  /* ---- Today: franja horaria alternativa (vista post-its) ---- */
+  .paper-strip{
+    border:1px solid var(--border);
+    border-radius:18px;
+    background:var(--surface);
+    padding:14px 16px 12px;
+    box-shadow:var(--shadow);
+  }
+  .paper-strip-head{ display:flex; align-items:baseline; justify-content:space-between; }
+  .paper-strip-now-label{ font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-strong); }
+  .paper-strip-now-time{ font-family:var(--font-display); font-weight:700; font-size:18px; color:var(--text); }
+  .paper-strip-track{ position:relative; height:8px; border-radius:999px; background:var(--accent-soft); margin:16px 2px 10px; }
+  .paper-strip-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:999px; background:var(--accent); }
+  .paper-strip-mark{
+    position:absolute; top:50%; width:9px; height:9px; border-radius:50%;
+    transform:translate(-50%,-50%); border:2px solid var(--surface);
+  }
+  .paper-strip-pin{
+    position:absolute; top:50%; width:15px; height:15px; border-radius:50%;
+    background:var(--accent-strong); border:3px solid var(--surface); box-shadow:var(--shadow);
+    transform:translate(-50%,-50%);
+    animation:pinPulse 2.2s ease-out infinite;
+  }
+  @keyframes pinPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(148,47,77,.45); } 70%{ box-shadow:0 0 0 9px rgba(148,47,77,0); } }
+  .paper-strip-scale{ display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); padding:0 2px; font-variant-numeric:tabular-nums; }
+  @media (prefers-reduced-motion: reduce){
+    .paper-strip-pin{ animation:none; }
+  }
 
   .section-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
   .up-next-card{ border-radius:20px; padding:17px 19px; background:var(--warn-bg); color:var(--warn-text); }
@@ -172,9 +202,9 @@
   .postit-stack{ position:relative; }
   .postit-card{
     position:absolute; left:0; top:0;
-    width:74%; min-width:190px;
-    border-radius:18px;
-    padding:14px 17px;
+    width:58%; min-width:168px;
+    border-radius:10px;
+    padding:14px 15px;
     box-shadow:var(--shadow);
     cursor:pointer;
     transform:translate(var(--dx,0px), var(--dy,0px)) rotate(var(--rot,0deg));
@@ -186,9 +216,12 @@
     0%, 100%{ transform:translate(var(--dx,0px), var(--dy,0px)) rotate(var(--rot,0deg)); }
     50%{ transform:translate(calc(var(--dx,0px) + var(--fx,3px)), calc(var(--dy,0px) + var(--fy,-3px))) rotate(calc(var(--rot,0deg) + var(--fr,2deg))); }
   }
-  .postit-time{ font-family:var(--font-display); font-weight:700; font-size:18px; line-height:1; }
-  .postit-title{ font-family:var(--font-display); font-weight:600; font-size:14.5px; margin-top:3px; }
-  .postit-sub{ font-size:11px; font-weight:500; margin-top:4px; line-height:1.35; opacity:.8; }
+  .postit-time{ font-family:var(--font-display); font-weight:700; font-size:17px; line-height:1; }
+  .postit-title{ font-family:var(--font-display); font-weight:600; font-size:14px; margin-top:3px; }
+  .postit-sub{ font-size:10.5px; font-weight:500; margin-top:4px; line-height:1.35; opacity:.8; }
+  .postit-card .toggle-row{ margin-top:8px; }
+  .postit-card .toggle-btn{ font-size:10.5px; padding:4px 8px; }
+  .postit-card .travel-note{ font-size:11px; padding:5px 8px; }
 
   .chip{
     display:inline-flex; align-items:center; gap:5px;
@@ -446,30 +479,30 @@
     <!-- ============ TODAY ============ -->
     <section class="screen active" id="screen-today" aria-labelledby="screen-heading">
 
-      <div>
-        <div class="day-strip">
-          <div class="bar"></div>
-
-          <div class="marker" style="left:64.3%; top:26px; width:10px; height:10px; background:var(--border);"></div>
-          <div class="stem" style="left:64.3%; top:44px; height:12px; background:var(--border);"></div>
-
-          <div class="marker pulse-amber" style="left:71.4%; top:18px; width:16px; height:16px; background:var(--warn-bg);"></div>
-          <div class="stem" style="left:71.4%; top:44px; height:14px; width:2px; background:var(--warn-bg);"></div>
-
-          <div class="marker" style="left:82.1%; top:28px; width:9px; height:9px; background:var(--cat-libre);"></div>
-          <div class="stem" style="left:82.1%; top:44px; height:12px; background:var(--cat-libre);"></div>
-
-          <div class="marker at-end" style="left:100%; top:28px; width:9px; height:9px; background:var(--cat-tarea);"></div>
-          <div class="stem at-end" style="left:100%; top:44px; height:12px; background:var(--cat-tarea);"></div>
-
-          <div class="now-line" style="left:66.1%; height:56px;"></div>
-          <div class="now-dot" style="left:66.1%; top:52px; width:12px; height:12px;"></div>
-          <div class="now-label" style="left:66.1%; top:66px;">AHORA · 17:15</div>
-        </div>
-        <div class="day-strip-scale"><span>8:00</span><span>22:00</span></div>
-      </div>
-
       <div class="today-view today-view-list active" id="today-view-list">
+        <div>
+          <div class="day-strip">
+            <div class="bar"></div>
+
+            <div class="marker" style="left:64.3%; top:26px; width:10px; height:10px; background:var(--border);"></div>
+            <div class="stem" style="left:64.3%; top:44px; height:12px; background:var(--border);"></div>
+
+            <div class="marker pulse-amber" style="left:71.4%; top:18px; width:16px; height:16px; background:var(--warn-bg);"></div>
+            <div class="stem" style="left:71.4%; top:44px; height:14px; width:2px; background:var(--warn-bg);"></div>
+
+            <div class="marker" style="left:82.1%; top:28px; width:9px; height:9px; background:var(--cat-libre);"></div>
+            <div class="stem" style="left:82.1%; top:44px; height:12px; background:var(--cat-libre);"></div>
+
+            <div class="marker at-end" style="left:100%; top:28px; width:9px; height:9px; background:var(--cat-tarea);"></div>
+            <div class="stem at-end" style="left:100%; top:44px; height:12px; background:var(--cat-tarea);"></div>
+
+            <div class="now-line" style="left:66.1%; height:56px;"></div>
+            <div class="now-dot" style="left:66.1%; top:52px; width:12px; height:12px;"></div>
+            <div class="now-label" style="left:66.1%; top:66px;">AHORA · 17:15</div>
+          </div>
+          <div class="day-strip-scale"><span>8:00</span><span>22:00</span></div>
+        </div>
+
         <div>
           <div class="section-eyebrow" style="color:var(--warn-ink)">Se acerca · faltan 45 min</div>
           <div class="up-next-card">
@@ -507,6 +540,22 @@
       </div>
 
       <div class="today-view today-view-stack" id="today-view-stack">
+        <div class="paper-strip">
+          <div class="paper-strip-head">
+            <span class="paper-strip-now-label">Ahora</span>
+            <span class="paper-strip-now-time">17:15</span>
+          </div>
+          <div class="paper-strip-track">
+            <div class="paper-strip-fill" style="width:66.1%"></div>
+            <div class="paper-strip-mark" style="left:64.3%; background:var(--border)"></div>
+            <div class="paper-strip-mark" style="left:71.4%; background:var(--warn-bg)"></div>
+            <div class="paper-strip-mark" style="left:82.1%; background:var(--cat-libre)"></div>
+            <div class="paper-strip-mark" style="left:100%; background:var(--cat-tarea)"></div>
+            <div class="paper-strip-pin" style="left:66.1%"></div>
+          </div>
+          <div class="paper-strip-scale"><span>8:00</span><span>22:00</span></div>
+        </div>
+
         <div>
           <div class="section-eyebrow" style="color:var(--accent-strong)">Próximo evento</div>
           <div class="next-event-box">
@@ -814,7 +863,10 @@
 
   /* ---- Today: vista "post-its" apilados ---- */
   var TODAY_LATER = [
-    { time:'19:30', title:'Merienda con Clara', sub:'Casa de Clara · 600 m · a pie', tone:'libre' },
+    { time:'19:30', title:'Merienda con Clara', sub:'Casa de Clara · 600 m', tone:'libre',
+      travel:{ mode:'walk',
+        walk:{ label:'A pie · 10 min', departure:'Salida 19:20' },
+        car:{ label:'En coche · 5 min', departure:'Salida 19:25' } } },
     { time:'22:00', title:'Entrega Lengua', sub:'Deadline vía Classroom', tone:'tarea' }
   ];
   var POSTIT_TONE = {
@@ -823,45 +875,76 @@
     actividad: { bg:'var(--cat-actividad)', text:'var(--cat-actividad-ink)' },
     libre:     { bg:'var(--cat-libre)',     text:'var(--cat-libre-ink)' }
   };
+  // Rotación/desplazamiento de cada post-it: el de delante, más volcado;
+  // los de detrás, cada vez más discretos y sobrepuestos.
+  var POSTIT_LAYOUT = [
+    { rot:-27, dx:0,  dy:0  },
+    { rot:-8,  dx:24, dy:32 },
+    { rot:7,   dx:44, dy:60 },
+    { rot:16,  dx:62, dy:86 }
+  ];
 
   function renderPostitStack(){
     var el = document.getElementById('postit-stack');
     if(!el) return;
     el.innerHTML = '';
     var n = TODAY_LATER.length;
-    el.style.height = (128 + (n - 1) * 26) + 'px';
+    el.style.height = (150 + (n - 1) * 38) + 'px';
     TODAY_LATER.forEach(function(item, i){
       var tone = POSTIT_TONE[item.tone] || POSTIT_TONE.libre;
-      var sign = i % 2 === 0 ? 1 : -1;
-      var rot = sign * (3 + i * 3);       // la rotación crece de una tarjeta a la siguiente
-      var dx = i * 30;                    // cascada hacia la derecha
-      var dy = i * 24;                    // cascada hacia abajo
-      var fx = sign * (3 + i);            // vaivén sutil (chispa) en cada eje
-      var fy = -sign * (3 + i * 0.8);
-      var fr = sign * (1.5 + i * 0.5);
+      var layout = POSTIT_LAYOUT[i] || POSTIT_LAYOUT[POSTIT_LAYOUT.length - 1];
+      var sign = layout.rot < 0 ? -1 : 1;
+      var fx = sign * (5 + i * 2);          // vaivén (chispa) en cada eje
+      var fy = -sign * (5 + i * 1.6);
+      var fr = sign * (3 + i * 1.2);
 
       var card = document.createElement('div');
       card.className = 'postit-card';
       card.style.background = tone.bg;
       card.style.color = tone.text;
       card.style.zIndex = n - i;
-      card.style.setProperty('--dx', dx + 'px');
-      card.style.setProperty('--dy', dy + 'px');
-      card.style.setProperty('--rot', rot + 'deg');
+      card.style.setProperty('--dx', layout.dx + 'px');
+      card.style.setProperty('--dy', layout.dy + 'px');
+      card.style.setProperty('--rot', layout.rot + 'deg');
       card.style.setProperty('--fx', fx + 'px');
       card.style.setProperty('--fy', fy + 'px');
       card.style.setProperty('--fr', fr + 'deg');
-      card.style.animationDuration = (4 + i * 0.7) + 's';
-      card.style.animationDelay = (i * 0.4) + 's';
-      card.innerHTML =
+      card.style.animationDuration = (3.2 + i * 0.6) + 's';
+      card.style.animationDelay = (i * 0.35) + 's';
+
+      var html =
         '<div class="postit-time">' + item.time + '</div>' +
         '<div class="postit-title">' + item.title + '</div>' +
         '<div class="postit-sub">' + item.sub + '</div>';
-      card.onclick = function(){
+      if(i === 0 && item.travel){
+        var t = item.travel;
+        var walkActive = t.mode === 'walk';
+        html +=
+          '<div class="toggle-row" role="group" aria-label="Modo de traslado a ' + item.title + '">' +
+            '<button type="button" class="toggle-btn' + (walkActive ? ' is-active' : '') + '" data-mode="walk">' + t.walk.label + '</button>' +
+            '<button type="button" class="toggle-btn' + (!walkActive ? ' is-active' : '') + '" data-mode="car">' + t.car.label + '</button>' +
+          '</div>' +
+          '<div class="travel-note">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' +
+            (walkActive ? t.walk.departure : t.car.departure) +
+          '</div>';
+      }
+      card.innerHTML = html;
+
+      if(i === 0 && item.travel){
+        card.querySelectorAll('.toggle-btn').forEach(function(btn){
+          btn.onclick = function(e){
+            e.stopPropagation();
+            item.travel.mode = btn.dataset.mode;
+            renderPostitStack();
+          };
+        });
+      }
+      card.addEventListener('click', function(){
         var picked = TODAY_LATER.splice(i, 1)[0];
         TODAY_LATER.unshift(picked);
         renderPostitStack();
-      };
+      });
       el.appendChild(card);
     });
   }
