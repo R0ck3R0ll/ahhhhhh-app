@@ -125,7 +125,7 @@
   @keyframes needlePulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(43,41,37,.5); } 70%{ box-shadow:0 0 0 10px rgba(43,41,37,0); } }
   @keyframes amberPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(232,184,57,.65); } 70%{ box-shadow:0 0 0 12px rgba(232,184,57,0); } }
   @media (prefers-reduced-motion: reduce){
-    .now-dot, .pulse-amber{ animation:none; }
+    .now-dot, .pulse-amber, .postit-card{ animation:none; }
   }
 
   .day-strip{ position:relative; height:78px; }
@@ -153,6 +153,40 @@
   .later-time{ font-size:11px; font-weight:700; }
   .later-title{ font-size:12.5px; font-weight:600; margin-top:3px; }
   .later-sub{ font-size:10.5px; color:var(--text-muted); margin-top:2px; }
+
+  /* ---- Today: vistas intercambiables ---- */
+  .today-view{ display:none; flex-direction:column; gap:20px; }
+  .today-view.active{ display:flex; }
+
+  /* ---- Today: vista "post-its" apilados ---- */
+  .postit-stack{ position:relative; }
+  .postit-card{
+    position:absolute; left:0; right:0; top:0;
+    min-height:74px;
+    border-radius:20px;
+    padding:13px 16px;
+    box-shadow:var(--shadow);
+    cursor:pointer;
+    transform:translateX(var(--shift,0px)) rotate(var(--rot,0deg));
+    transform-origin:50% 100%;
+  }
+  .postit-card.is-front{
+    position:relative;
+    min-height:96px;
+    padding:17px 19px;
+    cursor:default;
+  }
+  .postit-card:not(.is-front){ animation:postitSway 5.5s ease-in-out infinite; }
+  @keyframes postitSway{
+    0%, 100%{ transform:translateX(var(--shift,0px)) rotate(var(--rot,0deg)); }
+    50%{ transform:translateX(calc(var(--shift,0px) + 2px)) rotate(calc(var(--rot,0deg) + 1deg)); }
+  }
+  .postit-time{ font-family:var(--font-display); font-weight:700; font-size:19px; line-height:1; }
+  .postit-title{ font-family:var(--font-display); font-weight:600; font-size:14.5px; margin-top:3px; }
+  .postit-sub{ font-size:11px; font-weight:500; margin-top:4px; line-height:1.35; opacity:.8; }
+  .postit-card.is-front .postit-time{ font-size:27px; }
+  .postit-card.is-front .postit-title{ font-size:17px; }
+  .postit-card.is-front .postit-sub{ font-size:12.5px; }
 
   .chip{
     display:inline-flex; align-items:center; gap:5px;
@@ -441,39 +475,46 @@
         <div class="day-strip-scale"><span>8:00</span><span>22:00</span></div>
       </div>
 
-      <div>
-        <div class="section-eyebrow" style="color:var(--warn-ink)">Se acerca · faltan 45 min</div>
-        <div class="up-next-card">
-          <div style="display:flex; align-items:baseline; gap:10px;">
-            <span class="up-next-time">18:00</span>
-            <span class="up-next-title">Natación</span>
+      <div class="today-view today-view-list active" id="today-view-list">
+        <div>
+          <div class="section-eyebrow" style="color:var(--warn-ink)">Se acerca · faltan 45 min</div>
+          <div class="up-next-card">
+            <div style="display:flex; align-items:baseline; gap:10px;">
+              <span class="up-next-time">18:00</span>
+              <span class="up-next-title">Natación</span>
+            </div>
+            <div class="up-next-sub">Piscina Municipal Las Rozas · sale 17:35 en coche</div>
           </div>
-          <div class="up-next-sub">Piscina Municipal Las Rozas · sale 17:35 en coche</div>
+        </div>
+
+        <div>
+          <div class="section-eyebrow" style="color:var(--text-muted)">Más tarde</div>
+          <div class="later-row">
+            <div class="later-chip" style="background:rgba(111,149,196,.14); border:1px solid rgba(111,149,196,.4);">
+              <div class="later-time" style="color:var(--cat-libre-ink)">19:30</div>
+              <div class="later-title">Merienda con Clara</div>
+              <div class="later-sub">Casa de Clara · 600 m</div>
+              <div class="toggle-row" role="group" aria-label="Modo de traslado a Merienda con Clara">
+                <button type="button" class="toggle-btn is-active" data-walk="1" onclick="setTravelMode(this,'walk')">A pie · 10 min</button>
+                <button type="button" class="toggle-btn" data-walk="0" onclick="setTravelMode(this,'car')">En coche · 5 min</button>
+              </div>
+              <div class="travel-note" id="clara-departure">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                Salida 19:20
+              </div>
+            </div>
+            <div class="later-chip" style="background:rgba(95,184,176,.14); border:1px solid rgba(95,184,176,.4);">
+              <div class="later-time" style="color:var(--cat-tarea-ink)">22:00</div>
+              <div class="later-title">Entrega Lengua</div>
+              <div class="later-sub">Deadline vía Classroom</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div>
-        <div class="section-eyebrow" style="color:var(--text-muted)">Más tarde</div>
-        <div class="later-row">
-          <div class="later-chip" style="background:rgba(111,149,196,.14); border:1px solid rgba(111,149,196,.4);">
-            <div class="later-time" style="color:var(--cat-libre-ink)">19:30</div>
-            <div class="later-title">Merienda con Clara</div>
-            <div class="later-sub">Casa de Clara · 600 m</div>
-            <div class="toggle-row" role="group" aria-label="Modo de traslado a Merienda con Clara">
-              <button type="button" class="toggle-btn is-active" data-walk="1" onclick="setTravelMode(this,'walk')">A pie · 10 min</button>
-              <button type="button" class="toggle-btn" data-walk="0" onclick="setTravelMode(this,'car')">En coche · 5 min</button>
-            </div>
-            <div class="travel-note" id="clara-departure">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              Salida 19:20
-            </div>
-          </div>
-          <div class="later-chip" style="background:rgba(95,184,176,.14); border:1px solid rgba(95,184,176,.4);">
-            <div class="later-time" style="color:var(--cat-tarea-ink)">22:00</div>
-            <div class="later-title">Entrega Lengua</div>
-            <div class="later-sub">Deadline vía Classroom</div>
-          </div>
-        </div>
+      <div class="today-view today-view-stack" id="today-view-stack">
+        <div class="section-eyebrow" style="color:var(--text-muted)">Próximas actividades</div>
+        <div class="postit-stack" id="postit-stack"></div>
       </div>
 
     </section>
@@ -575,6 +616,19 @@
 
     <!-- ============ CONFIGURACIÓN ============ -->
     <section class="screen" id="screen-config" aria-labelledby="screen-heading">
+
+      <div>
+        <h2 class="section-title">Pantalla principal (Today)</h2>
+        <div class="config-card">
+          <div class="config-line">
+            <span class="config-label">Vista de próximas actividades</span>
+          </div>
+          <div class="seg-control" role="tablist" aria-label="Vista de la pantalla Today">
+            <button type="button" class="seg-btn today-view-btn is-active" data-view="list" onclick="setTodayView('list')">Lista</button>
+            <button type="button" class="seg-btn today-view-btn" data-view="stack" onclick="setTodayView('stack')">Post-its</button>
+          </div>
+        </div>
+      </div>
 
       <div>
         <h2 class="section-title">Cuentas conectadas</h2>
@@ -746,6 +800,63 @@
     toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2200);
   }
 
+  /* ---- Today: vista "post-its" apilados ---- */
+  var TODAY_UPCOMING = [
+    { time:'18:00', title:'Natación', sub:'Piscina Municipal Las Rozas · sale 17:35 en coche', tone:'urgent' },
+    { time:'19:30', title:'Merienda con Clara', sub:'Casa de Clara · 600 m · a pie', tone:'libre' },
+    { time:'22:00', title:'Entrega Lengua', sub:'Deadline vía Classroom', tone:'tarea' }
+  ];
+  var POSTIT_TONE = {
+    urgent:    { bg:'var(--warn-bg)',       text:'var(--warn-text)' },
+    tarea:     { bg:'var(--cat-tarea)',     text:'var(--cat-tarea-ink)' },
+    cita:      { bg:'var(--cat-cita)',      text:'var(--cat-cita-ink)' },
+    actividad: { bg:'var(--cat-actividad)', text:'var(--cat-actividad-ink)' },
+    libre:     { bg:'var(--cat-libre)',     text:'var(--cat-libre-ink)' }
+  };
+
+  function renderPostitStack(){
+    var el = document.getElementById('postit-stack');
+    if(!el) return;
+    el.innerHTML = '';
+    el.style.height = (100 + (TODAY_UPCOMING.length - 1) * 16) + 'px';
+    TODAY_UPCOMING.forEach(function(item, i){
+      var tone = POSTIT_TONE[item.tone] || POSTIT_TONE.libre;
+      var card = document.createElement('div');
+      card.className = 'postit-card' + (i === 0 ? ' is-front' : '');
+      var rot = i === 0 ? 0 : (i % 2 === 0 ? 1 : -1) * (2 + i * 1.3);
+      var shift = i === 0 ? 0 : (i % 2 === 0 ? 1 : -1) * (5 + i * 3);
+      card.style.background = tone.bg;
+      card.style.color = tone.text;
+      card.style.top = (i * 16) + 'px';
+      card.style.zIndex = TODAY_UPCOMING.length - i;
+      card.style.setProperty('--rot', rot + 'deg');
+      card.style.setProperty('--shift', shift + 'px');
+      card.style.animationDelay = (i * 0.35) + 's';
+      card.innerHTML =
+        '<div class="postit-time">' + item.time + '</div>' +
+        '<div class="postit-title">' + item.title + '</div>' +
+        '<div class="postit-sub">' + item.sub + '</div>';
+      if(i !== 0){
+        card.onclick = function(){
+          var picked = TODAY_UPCOMING.splice(i, 1)[0];
+          TODAY_UPCOMING.unshift(picked);
+          renderPostitStack();
+        };
+      }
+      el.appendChild(card);
+    });
+  }
+
+  function setTodayView(view){
+    document.querySelectorAll('.today-view-btn').forEach(function(b){
+      b.classList.toggle('is-active', b.dataset.view === view);
+    });
+    document.getElementById('today-view-list').classList.toggle('active', view === 'list');
+    document.getElementById('today-view-stack').classList.toggle('active', view === 'stack');
+    try{ localStorage.setItem('today-view', view); }catch(e){}
+    if(view === 'stack'){ renderPostitStack(); }
+  }
+
   /* ---- Categorías y prioridades (editable) ---- */
   var CAT_PALETTE = ['#4fc3f7','#b39ddb','#4cd6a0','#b7bfcb','#8c9eff','#4dd0e1'];
 
@@ -908,6 +1019,10 @@
   }
 
   renderCalendar('week');
+
+  var savedTodayView = 'list';
+  try{ savedTodayView = localStorage.getItem('today-view') || 'list'; }catch(e){}
+  setTodayView(savedTodayView);
 </script>
 </body>
 </html>
