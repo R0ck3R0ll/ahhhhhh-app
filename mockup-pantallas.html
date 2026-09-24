@@ -159,34 +159,36 @@
   .today-view.active{ display:flex; }
 
   /* ---- Today: vista "post-its" apilados ---- */
+  .next-event-box{
+    border:2px solid var(--accent);
+    border-radius:18px;
+    padding:15px 18px;
+    background:var(--surface);
+  }
+  .next-event-time{ font-family:var(--font-display); font-weight:700; font-size:26px; line-height:1; }
+  .next-event-title{ font-family:var(--font-display); font-weight:600; font-size:17px; margin-top:2px; }
+  .next-event-sub{ font-size:12.5px; color:var(--text-muted); margin-top:5px; }
+
   .postit-stack{ position:relative; }
   .postit-card{
-    position:absolute; left:0; right:0; top:0;
-    min-height:74px;
-    border-radius:20px;
-    padding:13px 16px;
+    position:absolute; left:0; top:0;
+    width:74%; min-width:190px;
+    border-radius:18px;
+    padding:14px 17px;
     box-shadow:var(--shadow);
     cursor:pointer;
-    transform:translateX(var(--shift,0px)) rotate(var(--rot,0deg));
-    transform-origin:50% 100%;
+    transform:translate(var(--dx,0px), var(--dy,0px)) rotate(var(--rot,0deg));
+    animation-name:postitFloat;
+    animation-timing-function:ease-in-out;
+    animation-iteration-count:infinite;
   }
-  .postit-card.is-front{
-    position:relative;
-    min-height:96px;
-    padding:17px 19px;
-    cursor:default;
+  @keyframes postitFloat{
+    0%, 100%{ transform:translate(var(--dx,0px), var(--dy,0px)) rotate(var(--rot,0deg)); }
+    50%{ transform:translate(calc(var(--dx,0px) + var(--fx,3px)), calc(var(--dy,0px) + var(--fy,-3px))) rotate(calc(var(--rot,0deg) + var(--fr,2deg))); }
   }
-  .postit-card:not(.is-front){ animation:postitSway 5.5s ease-in-out infinite; }
-  @keyframes postitSway{
-    0%, 100%{ transform:translateX(var(--shift,0px)) rotate(var(--rot,0deg)); }
-    50%{ transform:translateX(calc(var(--shift,0px) + 2px)) rotate(calc(var(--rot,0deg) + 1deg)); }
-  }
-  .postit-time{ font-family:var(--font-display); font-weight:700; font-size:19px; line-height:1; }
+  .postit-time{ font-family:var(--font-display); font-weight:700; font-size:18px; line-height:1; }
   .postit-title{ font-family:var(--font-display); font-weight:600; font-size:14.5px; margin-top:3px; }
   .postit-sub{ font-size:11px; font-weight:500; margin-top:4px; line-height:1.35; opacity:.8; }
-  .postit-card.is-front .postit-time{ font-size:27px; }
-  .postit-card.is-front .postit-title{ font-size:17px; }
-  .postit-card.is-front .postit-sub{ font-size:12.5px; }
 
   .chip{
     display:inline-flex; align-items:center; gap:5px;
@@ -444,14 +446,6 @@
     <!-- ============ TODAY ============ -->
     <section class="screen active" id="screen-today" aria-labelledby="screen-heading">
 
-      <div class="alert">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
-        <div>
-          <div class="alert-title">Carga de trabajo próxima</div>
-          <div class="alert-body">Trabajo de Ciencias Naturales · estimado 2 h · entrega el lunes 14/09</div>
-        </div>
-      </div>
-
       <div>
         <div class="day-strip">
           <div class="bar"></div>
@@ -513,8 +507,26 @@
       </div>
 
       <div class="today-view today-view-stack" id="today-view-stack">
-        <div class="section-eyebrow" style="color:var(--text-muted)">Próximas actividades</div>
-        <div class="postit-stack" id="postit-stack"></div>
+        <div>
+          <div class="section-eyebrow" style="color:var(--accent-strong)">Próximo evento</div>
+          <div class="next-event-box">
+            <div class="next-event-time">18:00</div>
+            <div class="next-event-title">Natación</div>
+            <div class="next-event-sub">Piscina Municipal Las Rozas · sale 17:35 en coche</div>
+          </div>
+        </div>
+        <div>
+          <div class="section-eyebrow" style="color:var(--text-muted)">Después</div>
+          <div class="postit-stack" id="postit-stack"></div>
+        </div>
+      </div>
+
+      <div class="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        <div>
+          <div class="alert-title">Carga de trabajo próxima</div>
+          <div class="alert-body">Trabajo de Ciencias Naturales · estimado 2 h · entrega el lunes 14/09</div>
+        </div>
       </div>
 
     </section>
@@ -801,13 +813,11 @@
   }
 
   /* ---- Today: vista "post-its" apilados ---- */
-  var TODAY_UPCOMING = [
-    { time:'18:00', title:'Natación', sub:'Piscina Municipal Las Rozas · sale 17:35 en coche', tone:'urgent' },
+  var TODAY_LATER = [
     { time:'19:30', title:'Merienda con Clara', sub:'Casa de Clara · 600 m · a pie', tone:'libre' },
     { time:'22:00', title:'Entrega Lengua', sub:'Deadline vía Classroom', tone:'tarea' }
   ];
   var POSTIT_TONE = {
-    urgent:    { bg:'var(--warn-bg)',       text:'var(--warn-text)' },
     tarea:     { bg:'var(--cat-tarea)',     text:'var(--cat-tarea-ink)' },
     cita:      { bg:'var(--cat-cita)',      text:'var(--cat-cita-ink)' },
     actividad: { bg:'var(--cat-actividad)', text:'var(--cat-actividad-ink)' },
@@ -818,31 +828,40 @@
     var el = document.getElementById('postit-stack');
     if(!el) return;
     el.innerHTML = '';
-    el.style.height = (100 + (TODAY_UPCOMING.length - 1) * 16) + 'px';
-    TODAY_UPCOMING.forEach(function(item, i){
+    var n = TODAY_LATER.length;
+    el.style.height = (128 + (n - 1) * 26) + 'px';
+    TODAY_LATER.forEach(function(item, i){
       var tone = POSTIT_TONE[item.tone] || POSTIT_TONE.libre;
+      var sign = i % 2 === 0 ? 1 : -1;
+      var rot = sign * (3 + i * 3);       // la rotación crece de una tarjeta a la siguiente
+      var dx = i * 30;                    // cascada hacia la derecha
+      var dy = i * 24;                    // cascada hacia abajo
+      var fx = sign * (3 + i);            // vaivén sutil (chispa) en cada eje
+      var fy = -sign * (3 + i * 0.8);
+      var fr = sign * (1.5 + i * 0.5);
+
       var card = document.createElement('div');
-      card.className = 'postit-card' + (i === 0 ? ' is-front' : '');
-      var rot = i === 0 ? 0 : (i % 2 === 0 ? 1 : -1) * (2 + i * 1.3);
-      var shift = i === 0 ? 0 : (i % 2 === 0 ? 1 : -1) * (5 + i * 3);
+      card.className = 'postit-card';
       card.style.background = tone.bg;
       card.style.color = tone.text;
-      card.style.top = (i * 16) + 'px';
-      card.style.zIndex = TODAY_UPCOMING.length - i;
+      card.style.zIndex = n - i;
+      card.style.setProperty('--dx', dx + 'px');
+      card.style.setProperty('--dy', dy + 'px');
       card.style.setProperty('--rot', rot + 'deg');
-      card.style.setProperty('--shift', shift + 'px');
-      card.style.animationDelay = (i * 0.35) + 's';
+      card.style.setProperty('--fx', fx + 'px');
+      card.style.setProperty('--fy', fy + 'px');
+      card.style.setProperty('--fr', fr + 'deg');
+      card.style.animationDuration = (4 + i * 0.7) + 's';
+      card.style.animationDelay = (i * 0.4) + 's';
       card.innerHTML =
         '<div class="postit-time">' + item.time + '</div>' +
         '<div class="postit-title">' + item.title + '</div>' +
         '<div class="postit-sub">' + item.sub + '</div>';
-      if(i !== 0){
-        card.onclick = function(){
-          var picked = TODAY_UPCOMING.splice(i, 1)[0];
-          TODAY_UPCOMING.unshift(picked);
-          renderPostitStack();
-        };
-      }
+      card.onclick = function(){
+        var picked = TODAY_LATER.splice(i, 1)[0];
+        TODAY_LATER.unshift(picked);
+        renderPostitStack();
+      };
       el.appendChild(card);
     });
   }
