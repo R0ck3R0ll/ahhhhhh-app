@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>AHHHHHH!!!!!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Tema único, claro por decisión de diseño (no sigue el modo del sistema) */
+  :root{
+    --bg:#D9D9D9;
+    --surface:#FFFFFF;
+    --surface-alt:#ECECEA;
+    --border:#C9C7C2;
+    --text:#2B2925;
+    --text-muted:#6F6A62;
+    --accent:#B34567;
+    --accent-strong:#942F4D;
+    --accent-soft:#F2DDE3;
+    --on-accent:#FFF3F0;
+    --alert-bg:#4a2f2a;
+    --alert-text:#f0c9bd;
+    --alert-body-text:#e3b6a8;
+    --alert-border:#6b453d;
+    --cat-tarea:#5fb8b0;      --cat-tarea-ink:#0e8077;
+    --cat-cita:#a08bd8;       --cat-cita-ink:#6a4aa8;
+    --cat-actividad:#8bb06a;  --cat-actividad-ink:#557b3d;
+    --cat-libre:#6f95c4;      --cat-libre-ink:#3e6899;
+    --warn-bg:#e8b839;
+    --warn-text:#2b1d02;
+    --warn-ink:#8a6a12;
+    --danger-bg:#ef4b4b;
+    --danger-text:#fff5f4;
+    --shadow: 0 1px 2px rgba(0,0,0,.06), 0 10px 26px rgba(0,0,0,.10);
+    --font-display:'Fraunces', serif;
+    --font-body:'IBM Plex Sans', system-ui, sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    display:flex;
+    justify-content:center;
+    min-height:100vh;
+  }
+  .page-pad{ width:100%; display:flex; justify-content:center; padding:32px 16px 48px; }
+
+  .app-shell{
+    width:100%;
+    max-width:428px;
+    background:var(--bg);
+    border-radius:28px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--border);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    min-height:780px;
+  }
+
+  .topbar{
+    padding:20px 20px 16px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .topbar .brand{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--accent);
+  }
+  .topbar h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:32px;
+    margin:2px 0 0;
+    text-wrap:balance;
+  }
+  .topbar .subtitle{
+    font-size:13px;
+    color:var(--text-muted);
+    margin-top:2px;
+  }
+
+  main.screen-container{
+    flex:1;
+    overflow-y:auto;
+    padding:18px 18px 100px;
+  }
+  .screen{ display:none; flex-direction:column; gap:20px; }
+  .screen.active{ display:flex; }
+
+  h2.section-title{
+    font-family:var(--font-body);
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    margin:0 0 10px;
+  }
+
+  /* ---- Alert banner ---- */
+  .alert{
+    background:var(--alert-bg);
+    border:1px solid var(--alert-border);
+    color:var(--alert-text);
+    border-radius:14px;
+    padding:12px 14px;
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+  }
+  .alert svg{ flex:none; margin-top:2px; }
+  .alert .alert-title{ font-weight:600; font-size:13.5px; }
+  .alert .alert-body{ font-size:13px; margin-top:2px; line-height:1.4; color:var(--alert-body-text); }
+
+  /* ---- Today: franja horaria ---- */
+  @keyframes needlePulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(43,41,37,.5); } 70%{ box-shadow:0 0 0 10px rgba(43,41,37,0); } }
+  @keyframes amberPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(232,184,57,.65); } 70%{ box-shadow:0 0 0 12px rgba(232,184,57,0); } }
+  @media (prefers-reduced-motion: reduce){
+    .now-dot, .pulse-amber{ animation:none; }
+  }
+
+  .day-strip{ position:relative; height:78px; }
+  .day-strip .bar{
+    position:absolute; left:0; right:0; top:32px; height:12px; border-radius:999px;
+    background:linear-gradient(90deg, #f0c9a0 0%, #f5e0a8 32%, #e0a06a 62%, #4a3a5a 85%, #2a2438 100%);
+  }
+  .day-strip .marker{ position:absolute; border-radius:50%; transform:translateX(-50%); }
+  .day-strip .marker.at-end{ transform:translateX(-100%); }
+  .day-strip .stem{ position:absolute; width:1px; transform:translateX(-50%); }
+  .day-strip .stem.at-end{ transform:translateX(-100%); }
+  .day-strip .now-line{ position:absolute; top:0; width:3px; border-radius:2px; background:var(--text); transform:translateX(-50%); }
+  .day-strip .now-dot{ position:absolute; border-radius:50%; background:var(--text); transform:translateX(-50%); animation:needlePulse 2s ease-out infinite; }
+  .day-strip .now-label{ position:absolute; transform:translateX(-50%); font-size:10px; font-weight:700; color:var(--text); white-space:nowrap; }
+  .day-strip-scale{ display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; }
+
+  .section-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
+  .up-next-card{ border-radius:20px; padding:17px 19px; background:var(--warn-bg); color:var(--warn-text); }
+  .up-next-time{ font-family:var(--font-display); font-weight:700; font-size:28px; }
+  .up-next-title{ font-family:var(--font-display); font-weight:600; font-size:18px; }
+  .up-next-sub{ font-size:12.5px; font-weight:600; margin-top:6px; }
+
+  .later-row{ display:flex; flex-wrap:wrap; gap:10px; }
+  .later-chip{ border-radius:14px; padding:10px 14px; flex:1; min-width:152px; }
+  .later-time{ font-size:11px; font-weight:700; }
+  .later-title{ font-size:12.5px; font-weight:600; margin-top:3px; }
+  .later-sub{ font-size:10.5px; color:var(--text-muted); margin-top:2px; }
+
+  .chip{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; font-weight:600;
+    padding:3px 8px; border-radius:999px;
+    background:var(--surface-alt); color:var(--text-muted);
+    border:1px solid var(--border);
+    width:fit-content;
+  }
+
+  .travel-note{
+    margin-top:6px;
+    display:flex; align-items:center; gap:6px;
+    font-size:12.5px; font-weight:500;
+    color:var(--accent-strong);
+    background:var(--accent-soft);
+    border-radius:8px;
+    padding:6px 9px;
+    width:fit-content;
+  }
+  .travel-note svg{ flex:none; }
+
+  .toggle-row{ display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+  .toggle-btn{
+    font-family:var(--font-body);
+    font-size:12px; font-weight:600;
+    padding:5px 10px; border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--text-muted);
+    cursor:pointer;
+  }
+  .toggle-btn.is-active{
+    background:var(--accent); border-color:var(--accent); color:var(--on-accent);
+  }
+  .toggle-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* ---- Rows (Activities / Events / Config) ---- */
+  .row-list{ display:flex; flex-direction:column; }
+  .row{
+    display:flex; align-items:center; gap:12px;
+    padding:13px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .row:last-child{ border-bottom:none; }
+  .row-bar{ width:4px; align-self:stretch; border-radius:3px; flex:none; }
+  .row-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .row-title{ font-weight:600; font-size:14.5px; }
+  .row-sub{ font-size:12.5px; color:var(--text-muted); display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+  .row-sub svg{ flex:none; }
+  .row-action{
+    flex:none; border:none; background:none; color:var(--accent);
+    font-family:var(--font-body); font-weight:600; font-size:12.5px;
+    padding:6px 4px; cursor:pointer; border-radius:6px;
+  }
+  .row-action:hover{ background:var(--accent-soft); }
+  .row-action:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+
+  .add-btn{
+    font-family:var(--font-body); font-weight:600; font-size:13.5px;
+    color:var(--accent-strong);
+    background:var(--accent-soft);
+    border:1px dashed var(--accent);
+    border-radius:12px;
+    padding:12px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .add-btn:hover{ filter:brightness(1.03); }
+  .add-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .context-note{
+    display:flex; align-items:flex-start; gap:8px;
+    background:var(--surface-alt); border:1px solid var(--border);
+    border-radius:12px; padding:10px 12px;
+    font-size:12.5px; color:var(--text-muted); line-height:1.4;
+  }
+  .context-note svg{ flex:none; margin-top:1px; color:var(--accent-strong); }
+  .context-note strong{ color:var(--text); }
+
+  /* ---- Config specific ---- */
+  .config-card{
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px;
+    background:var(--surface-alt);
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .config-line{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .config-label{ font-size:13.5px; font-weight:500; }
+  .config-value{ font-size:12.5px; color:var(--text-muted); font-variant-numeric:tabular-nums; }
+  .status-chip{
+    font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px;
+  }
+  .status-chip.off{ background:var(--surface); color:var(--text-muted); border:1px solid var(--border); }
+  .btn-primary{
+    font-family:var(--font-body); font-weight:600; font-size:12.5px;
+    background:var(--accent); color:var(--on-accent); border:none;
+    padding:7px 13px; border-radius:9px; cursor:pointer;
+  }
+  .btn-primary:hover{ background:var(--accent-strong); }
+  .btn-primary:focus-visible{ outline:2px solid var(--accent-strong); outline-offset:2px; }
+  .btn-ghost{
+    font-family:var(--font-body); font-weight:600; font-size:12.5px;
+    background:transparent; color:var(--accent-strong); border:1px solid var(--border);
+    padding:7px 13px; border-radius:9px; cursor:pointer;
+  }
+
+  /* ---- Editable categories ---- */
+  .cat-row{ align-items:center; }
+  .swatch{ border:none; cursor:pointer; padding:0; }
+  .swatch:hover{ filter:brightness(1.1); }
+  .swatch:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .cat-name-input{
+    font-family:var(--font-body); font-weight:600; font-size:14.5px; color:var(--text);
+    background:transparent; border:none; border-bottom:1px solid transparent;
+    padding:2px 0; width:100%; min-width:0;
+  }
+  .cat-name-input:hover{ border-bottom-color:var(--border); }
+  .cat-name-input:focus{ outline:none; border-bottom-color:var(--accent); }
+  .priority-select{
+    flex:none;
+    font-family:var(--font-body); font-weight:700; font-size:11px; color:var(--text);
+    border:none; border-radius:999px; padding:4px 22px 4px 10px;
+    cursor:pointer;
+    -webkit-appearance:none; appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232B2925' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position:right 6px center; background-size:11px;
+  }
+  .priority-select:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .priority-select option{ color:var(--text); background:var(--surface); font-weight:500; }
+  .row-delete{
+    flex:none; width:24px; height:24px; border-radius:50%;
+    border:1px solid var(--border); background:var(--surface);
+    color:var(--text-muted); font-size:15px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .row-delete:hover{ background:var(--alert-bg); border-color:var(--alert-border); color:var(--alert-text); }
+  .row-delete:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+
+  /* ---- Calendar ---- */
+  .seg-control{ display:flex; background:var(--surface-alt); border:1px solid var(--border); border-radius:10px; padding:3px; gap:3px; }
+  .seg-btn{
+    flex:1; border:none; background:none; cursor:pointer;
+    font-family:var(--font-body); font-weight:600; font-size:13px; color:var(--text-muted);
+    padding:7px; border-radius:8px;
+  }
+  .seg-btn.is-active{ background:var(--surface); color:var(--accent-strong); box-shadow:var(--shadow); }
+  .seg-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+
+  .cal-nav{ display:flex; align-items:center; justify-content:center; gap:16px; margin-top:2px; }
+  .nav-arrow{
+    border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+    width:26px; height:26px; border-radius:8px; font-size:14px; line-height:1; cursor:pointer;
+  }
+  .nav-arrow:hover{ background:var(--surface-alt); }
+  .cal-range{ font-size:13px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
+
+  .cal-scroll{ overflow-x:auto; margin-top:12px; }
+  .cal-legend{ display:flex; flex-wrap:wrap; gap:12px; font-size:11px; color:var(--text-muted); }
+  .cal-legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .cal-legend i{ width:8px; height:8px; border-radius:50%; display:inline-block; flex:none; }
+
+  .cal-grid{ display:grid; }
+  .cal-daylabel{
+    text-align:center; font-size:11px; font-weight:600; color:var(--text-muted);
+    padding-bottom:6px; display:flex; flex-direction:column; align-items:center; gap:1px;
+  }
+  .cal-daylabel.is-today{ color:var(--accent-strong); }
+  .cal-daylabel .dl-date{ font-size:13px; font-variant-numeric:tabular-nums; }
+  .cal-daylabel .dl-full{ font-size:12.5px; }
+
+  .cal-hourcol{ position:relative; }
+  .cal-hourlabel{
+    position:absolute; right:6px; transform:translateY(-50%);
+    font-size:9.5px; color:var(--text-muted); font-variant-numeric:tabular-nums;
+  }
+
+  .cal-daycol{
+    position:relative; border-left:1px solid var(--border);
+    background-image:repeating-linear-gradient(to bottom, var(--border) 0, var(--border) 1px, transparent 1px, transparent 36px);
+  }
+  .cal-daycol.is-today{ background-color:var(--accent-soft); }
+
+  .school-band{
+    position:absolute; left:2px; right:2px; border-radius:4px; opacity:.75;
+    background:repeating-linear-gradient(135deg, transparent, transparent 5px, var(--border) 5px, var(--border) 6px);
+    font-size:9px; color:var(--text-muted); text-align:center; padding-top:2px;
+  }
+
+  .cal-bar{
+    position:absolute; left:2px; right:2px; border-radius:6px; padding:3px 5px;
+    overflow:hidden; display:flex; flex-direction:column; justify-content:flex-start;
+    font-size:10.5px; color:var(--text); line-height:1.15;
+  }
+  .cal-bar .bar-title{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cal-bar .bar-time{ font-size:9.5px; opacity:.85; font-variant-numeric:tabular-nums; }
+  .cal-bar.cat-actividad{ background:var(--cat-actividad); }
+  .cal-bar.cat-libre{ background:var(--cat-libre); }
+  .cal-bar.cat-cita{ background:var(--cat-cita); }
+
+  .cal-deadline{ position:absolute; left:2px; right:2px; display:flex; align-items:center; gap:4px; transform:translateY(-50%); z-index:2; }
+  .cal-deadline .dl-dot{ width:9px; height:9px; border-radius:50%; background:var(--cat-tarea); border:2px solid var(--surface); flex:none; }
+  .cal-deadline .dl-label{
+    font-size:9.5px; font-weight:600; color:var(--cat-tarea-ink); background:var(--surface);
+    padding:1px 4px; border-radius:4px; white-space:nowrap;
+  }
+
+  /* ---- Tab bar ---- */
+  .tabbar{
+    position:sticky; bottom:0;
+    display:grid; grid-template-columns:repeat(5,1fr);
+    border-top:1px solid var(--border);
+    background:var(--surface);
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+  }
+  .tab{
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-muted);
+    font-family:var(--font-body); font-size:10px; font-weight:600;
+    padding:6px 1px; border-radius:10px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
+  }
+  .tab svg{ flex:none; }
+  .tab.is-active{ color:var(--accent); }
+  .tab:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+
+  .toast{
+    position:fixed; left:50%; bottom:28px; transform:translate(-50%,12px);
+    background:var(--text); color:var(--bg);
+    padding:10px 16px; border-radius:10px; font-size:13px; font-weight:500;
+    opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;
+    max-width:90vw; text-align:center; z-index:20;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+
+  @media (prefers-reduced-motion: reduce){
+    .toast{ transition:none; }
+  }
+</style>
+</head>
+<body>
+<div class="page-pad">
+<div class="app-shell">
+
+  <div class="topbar">
+    <span class="brand">AHHHHHH!!!!!</span>
+    <h1 id="screen-heading">Today</h1>
+    <span class="subtitle" id="screen-subheading">Viernes, 11 de septiembre · plan de Martina</span>
+  </div>
+
+  <main class="screen-container">
+
+    <!-- ============ TODAY ============ -->
+    <section class="screen active" id="screen-today" aria-labelledby="screen-heading">
+
+      <div class="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        <div>
+          <div class="alert-title">Carga de trabajo próxima</div>
+          <div class="alert-body">Trabajo de Ciencias Naturales · estimado 2 h · entrega el lunes 14/09</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="day-strip">
+          <div class="bar"></div>
+
+          <div class="marker" style="left:64.3%; top:26px; width:10px; height:10px; background:var(--border);"></div>
+          <div class="stem" style="left:64.3%; top:44px; height:12px; background:var(--border);"></div>
+
+          <div class="marker pulse-amber" style="left:71.4%; top:18px; width:16px; height:16px; background:var(--warn-bg);"></div>
+          <div class="stem" style="left:71.4%; top:44px; height:14px; width:2px; background:var(--warn-bg);"></div>
+
+          <div class="marker" style="left:82.1%; top:28px; width:9px; height:9px; background:var(--cat-libre);"></div>
+          <div class="stem" style="left:82.1%; top:44px; height:12px; background:var(--cat-libre);"></div>
+
+          <div class="marker at-end" style="left:100%; top:28px; width:9px; height:9px; background:var(--cat-tarea);"></div>
+          <div class="stem at-end" style="left:100%; top:44px; height:12px; background:var(--cat-tarea);"></div>
+
+          <div class="now-line" style="left:66.1%; height:56px;"></div>
+          <div class="now-dot" style="left:66.1%; top:52px; width:12px; height:12px;"></div>
+          <div class="now-label" style="left:66.1%; top:66px;">AHORA · 17:15</div>
+        </div>
+        <div class="day-strip-scale"><span>8:00</span><span>22:00</span></div>
+      </div>
+
+      <div>
+        <div class="section-eyebrow" style="color:var(--warn-ink)">Se acerca · faltan 45 min</div>
+        <div class="up-next-card">
+          <div style="display:flex; align-items:baseline; gap:10px;">
+            <span class="up-next-time">18:00</span>
+            <span class="up-next-title">Natación</span>
+          </div>
+          <div class="up-next-sub">Piscina Municipal Las Rozas · sale 17:35 en coche</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-eyebrow" style="color:var(--text-muted)">Más tarde</div>
+        <div class="later-row">
+          <div class="later-chip" style="background:rgba(111,149,196,.14); border:1px solid rgba(111,149,196,.4);">
+            <div class="later-time" style="color:var(--cat-libre-ink)">19:30</div>
+            <div class="later-title">Merienda con Clara</div>
+            <div class="later-sub">Casa de Clara · 600 m</div>
+            <div class="toggle-row" role="group" aria-label="Modo de traslado a Merienda con Clara">
+              <button type="button" class="toggle-btn is-active" data-walk="1" onclick="setTravelMode(this,'walk')">A pie · 10 min</button>
+              <button type="button" class="toggle-btn" data-walk="0" onclick="setTravelMode(this,'car')">En coche · 5 min</button>
+            </div>
+            <div class="travel-note" id="clara-departure">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              Salida 19:20
+            </div>
+          </div>
+          <div class="later-chip" style="background:rgba(95,184,176,.14); border:1px solid rgba(95,184,176,.4);">
+            <div class="later-time" style="color:var(--cat-tarea-ink)">22:00</div>
+            <div class="later-title">Entrega Lengua</div>
+            <div class="later-sub">Deadline vía Classroom</div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============ ACTIVIDADES ============ -->
+    <section class="screen" id="screen-activities" aria-labelledby="screen-heading">
+      <div class="context-note">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <span><strong>Horario escolar:</strong> lunes a viernes, 09:00–17:00. Fuera de ese horario la agenda de Martina está libre para actividades, tareas y otros planes.</span>
+      </div>
+
+      <div>
+        <h2 class="section-title">Actividades recurrentes</h2>
+        <div class="row-list">
+
+          <div class="row">
+            <div class="row-body">
+              <span class="row-title" style="color:var(--cat-actividad-ink)">Natación</span>
+              <span class="row-sub">Lunes y viernes · 18:00–19:00
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                Piscina Municipal Las Rozas</span>
+            </div>
+            <button class="row-action" onclick="toast('La edición de actividades se activa en la fase de datos')">Editar</button>
+          </div>
+
+          <div class="row">
+            <div class="row-body">
+              <span class="row-title" style="color:var(--cat-actividad-ink)">Inglés</span>
+              <span class="row-sub">Martes · 17:00–18:00
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                Academia Oxford Las Rozas</span>
+            </div>
+            <button class="row-action" onclick="toast('La edición de actividades se activa en la fase de datos')">Editar</button>
+          </div>
+
+          <div class="row">
+            <div class="row-body">
+              <span class="row-title" style="color:var(--cat-actividad-ink)">Piano</span>
+              <span class="row-sub">Jueves · 17:30–18:15 · En casa (sin traslado)</span>
+            </div>
+            <button class="row-action" onclick="toast('La edición de actividades se activa en la fase de datos')">Editar</button>
+          </div>
+
+        </div>
+      </div>
+
+      <button class="add-btn" onclick="toast('Se podrá añadir una actividad nueva en la siguiente fase')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Añadir actividad
+      </button>
+    </section>
+
+    <!-- ============ EVENTOS ============ -->
+    <section class="screen" id="screen-events" aria-labelledby="screen-heading">
+
+      <div class="context-note">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <span><strong>Horario escolar:</strong> lunes a viernes, 09:00–17:00. Fuera de ese horario la agenda de Martina está libre para actividades, tareas y otros planes.</span>
+      </div>
+
+      <div>
+        <h2 class="section-title">Próximos eventos</h2>
+        <div class="row-list">
+          <div class="row">
+            <div class="row-body">
+              <span class="row-title" style="color:var(--cat-libre-ink)">Cumpleaños de Sofía</span>
+              <span class="row-sub">Sáb 12/09 · 17:00 · Bowling Las Rozas</span>
+            </div>
+            <button class="row-action" onclick="toast('La edición de eventos se activa en la siguiente fase')">Editar</button>
+          </div>
+          <div class="row">
+            <div class="row-body">
+              <span class="row-title" style="color:var(--cat-cita-ink)">Revisión dental</span>
+              <span class="row-sub">Mié 16/09 · 10:00 · Clínica Dental Sonrisas</span>
+            </div>
+            <button class="row-action" onclick="toast('La edición de eventos se activa en la siguiente fase')">Editar</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="section-title">Tiempo libre</h2>
+        <div class="row-list">
+          <div class="row">
+            <div class="row-body">
+              <span class="row-title" style="color:var(--cat-libre-ink)">Tarde libre</span>
+              <span class="row-sub">Sáb 12/09 · 15:00–17:00</span>
+            </div>
+            <button class="row-action" onclick="toast('La edición de eventos se activa en la siguiente fase')">Editar</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="add-btn" onclick="toast('Se podrá añadir un evento o bloque libre en la siguiente fase')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Añadir evento o tiempo libre
+      </button>
+    </section>
+
+    <!-- ============ CONFIGURACIÓN ============ -->
+    <section class="screen" id="screen-config" aria-labelledby="screen-heading">
+
+      <div>
+        <h2 class="section-title">Cuentas conectadas</h2>
+        <div class="config-card">
+          <div class="config-line">
+            <span class="config-label">Google (Classroom y Gmail)</span>
+            <span class="status-chip off">No conectado</span>
+          </div>
+          <button class="btn-primary" style="align-self:flex-start" onclick="toast('La conexión con Google se configura en la fase de integraciones')">Conectar</button>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="section-title">Horario escolar</h2>
+        <div class="config-card">
+          <div class="config-line">
+            <span class="config-label">Lunes – Viernes</span>
+            <span class="config-value">09:00 – 17:00</span>
+          </div>
+          <button class="btn-ghost" style="align-self:flex-start" onclick="toast('La edición del horario se activa en la fase de datos')">Editar horario</button>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="section-title">Calendario escolar</h2>
+        <div class="config-card">
+          <div class="config-line">
+            <span class="config-label">Archivo del calendario</span>
+            <span class="config-value">Ningún archivo cargado</span>
+          </div>
+          <button class="btn-ghost" style="align-self:flex-start" onclick="toast('La importación de archivos se activa en la fase de datos')">Seleccionar archivo</button>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="section-title">Categorías y prioridades</h2>
+        <div class="row-list" id="category-list">
+          <div class="row cat-row">
+            <button class="row-bar swatch" style="background:var(--cat-tarea)" onclick="cycleColor(this)" aria-label="Cambiar color de la categoría Tarea" title="Cambiar color"></button>
+            <div class="row-body"><input class="cat-name-input" value="Tarea" aria-label="Nombre de la categoría"></div>
+            <select class="priority-select" style="background:var(--cat-tarea)" onchange="onPriorityChange(this)" aria-label="Prioridad de la categoría Tarea">
+              <option value="Alta" selected>Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+            <button class="row-delete" onclick="removeCategory(this)" aria-label="Eliminar categoría Tarea" title="Eliminar categoría">×</button>
+          </div>
+          <div class="row cat-row">
+            <button class="row-bar swatch" style="background:var(--cat-cita)" onclick="cycleColor(this)" aria-label="Cambiar color de la categoría Cita" title="Cambiar color"></button>
+            <div class="row-body"><input class="cat-name-input" value="Cita" aria-label="Nombre de la categoría"></div>
+            <select class="priority-select" style="background:var(--cat-cita)" onchange="onPriorityChange(this)" aria-label="Prioridad de la categoría Cita">
+              <option value="Alta" selected>Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+            <button class="row-delete" onclick="removeCategory(this)" aria-label="Eliminar categoría Cita" title="Eliminar categoría">×</button>
+          </div>
+          <div class="row cat-row">
+            <button class="row-bar swatch" style="background:var(--cat-actividad)" onclick="cycleColor(this)" aria-label="Cambiar color de la categoría Actividad" title="Cambiar color"></button>
+            <div class="row-body"><input class="cat-name-input" value="Actividad" aria-label="Nombre de la categoría"></div>
+            <select class="priority-select" style="background:var(--cat-actividad)" onchange="onPriorityChange(this)" aria-label="Prioridad de la categoría Actividad">
+              <option value="Alta">Alta</option>
+              <option value="Media" selected>Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+            <button class="row-delete" onclick="removeCategory(this)" aria-label="Eliminar categoría Actividad" title="Eliminar categoría">×</button>
+          </div>
+          <div class="row cat-row">
+            <button class="row-bar swatch" style="background:var(--cat-libre)" onclick="cycleColor(this)" aria-label="Cambiar color de la categoría Tiempo libre" title="Cambiar color"></button>
+            <div class="row-body"><input class="cat-name-input" value="Tiempo libre" aria-label="Nombre de la categoría"></div>
+            <select class="priority-select" style="background:var(--cat-libre)" onchange="onPriorityChange(this)" aria-label="Prioridad de la categoría Tiempo libre">
+              <option value="Alta">Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja" selected>Baja</option>
+            </select>
+            <button class="row-delete" onclick="removeCategory(this)" aria-label="Eliminar categoría Tiempo libre" title="Eliminar categoría">×</button>
+          </div>
+        </div>
+        <button class="add-btn" style="margin-top:12px" onclick="addCategory()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          Añadir categoría
+        </button>
+      </div>
+
+    </section>
+
+    <!-- ============ CALENDARIO ============ -->
+    <section class="screen" id="screen-calendar" aria-labelledby="screen-heading">
+      <div class="seg-control" role="tablist" aria-label="Vista de calendario">
+        <button class="seg-btn is-active" data-view="week" onclick="setCalView(this)">Semana</button>
+        <button class="seg-btn" data-view="day" onclick="setCalView(this)">Día</button>
+      </div>
+
+      <div class="cal-nav">
+        <button class="nav-arrow" onclick="toast('La navegación entre semanas estará disponible con datos reales')" aria-label="Semana anterior">‹</button>
+        <span class="cal-range" id="cal-range">7–13 septiembre</span>
+        <button class="nav-arrow" onclick="toast('La navegación entre semanas estará disponible con datos reales')" aria-label="Semana siguiente">›</button>
+      </div>
+
+      <div class="cal-scroll">
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+
+      <div class="cal-legend">
+        <span><i style="background:var(--cat-actividad)"></i>Actividad</span>
+        <span><i style="background:var(--cat-cita)"></i>Cita</span>
+        <span><i style="background:var(--cat-libre)"></i>Evento</span>
+        <span><i style="background:var(--cat-tarea)"></i>Tarea (deadline)</span>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="tabbar" aria-label="Navegación principal">
+    <button class="tab is-active" data-screen="today" data-title="Today" data-sub="Viernes, 11 de septiembre · plan de Martina" onclick="showScreen(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Today
+    </button>
+    <button class="tab" data-screen="activities" data-title="Actividades" data-sub="Extraescolares recurrentes de Martina" onclick="showScreen(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l3 3-8 8-4 1 1-4 8-8z"/><path d="M4 20h16"/></svg>
+      Actividades
+    </button>
+    <button class="tab" data-screen="events" data-title="Eventos" data-sub="Eventos puntuales y tiempo libre" onclick="showScreen(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/></svg>
+      Eventos
+    </button>
+    <button class="tab" data-screen="calendar" data-title="Calendario" data-sub="Actividades en vista día o semana" onclick="showScreen(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
+      Calendario
+    </button>
+    <button class="tab" data-screen="config" data-title="Configuración" data-sub="Cuentas, horario y categorías" onclick="showScreen(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></svg>
+      Config
+    </button>
+  </nav>
+
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function showScreen(btn){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('is-active'));
+    btn.classList.add('is-active');
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('screen-'+btn.dataset.screen).classList.add('active');
+    document.getElementById('screen-heading').textContent = btn.dataset.title;
+    document.getElementById('screen-subheading').textContent = btn.dataset.sub;
+  }
+
+  function setTravelMode(btn, mode){
+    document.querySelectorAll('.toggle-btn[data-walk]').forEach(b=>b.classList.remove('is-active'));
+    btn.classList.add('is-active');
+    var note = document.getElementById('clara-departure');
+    if(mode === 'walk'){
+      note.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Salida 19:20';
+    } else {
+      note.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Salida 19:25';
+    }
+  }
+
+  var toastTimer;
+  function toast(msg){
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2200);
+  }
+
+  /* ---- Categorías y prioridades (editable) ---- */
+  var CAT_PALETTE = ['#4fc3f7','#b39ddb','#4cd6a0','#b7bfcb','#8c9eff','#4dd0e1'];
+
+  function cycleColor(btn){
+    var current = getComputedStyle(btn).backgroundColor;
+    var idx = 0;
+    for(var i=0;i<CAT_PALETTE.length;i++){
+      if(hexToRgb(CAT_PALETTE[i]) === current){ idx = i; break; }
+    }
+    var next = CAT_PALETTE[(idx+1) % CAT_PALETTE.length];
+    btn.style.background = next;
+    var select = btn.closest('.cat-row').querySelector('.priority-select');
+    if(select){ select.style.background = next; }
+  }
+
+  function hexToRgb(hex){
+    var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return 'rgb(' + r + ', ' + g + ', ' + b + ')';
+  }
+
+  function onPriorityChange(select){
+    var name = select.closest('.cat-row').querySelector('.cat-name-input').value || 'Categoría';
+    toast('Prioridad de "' + name + '" actualizada a ' + select.value);
+  }
+
+  function removeCategory(btn){
+    var row = btn.closest('.cat-row');
+    var name = row.querySelector('.cat-name-input').value || 'Categoría';
+    row.remove();
+    toast('Categoría "' + name + '" eliminada');
+  }
+
+  function addCategory(){
+    var list = document.getElementById('category-list');
+    var color = CAT_PALETTE[list.children.length % CAT_PALETTE.length];
+    var row = document.createElement('div');
+    row.className = 'row cat-row';
+    row.innerHTML =
+      '<button class="row-bar swatch" style="background:' + color + '" onclick="cycleColor(this)" aria-label="Cambiar color de categoría" title="Cambiar color"></button>' +
+      '<div class="row-body"><input class="cat-name-input" value="Nueva categoría" aria-label="Nombre de la categoría"></div>' +
+      '<select class="priority-select" style="background:' + color + '" onchange="onPriorityChange(this)" aria-label="Prioridad de la nueva categoría">' +
+        '<option value="Alta">Alta</option><option value="Media" selected>Media</option><option value="Baja">Baja</option>' +
+      '</select>' +
+      '<button class="row-delete" onclick="removeCategory(this)" aria-label="Eliminar categoría">×</button>';
+    list.appendChild(row);
+    row.querySelector('.cat-name-input').focus();
+    row.querySelector('.cat-name-input').select();
+  }
+
+  /* ---- Calendario (vista día / semana) ---- */
+  var CAL_START = 8, CAL_END = 22, CAL_HOUR_PX = 36;
+  var WEEK_DAYS = [
+    {label:'L', date:'7',  full:'Lunes 7 sept'},
+    {label:'M', date:'8',  full:'Martes 8 sept'},
+    {label:'X', date:'9',  full:'Miércoles 9 sept'},
+    {label:'J', date:'10', full:'Jueves 10 sept'},
+    {label:'V', date:'11', full:'Viernes 11 sept', isToday:true},
+    {label:'S', date:'12', full:'Sábado 12 sept'},
+    {label:'D', date:'13', full:'Domingo 13 sept'}
+  ];
+  var CAL_EVENTS = [
+    {day:0, title:'Natación', start:18, end:19, cat:'actividad'},
+    {day:1, title:'Inglés', start:17, end:18, cat:'actividad'},
+    {day:3, title:'Piano', start:17.5, end:18.25, cat:'actividad'},
+    {day:4, title:'Natación', start:18, end:19, cat:'actividad'},
+    {day:4, title:'Merienda con Clara', start:19.5, end:20.5, cat:'libre'},
+    {day:5, title:'Cumpleaños de Sofía', start:17, end:19, cat:'libre'}
+  ];
+  var CAL_DEADLINES = [
+    {day:4, title:'Entrega Lengua', time:22, cat:'tarea'}
+  ];
+  var CAL_SCHOOL_DAYS = [0,1,2,3,4];
+
+  function calPct(hour){ return ((hour - CAL_START) / (CAL_END - CAL_START)) * 100; }
+
+  function fmtHour(h){
+    var hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+    return (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
+  }
+
+  function renderCalendar(view){
+    var grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+    var isWeek = view === 'week';
+    var days = isWeek ? WEEK_DAYS : [WEEK_DAYS[4]];
+    var colHeight = (CAL_END - CAL_START) * CAL_HOUR_PX;
+
+    grid.style.gridTemplateColumns = '36px repeat(' + days.length + ', 1fr)';
+    grid.style.columnGap = isWeek ? '3px' : '0';
+    grid.style.minWidth = isWeek ? '460px' : '0';
+
+    var corner = document.createElement('div');
+    grid.appendChild(corner);
+
+    days.forEach(function(d){
+      var h = document.createElement('div');
+      h.className = 'cal-daylabel' + (d.isToday ? ' is-today' : '');
+      h.innerHTML = isWeek
+        ? '<span class="dl-name">' + d.label + '</span><span class="dl-date">' + d.date + '</span>'
+        : '<span class="dl-full">' + d.full + '</span>';
+      grid.appendChild(h);
+    });
+
+    var hourCol = document.createElement('div');
+    hourCol.className = 'cal-hourcol';
+    hourCol.style.height = colHeight + 'px';
+    for(var hr = CAL_START; hr <= CAL_END; hr += 2){
+      var lab = document.createElement('div');
+      lab.className = 'cal-hourlabel';
+      lab.style.top = calPct(hr) + '%';
+      lab.textContent = hr + ':00';
+      hourCol.appendChild(lab);
+    }
+    grid.appendChild(hourCol);
+
+    days.forEach(function(d, i){
+      var realDay = isWeek ? i : 4;
+      var col = document.createElement('div');
+      col.className = 'cal-daycol' + (d.isToday ? ' is-today' : '');
+      col.style.height = colHeight + 'px';
+
+      if(CAL_SCHOOL_DAYS.indexOf(realDay) !== -1){
+        var band = document.createElement('div');
+        band.className = 'school-band';
+        band.style.top = calPct(9) + '%';
+        band.style.height = (calPct(17) - calPct(9)) + '%';
+        if(!isWeek){ band.textContent = 'Horario escolar'; }
+        col.appendChild(band);
+      }
+
+      CAL_EVENTS.filter(function(e){ return e.day === realDay; }).forEach(function(e){
+        var bar = document.createElement('div');
+        bar.className = 'cal-bar cat-' + e.cat;
+        bar.style.top = calPct(e.start) + '%';
+        bar.style.height = (calPct(e.end) - calPct(e.start)) + '%';
+        bar.innerHTML = '<span class="bar-title">' + e.title + '</span>' +
+          (!isWeek ? '<span class="bar-time">' + fmtHour(e.start) + '–' + fmtHour(e.end) + '</span>' : '');
+        col.appendChild(bar);
+      });
+
+      CAL_DEADLINES.filter(function(e){ return e.day === realDay; }).forEach(function(e){
+        var mk = document.createElement('div');
+        mk.className = 'cal-deadline';
+        mk.style.top = calPct(e.time) + '%';
+        mk.title = e.title + ' · ' + fmtHour(e.time);
+        mk.innerHTML = '<span class="dl-dot"></span>' + (!isWeek ? '<span class="dl-label">' + e.title + ' · ' + fmtHour(e.time) + '</span>' : '');
+        col.appendChild(mk);
+      });
+
+      grid.appendChild(col);
+    });
+  }
+
+  function setCalView(btn){
+    document.querySelectorAll('.seg-btn').forEach(function(b){ b.classList.remove('is-active'); });
+    btn.classList.add('is-active');
+    var view = btn.dataset.view;
+    document.getElementById('cal-range').textContent = view === 'week' ? '7–13 septiembre' : 'Viernes 11 septiembre';
+    renderCalendar(view);
+  }
+
+  renderCalendar('week');
+</script>
+</body>
+</html>
