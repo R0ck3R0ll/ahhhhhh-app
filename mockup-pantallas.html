@@ -280,34 +280,23 @@
   .switch:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
   @media (prefers-reduced-motion: reduce){ .switch, .switch::after{ transition:none; } }
 
-  /* ---- Horario escolar por día ---- */
+  /* ---- Franja horaria y horario escolar ---- */
   .time-input{
     font-family:var(--font-body); font-size:13px; font-variant-numeric:tabular-nums; color:var(--text);
     background:var(--surface); border:1px solid var(--border); border-radius:8px;
-    padding:5px 6px; width:100%; min-width:0;
+    padding:5px 6px; width:84px; min-width:0; text-align:center;
   }
   .time-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
   /* Sin icono de reloj: en el móvil el selector se abre al tocar y así caben las horas */
   .time-input::-webkit-calendar-picker-indicator{ display:none; }
-  .time-input{ text-align:center; }
-  .sched-list{ display:flex; flex-direction:column; }
-  .sched-row, .sched-head{
-    display:grid; grid-template-columns:40px 1fr 1fr 38px; gap:4px 8px; align-items:center;
-  }
-  .sched-head{ font-size:10.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
-  .sched-head span:last-child{ text-align:center; }
-  .sched-row{ padding:9px 0; border-bottom:1px solid var(--border); }
-  .sched-row:last-child{ border-bottom:none; }
-  .sched-day{ font-weight:600; font-size:13.5px; }
-  .sched-row.is-off .sched-day{ color:var(--text-muted); }
-  .sched-off{ grid-column:2 / 4; font-size:12.5px; color:var(--text-muted); }
-  .sched-cover{ grid-column:2 / 5; font-size:11.5px; color:var(--text-muted); font-variant-numeric:tabular-nums; }
-  .sched-cover strong{ color:var(--cat-libre-ink); font-weight:600; }
-  .day-bounds{ flex-wrap:wrap; }
+  .time-line{ flex-wrap:wrap; }
+  .time-line[hidden]{ display:none; }
   .time-pair{ display:flex; align-items:center; gap:6px; color:var(--text-muted); }
-  .time-pair .time-input{ width:84px; }
+  .cover-block{ display:flex; flex-direction:column; gap:6px; border-top:1px solid var(--border); padding-top:12px; }
+  .cover-list{ display:flex; flex-direction:column; gap:4px; }
+  .cover-list .config-value{ color:var(--cat-libre-ink); font-weight:600; text-align:right; }
 
-  /* ---- Exportación al calendario del móvil ---- */
+  /* ---- Exportación a Google Calendar ---- */
   .export-options{ display:flex; flex-direction:column; gap:10px; border-top:1px solid var(--border); padding-top:12px; }
   .export-options[hidden]{ display:none; }
   .check-list{ display:flex; flex-direction:column; gap:2px; }
@@ -537,7 +526,7 @@
     <section class="screen" id="screen-activities" aria-labelledby="screen-heading">
       <div class="context-note">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <span><strong>Horario escolar:</strong> <span class="school-summary">lunes a jueves, 09:00–17:00 · viernes, 09:00–15:00</span>. Fuera de ese horario la agenda de Martina está libre para actividades, tareas y otros planes.</span>
+        <span><strong>Horario escolar:</strong> <span class="school-summary">lunes a viernes, 09:00–17:00</span>. Fuera de ese horario la agenda de Martina está libre para actividades, tareas y otros planes.</span>
       </div>
 
       <div>
@@ -586,7 +575,7 @@
 
       <div class="context-note">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <span><strong>Horario escolar:</strong> <span class="school-summary">lunes a jueves, 09:00–17:00 · viernes, 09:00–15:00</span>. Fuera de ese horario la agenda de Martina está libre para actividades, tareas y otros planes.</span>
+        <span><strong>Horario escolar:</strong> <span class="school-summary">lunes a viernes, 09:00–17:00</span>. Fuera de ese horario la agenda de Martina está libre para actividades, tareas y otros planes.</span>
       </div>
 
       <div>
@@ -643,20 +632,48 @@
       </div>
 
       <div>
-        <h2 class="section-title">Horario escolar</h2>
+        <h2 class="section-title">Franja horaria</h2>
         <div class="config-card">
-          <p class="card-hint">La App solo planifica el tiempo <strong>fuera del cole</strong>. Marca qué días hay clase y a qué hora entra y sale Martina: la franja que gestiona cambia según el día.</p>
-          <div class="sched-head" aria-hidden="true"><span></span><span>Entrada</span><span>Salida</span><span>Cole</span></div>
-          <div class="sched-list" id="schedule-list"></div>
-          <div class="config-line day-bounds">
-            <span class="config-label">Día de Martina</span>
+          <div class="config-line time-line">
+            <span class="config-label">Todos los días</span>
             <span class="time-pair">
-              <input type="time" class="time-input" id="day-start" value="08:00" aria-label="Hora de inicio del día" onchange="onBoundsChange(this)">
+              <input type="time" class="time-input" id="day-start" value="07:30" aria-label="Inicio de la franja horaria" onchange="onBoundsChange(this)">
               –
-              <input type="time" class="time-input" id="day-end" value="22:00" aria-label="Hora de fin del día" onchange="onBoundsChange(this)">
+              <input type="time" class="time-input" id="day-end" value="23:00" aria-label="Fin de la franja horaria" onchange="onBoundsChange(this)">
             </span>
           </div>
-          <p class="card-hint">Fuera de este margen la App no planifica nada. Los festivos del calendario escolar cuentan como días sin cole.</p>
+          <p class="card-hint">Horas del día en las que la App puede planificar. Fuera de esta franja no planifica nada.</p>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="section-title">Horario escolar</h2>
+        <div class="config-card">
+          <div class="config-line time-line">
+            <span class="config-label">Lunes a viernes</span>
+            <span class="time-pair">
+              <input type="time" class="time-input" value="09:00" aria-label="Entrada de lunes a viernes" onchange="onSchoolTime('week','entry',this)">
+              –
+              <input type="time" class="time-input" value="17:00" aria-label="Salida de lunes a viernes" onchange="onSchoolTime('week','exit',this)">
+            </span>
+          </div>
+          <div class="config-line">
+            <span class="config-label">Clases el sábado</span>
+            <button type="button" class="switch" role="switch" aria-checked="false" aria-label="Clases el sábado" onclick="toggleSaturday(this)"></button>
+          </div>
+          <div class="config-line time-line" id="sat-times" hidden>
+            <span class="config-label">Sábado</span>
+            <span class="time-pair">
+              <input type="time" class="time-input" value="09:00" aria-label="Entrada del sábado" onchange="onSchoolTime('sat','entry',this)">
+              –
+              <input type="time" class="time-input" value="13:00" aria-label="Salida del sábado" onchange="onSchoolTime('sat','exit',this)">
+            </span>
+          </div>
+          <p class="card-hint">En los días de cole se quita el horario escolar de la franja. El resto, también <strong>antes de entrar</strong>, queda libre para tareas y actividades.</p>
+          <div class="cover-block">
+            <div class="field-label">Tiempo que planifica la App</div>
+            <div class="cover-list" id="cover-list"></div>
+          </div>
         </div>
       </div>
 
@@ -667,6 +684,7 @@
             <span class="config-label">Archivo del calendario</span>
             <span class="config-value">Ningún archivo cargado</span>
           </div>
+          <p class="card-hint">Se consulta para saber los <strong>festivos y días no lectivos</strong>: la App los trata como un domingo, con toda la franja horaria disponible.</p>
           <button class="btn-ghost" style="align-self:flex-start" onclick="toast('La importación de archivos se activa en la fase de datos')">Seleccionar archivo</button>
         </div>
       </div>
@@ -722,13 +740,13 @@
       </div>
 
       <div>
-        <h2 class="section-title">Calendario del móvil</h2>
+        <h2 class="section-title">Google Calendar</h2>
         <div class="config-card">
           <div class="config-line">
-            <span class="config-label">Exportar eventos al calendario del móvil</span>
-            <button type="button" class="switch" role="switch" aria-checked="false" id="export-switch" aria-label="Exportar eventos al calendario del móvil" onclick="toggleExport(this)"></button>
+            <span class="config-label">Exportar eventos a Google Calendar</span>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="export-switch" aria-label="Exportar eventos a Google Calendar" onclick="toggleExport(this)"></button>
           </div>
-          <p class="card-hint">Solo en un sentido: la App escribe sus eventos en un calendario propio, <strong>«AHHHHHH · Martina»</strong>. No importa ni lee el resto de tu calendario (cumpleaños, trabajo…), y puedes ocultarlo o borrarlo desde el móvil cuando quieras.</p>
+          <p class="card-hint">Solo en un sentido: la App crea en tu Google Calendar un calendario propio, <strong>«AHHHHHH · Martina»</strong>, y escribe ahí sus eventos. No importa ni lee el resto de tus calendarios (cumpleaños, trabajo…). Lo verás en el móvil junto a los demás y puedes ocultarlo cuando quieras.</p>
 
           <div class="export-options" id="export-options" hidden>
             <div class="field-label">Qué se exporta</div>
@@ -741,9 +759,9 @@
             <p class="card-hint">Si un evento implica traslado, el móvil avisa a la hora de salir calculada, no a la hora del evento.</p>
             <div class="config-line">
               <span class="config-label">Estado</span>
-              <span class="status-chip pending">Pendiente de añadir</span>
+              <span class="status-chip off">Requiere conectar Google</span>
             </div>
-            <button class="btn-primary" style="align-self:flex-start" onclick="toast('La exportación al calendario se conecta en la fase de integraciones')">Añadir al calendario del móvil</button>
+            <button class="btn-primary" style="align-self:flex-start" onclick="toast('Se usa la misma cuenta de Google de Cuentas conectadas · fase de integraciones')">Crear calendario en Google</button>
           </div>
         </div>
       </div>
@@ -887,27 +905,29 @@
     row.querySelector('.cat-name-input').select();
   }
 
-  /* ---- Horario escolar por día (lunes = 0) ---- */
-  var DAY_ABBR = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  var DAY_LONG = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
-  var SCHOOL = [
-    {on:true,  entry:'09:00', exit:'17:00'},
-    {on:true,  entry:'09:00', exit:'17:00'},
-    {on:true,  entry:'09:00', exit:'17:00'},
-    {on:true,  entry:'09:00', exit:'17:00'},
-    {on:true,  entry:'09:00', exit:'15:00'},
-    {on:false, entry:'09:00', exit:'17:00'},
-    {on:false, entry:'09:00', exit:'17:00'}
-  ];
+  /* ---- Franja horaria y horario escolar ---- */
+  var SCHOOL = {
+    week: {entry:'09:00', exit:'17:00'},            // lunes a viernes
+    sat:  {on:false, entry:'09:00', exit:'13:00'}   // clases el sábado (opcional)
+  };
+  var DEFAULT_BOUNDS = {'day-start':'07:30', 'day-end':'23:00'};
   var TIME_RE = /^\d{2}:\d{2}$/;
 
   function toHours(t){ var p = t.split(':'); return +p[0] + (+p[1]) / 60; }
   function dayBounds(){
-    return { start: document.getElementById('day-start').value || '08:00',
-             end:   document.getElementById('day-end').value   || '22:00' };
+    return { start: document.getElementById('day-start').value || DEFAULT_BOUNDS['day-start'],
+             end:   document.getElementById('day-end').value   || DEFAULT_BOUNDS['day-end'] };
   }
 
-  // Franjas fuera del cole que gestiona la App para un día
+  // Horario del cole para un día de la semana (lunes = 0). Domingos y
+  // festivos/no lectivos del calendario escolar: sin cole.
+  function schoolFor(day){
+    if(day < 5){ return {on:true, entry:SCHOOL.week.entry, exit:SCHOOL.week.exit}; }
+    if(day === 5){ return SCHOOL.sat; }
+    return {on:false};
+  }
+
+  // Franja horaria menos el horario escolar
   function coveredRanges(d){
     var b = dayBounds();
     if(!d.on){ return [[b.start, b.end]]; }
@@ -917,40 +937,27 @@
     return r;
   }
 
-  function coverHtml(d){
+  function rangesText(d){
     var r = coveredRanges(d);
-    if(!r.length){ return 'Sin tiempo fuera del cole que gestionar'; }
-    var txt = r.map(function(x){ return '<strong>' + x[0] + '–' + x[1] + '</strong>'; }).join(' y ');
-    return (d.on ? 'Gestiona ' : 'Gestiona todo el día, ') + txt;
+    return r.length ? r.map(function(x){ return '<span style="white-space:nowrap">' + x[0] + '–' + x[1] + '</span>'; }).join(' y ') : 'Nada';
   }
 
-  function renderSchedule(){
-    var list = document.getElementById('schedule-list');
+  function renderCover(){
+    var rows = [['Lunes a viernes', schoolFor(0)]];
+    if(SCHOOL.sat.on){ rows.push(['Sábado', SCHOOL.sat]); }
+    rows.push([SCHOOL.sat.on ? 'Domingo y festivos' : 'Sábado, domingo y festivos', {on:false}]);
+    var list = document.getElementById('cover-list');
     list.innerHTML = '';
-    SCHOOL.forEach(function(d, i){
-      var row = document.createElement('div');
-      row.className = 'sched-row' + (d.on ? '' : ' is-off');
-      var times = d.on
-        ? '<input type="time" class="time-input" value="' + d.entry + '" aria-label="Entrada ' + DAY_LONG[i] + '" onchange="onSchoolTime(' + i + ',\'entry\',this)">' +
-          '<input type="time" class="time-input" value="' + d.exit + '" aria-label="Salida ' + DAY_LONG[i] + '" onchange="onSchoolTime(' + i + ',\'exit\',this)">'
-        : '<span class="sched-off">Sin cole</span>';
-      row.innerHTML =
-        '<span class="sched-day">' + DAY_ABBR[i] + '</span>' + times +
-        '<button type="button" class="switch" role="switch" aria-checked="' + d.on + '" aria-label="Hay cole el ' + DAY_LONG[i] + '" onclick="toggleSchoolDay(' + i + ')"></button>' +
-        '<span class="sched-cover">' + coverHtml(d) + '</span>';
-      list.appendChild(row);
+    rows.forEach(function(r){
+      var line = document.createElement('div');
+      line.className = 'config-line';
+      line.innerHTML = '<span class="config-label">' + r[0] + '</span><span class="config-value">' + rangesText(r[1]) + '</span>';
+      list.appendChild(line);
     });
   }
 
-  function toggleSchoolDay(i){
-    SCHOOL[i].on = !SCHOOL[i].on;
-    renderSchedule();
-    onScheduleChanged();
-    document.querySelectorAll('#schedule-list .switch')[i].focus();
-  }
-
-  function onSchoolTime(i, field, input){
-    var d = SCHOOL[i], v = input.value;
+  function onSchoolTime(which, field, input){
+    var d = SCHOOL[which], v = input.value;
     var entry = field === 'entry' ? v : d.entry, exit = field === 'exit' ? v : d.exit;
     if(!TIME_RE.test(v) || entry >= exit){
       input.value = d[field];
@@ -958,43 +965,42 @@
       return;
     }
     d[field] = v;
-    input.closest('.sched-row').querySelector('.sched-cover').innerHTML = coverHtml(d);
+    onScheduleChanged();
+  }
+
+  function toggleSaturday(btn){
+    SCHOOL.sat.on = !SCHOOL.sat.on;
+    btn.setAttribute('aria-checked', String(SCHOOL.sat.on));
+    document.getElementById('sat-times').hidden = !SCHOOL.sat.on;
     onScheduleChanged();
   }
 
   function onBoundsChange(input){
     var b = dayBounds();
     if(!TIME_RE.test(input.value) || b.start >= b.end){
-      input.value = input.id === 'day-start' ? '08:00' : '22:00';
-      toast('El día tiene que terminar después de empezar');
+      input.value = DEFAULT_BOUNDS[input.id];
+      toast('La franja tiene que terminar después de empezar');
     }
-    document.querySelectorAll('#schedule-list .sched-cover').forEach(function(el, i){ el.innerHTML = coverHtml(SCHOOL[i]); });
+    onScheduleChanged();
   }
 
-  // Resumen legible: agrupa días consecutivos con el mismo horario
   function scheduleSummary(){
-    var groups = [];
-    SCHOOL.forEach(function(d, i){
-      if(!d.on){ return; }
-      var last = groups[groups.length - 1];
-      if(last && last.to === i - 1 && last.entry === d.entry && last.exit === d.exit){ last.to = i; }
-      else { groups.push({from:i, to:i, entry:d.entry, exit:d.exit}); }
-    });
-    if(!groups.length){ return 'sin clases'; }
-    return groups.map(function(g){
-      var days = g.from === g.to ? DAY_LONG[g.from]
-        : (g.to - g.from === 1 ? DAY_LONG[g.from] + ' y ' + DAY_LONG[g.to] : DAY_LONG[g.from] + ' a ' + DAY_LONG[g.to]);
-      return days + ', ' + g.entry + '–' + g.exit;
-    }).join(' · ');
+    var txt = 'lunes a viernes, ' + SCHOOL.week.entry + '–' + SCHOOL.week.exit;
+    if(SCHOOL.sat.on){ txt += ' · sábado, ' + SCHOOL.sat.entry + '–' + SCHOOL.sat.exit; }
+    return txt;
   }
 
   function onScheduleChanged(){
     var summary = scheduleSummary();
     document.querySelectorAll('.school-summary').forEach(function(el){ el.textContent = summary; });
+    renderCover();
+    var b = dayBounds();
+    CAL_START = Math.floor(toHours(b.start));
+    CAL_END = Math.ceil(toHours(b.end));
     renderCalendar(calView);
   }
 
-  /* ---- Exportación al calendario del móvil ---- */
+  /* ---- Exportación a Google Calendar ---- */
   function toggleSwitch(btn, label){
     var on = btn.getAttribute('aria-checked') !== 'true';
     btn.setAttribute('aria-checked', String(on));
@@ -1032,7 +1038,7 @@
   document.getElementById('category-list').addEventListener('input', renderExportCats);
 
   /* ---- Calendario (vista día / semana) ---- */
-  var CAL_START = 8, CAL_END = 22, CAL_HOUR_PX = 36;
+  var CAL_START = 7, CAL_END = 23, CAL_HOUR_PX = 36;   // sigue la franja horaria de Config
   var WEEK_DAYS = [
     {label:'L', date:'7',  full:'Lunes 7 sept'},
     {label:'M', date:'8',  full:'Martes 8 sept'},
@@ -1103,7 +1109,7 @@
       col.className = 'cal-daycol' + (d.isToday ? ' is-today' : '');
       col.style.height = colHeight + 'px';
 
-      var sd = SCHOOL[realDay];
+      var sd = schoolFor(realDay);
       if(sd.on){
         var bStart = Math.max(toHours(sd.entry), CAL_START), bEnd = Math.min(toHours(sd.exit), CAL_END);
         var band = document.createElement('div');
@@ -1145,7 +1151,6 @@
     renderCalendar(view);
   }
 
-  renderSchedule();
   onScheduleChanged();
 </script>
 </body>

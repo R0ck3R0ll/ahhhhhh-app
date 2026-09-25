@@ -21,17 +21,18 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
 
 ### 2.1 Configuración
 - Inserción de credenciales / conexión de cuentas externas (Google, y las que se necesiten).
-- **Horario escolar por día de la semana** (hora de entrada y salida, y si ese día hay cole o no).
-  - La App **solo gestiona el tiempo fuera de la escuela**: la franja que planifica es distinta cada día según el horario (ej.: L–J sale a las 17:00, V a las 15:00, fines de semana todo el día).
-  - Se define también el **margen del día de Martina** (ej.: 08:00–22:00): fuera de él la App no planifica nada.
-  - Franja cubierta de un día con cole = [inicio del día → entrada] + [salida → fin del día]. Día sin cole = todo el margen del día.
-  - Los festivos del calendario escolar importado cuentan como días sin cole.
-  - Este horario alimenta la banda "Horario escolar" del Calendario y las notas de contexto de Actividades y Eventos.
-- Localización del archivo con el calendario escolar (para importarlo).
+- **Franja horaria** definida por el usuario (ej.: 07:30–23:00): horas del día en las que la App puede planificar. Fuera de ella no planifica nada.
+- **Horario escolar**: una sola hora de entrada y salida para lunes a viernes, y opción de **clases el sábado** (con su propio horario) si las hubiera.
+  - La App solo gestiona el tiempo fuera del cole: en los días de cole se quita el horario escolar de la franja horaria. Tiempo planificable = [inicio franja → entrada] + [salida → fin franja].
+  - El tramo antes de entrar al cole también cuenta, así se pueden planificar tareas por la mañana si se quiere.
+  - Domingos (y sábados sin clase) = toda la franja horaria disponible.
+  - Este horario alimenta la banda "Horario escolar" del Calendario y las notas de contexto de Actividades y Eventos; el Calendario muestra las horas de la franja horaria.
+- Localización del archivo con el calendario escolar (para importarlo). Se usa para consultar **festivos y días no lectivos**, que la App trata igual que un domingo (toda la franja horaria disponible).
 - Definición de categorías de eventos (tarea, actividad, cita, etc.), cada una con un nivel de prioridad asignado.
-- **Exportación al calendario del móvil (solo en un sentido: App → móvil).**
-  - La App **no importa** eventos del calendario del móvil: solo lleva actividades, tareas y eventos que inciden en el tiempo disponible de Martina, y muchos eventos del calendario personal no interesan (cumpleaños, trabajo…).
-  - Los eventos de la App se escriben en un **calendario propio y separado** ("AHHHHHH · Martina"), que se puede ocultar o borrar desde el móvil sin tocar el resto.
+- **Exportación a Google Calendar (solo en un sentido: App → Google Calendar).**
+  - La App **no importa** eventos del calendario: solo lleva actividades, tareas y eventos que inciden en el tiempo disponible de Martina, y muchos eventos del calendario personal no interesan (cumpleaños, trabajo…).
+  - La App crea en Google Calendar un **calendario propio y separado** ("AHHHHHH · Martina") y escribe ahí sus eventos; se ve en el móvil junto a los demás y se puede ocultar o borrar sin tocar el resto.
+  - Usa la misma cuenta de Google conectada para Classroom y Gmail.
   - Se elige qué categorías se exportan (una casilla por categoría definida).
   - Las tareas se exportan como aviso a su hora de entrega, no como bloque de tiempo.
   - Opción de aviso a la **hora de salida** calculada cuando el evento implica traslado.
@@ -77,7 +78,7 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
 | Gmail API | Mismo proyecto de Google Cloud, API activada, mismo OAuth | Se usa tanto para leer contenido relevante como para la extracción con IA |
 | Geolocalización del dispositivo | Ninguna cuenta ni API — función estándar del navegador con permiso del usuario | Trivial |
 | Google Maps Platform (cálculo de traslados reales) | Clave de API de Google Maps — **requiere asociar una tarjeta de crédito a la cuenta de Google Cloud**, aunque el uso se mantenga dentro del nivel gratuito | Alternativa sin tarjeta: estimación en línea recta con velocidad media (menos realista) — decisión pendiente de confirmar antes de implementar esta parte |
-| Exportación al calendario del móvil | Opción A: **feed iCalendar (.ics) de suscripción** servido por la propia App — funciona en iPhone y Android, sin permisos sobre el calendario del usuario. Opción B: **Google Calendar API** con el mismo OAuth, usando el permiso limitado a calendarios creados por la App (`calendar.app.created`) | Solo escritura/publicación, nunca lectura del calendario del usuario. La suscripción .ics se refresca según el móvil (de minutos a horas); Google Calendar es inmediato — decisión pendiente |
+| Google Calendar API (exportación) | Mismo proyecto de Google Cloud y mismo OAuth; API de Google Calendar activada. Permiso limitado `calendar.app.created` (solo puede gestionar calendarios creados por la App, no lee los demás) | Decidido: exportar a Google Calendar. Solo escritura en el calendario propio de la App |
 | Extracción de contenido con IA (Claude API) | Clave de API propia de Anthropic una vez la app esté fuera de Claude.ai | Coste mínimo para volumen familiar, pero no es gratuito como dentro de este chat |
 
 ---
@@ -95,7 +96,6 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
 - Estrategia concreta de login/sesión persistente con Google que no interrumpa la experiencia de uso.
 - Decisión final sobre Google Maps (con tarjeta, traslados reales) vs. estimación aproximada sin tarjeta.
 - Diseño gráfico y de contenido detallado de cada pantalla (mencionado como primer paso a definir en Code).
-- Método de exportación al calendario del móvil: suscripción .ics (universal, refresco más lento) vs. Google Calendar API (inmediato, requiere que el móvil use Google Calendar).
 - Peso relativo de los criterios de priorización en el algoritmo de planificación diaria.
 - Grado de autonomía de la IA al interpretar correos (todo lo extraído pasa por aprobación del usuario, según lo decidido en el punto 4).
 
