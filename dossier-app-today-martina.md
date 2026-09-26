@@ -123,6 +123,13 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - 30 min o menos: borde y texto en **rojo oscuro**, todo en negrita; relleno del color de la categoría.
   - El **punto del próximo deadline en la barra de tiempo** sigue el mismo código (borde y relleno; en la barra de la niña, el contorno de su explosión).
 - Muestra los deadlines del día: hora de inicio de actividades/citas programadas, y para tareas de Classroom, la hora de entrega como deadline.
+- **Datos reales** (fase 2 de «ejecución de tareas»): «Hoy» se construye con lo que hay en la App: las sesiones de hoy de las **actividades**, los **eventos** de hoy y las **tareas** (Classroom, sueltas, de eventos y de práctica) con entrega hoy.
+  - Se quitan los elementos que ya han terminado y las **tareas hechas**; una tarea cuya hora ya pasó sin completarse queda en «Atrasadas» (pantalla Tareas).
+  - En las tareas, la línea de detalle es su origen y el tiempo estimado (p. ej. «Classroom · Lengua»).
+  - El **✓ rápido** aparece en todas las tarjetas de tareas, también en la del primer deadline; marca la tarea como hecha en toda la App, con «Deshacer».
+  - Si no queda nada para hoy, el cuerpo muestra «No queda nada más para hoy.»
+  - «Próximos días» también usa las tareas reales pendientes.
+  - Los **traslados** (distancia y horas de salida) quedan pendientes hasta conectar Google Maps: mientras tanto se muestra solo el lugar.
 - Si un evento implica desplazamiento, se muestran **dos datos**: el deadline en sí, y la hora de salida calculada según el tiempo de traslado (Google Maps).
   - Distancias menores de 1 km: preguntar al usuario si se va andando.
   - Resto de distancias: calcular en coche.

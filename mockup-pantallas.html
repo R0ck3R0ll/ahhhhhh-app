@@ -152,7 +152,12 @@
   .today-check{ position:absolute; top:6px; right:6px; width:22px; height:22px; background:rgba(255,255,255,.55); border-color:currentColor; color:transparent; z-index:2; }
   .today-check:hover{ color:var(--cat-tarea-ink); }
   .note .today-check{ top:12px; left:12px; right:auto; width:26px; height:26px; border-color:var(--deep); }
+  /* Próximo: el ✓ en la esquina, con el color del código (categoría / ámbar / rojo oscuro) */
+  .up-next-card, .hero-card, .pi-next{ position:relative; }
+  .up-next-card .today-check, .hero-card .today-check{ top:10px; right:10px; width:28px; height:28px; border-color:var(--st-line, currentColor); }
+  .pi-next .today-check{ position:static; flex:none; align-self:flex-end; margin:0; width:24px; height:24px; border-color:var(--st-line, currentColor); }
   .fan-card .today-check{ top:auto; bottom:6px; right:6px; width:22px; height:22px; border-color:var(--deep); }
+  .today-empty{ margin:24px 0; font-size:15px; color:var(--text-muted); text-align:center; }
   .today-more{ margin:0; font-size:12.5px; color:var(--text-muted); text-align:center; }
   #screen-today.active{ min-height:100%; }
   /* Próximos días: abajo del todo, pegada a la barra de pestañas aunque el resto se desplace */
@@ -1618,9 +1623,9 @@
       'task.deleteConfirmLinked':'Confirmar: se quita la tarea de «{name}»', 'toast.taskSaved':'Tarea «{name}» guardada', 'toast.taskDeleted':'Tarea «{name}» eliminada',
       'task.ownPrio':'{p} · propia de la tarea',
       'btn.back':'Volver', 'tasks.add':'Añadir tarea', 'task.newTitle':'Nueva tarea', 'task.fromManual':'Añadida a mano', 'd.when':'Cuándo', 'd.task':'Tarea asociada', 'd.origin':'Origen', 'd.prioOwn':'(propia)', 'd.prioDefault':'(la de la categoría)',
-      'tab.today':'Hoy', 'today.more1':'Y 1 más hoy: la ves en la barra de tiempo.', 'today.more':'Y {n} más hoy: los ves en la barra de tiempo.',
+      'tab.today':'Hoy', 'today.empty':'No queda nada más para hoy.', 'today.more1':'Y 1 más hoy: la ves en la barra de tiempo.', 'today.more':'Y {n} más hoy: los ves en la barra de tiempo.',
       'btn.backCal':'Volver al Calendario',
-      'btn.backToday':'Volver a Hoy', 'd.leave':'Salida', 'toast.demoItem':'Es un dato de ejemplo: se podrá editar cuando «Hoy» use los datos reales',
+      'btn.backToday':'Volver a Hoy', 'd.leave':'Salida',
       'task.markDone':'Marcar como hecha', 'task.reopen':'Reabrir', 'tasks.overdue':'Atrasadas',
       'tasks.doneTitle':'Hechas', 'toast.taskDone':'Tarea «{name}» hecha', 'toast.taskReopened':'Tarea «{name}» reabierta',
       'btn.undo':'Deshacer', 'd.status':'Estado', 'status.done':'Hecha',
@@ -1745,9 +1750,9 @@
       'task.deleteConfirmLinked':'Confirm: the task is removed from “{name}”', 'toast.taskSaved':'Task “{name}” saved', 'toast.taskDeleted':'Task “{name}” deleted',
       'task.ownPrio':'{p} · set for this task',
       'btn.back':'Back', 'tasks.add':'Add task', 'task.newTitle':'New task', 'task.fromManual':'Added by hand', 'd.when':'When', 'd.task':'Linked task', 'd.origin':'Source', 'd.prioOwn':'(own)', 'd.prioDefault':'(the category’s)',
-      'tab.today':'Today', 'today.more1':'And 1 more today: see it on the time bar.', 'today.more':'And {n} more today: see them on the time bar.',
+      'tab.today':'Today', 'today.empty':'Nothing else for today.', 'today.more1':'And 1 more today: see it on the time bar.', 'today.more':'And {n} more today: see them on the time bar.',
       'btn.backCal':'Back to Calendar',
-      'btn.backToday':'Back to Today', 'd.leave':'Departure', 'toast.demoItem':'This is sample data: it can be edited once Today uses real data',
+      'btn.backToday':'Back to Today', 'd.leave':'Departure',
       'task.markDone':'Mark as done', 'task.reopen':'Reopen', 'tasks.overdue':'Overdue',
       'tasks.doneTitle':'Done', 'toast.taskDone':'Task “{name}” done', 'toast.taskReopened':'Task “{name}” reopened',
       'btn.undo':'Undo', 'd.status':'Status', 'status.done':'Done',
@@ -1872,9 +1877,9 @@
       'task.deleteConfirmLinked':'Conferma: il compito viene tolto da «{name}»', 'toast.taskSaved':'Compito «{name}» salvato', 'toast.taskDeleted':'Compito «{name}» eliminato',
       'task.ownPrio':'{p} · propria del compito',
       'btn.back':'Indietro', 'tasks.add':'Aggiungi compito', 'task.newTitle':'Nuovo compito', 'task.fromManual':'Aggiunto a mano', 'd.when':'Quando', 'd.task':'Compito associato', 'd.origin':'Origine', 'd.prioOwn':'(propria)', 'd.prioDefault':'(quella della categoria)',
-      'tab.today':'Oggi', 'today.more1':'E 1 altro oggi: lo vedi nella barra del tempo.', 'today.more':'E altri {n} oggi: li vedi nella barra del tempo.',
+      'tab.today':'Oggi', 'today.empty':'Per oggi non resta nient’altro.', 'today.more1':'E 1 altro oggi: lo vedi nella barra del tempo.', 'today.more':'E altri {n} oggi: li vedi nella barra del tempo.',
       'btn.backCal':'Torna al Calendario',
-      'btn.backToday':'Torna a Oggi', 'd.leave':'Partenza', 'toast.demoItem':'È un dato di esempio: si potrà modificare quando «Oggi» userà i dati reali',
+      'btn.backToday':'Torna a Oggi', 'd.leave':'Partenza',
       'task.markDone':'Segna come fatto', 'task.reopen':'Riapri', 'tasks.overdue':'In ritardo',
       'tasks.doneTitle':'Fatti', 'toast.taskDone':'Compito «{name}» fatto', 'toast.taskReopened':'Compito «{name}» riaperto',
       'btn.undo':'Annulla', 'd.status':'Stato', 'status.done':'Fatto',
@@ -1999,9 +2004,9 @@
       'task.deleteConfirmLinked':'Confirmer : la tâche est retirée de « {name} »', 'toast.taskSaved':'Tâche « {name} » enregistrée', 'toast.taskDeleted':'Tâche « {name} » supprimée',
       'task.ownPrio':'{p} · propre à la tâche',
       'btn.back':'Retour', 'tasks.add':'Ajouter une tâche', 'task.newTitle':'Nouvelle tâche', 'task.fromManual':'Ajoutée à la main', 'd.when':'Quand', 'd.task':'Tâche associée', 'd.origin':'Origine', 'd.prioOwn':'(propre)', 'd.prioDefault':'(celle de la catégorie)',
-      'tab.today':'Aujourd’hui', 'today.more1':'Et 1 de plus aujourd’hui : voyez-le sur la barre de temps.', 'today.more':'Et {n} de plus aujourd’hui : voyez-les sur la barre de temps.',
+      'tab.today':'Aujourd’hui', 'today.empty':'Plus rien pour aujourd’hui.', 'today.more1':'Et 1 de plus aujourd’hui : voyez-le sur la barre de temps.', 'today.more':'Et {n} de plus aujourd’hui : voyez-les sur la barre de temps.',
       'btn.backCal':'Retour au Calendrier',
-      'btn.backToday':'Retour à Aujourd’hui', 'd.leave':'Départ', 'toast.demoItem':'C’est une donnée d’exemple : elle pourra être modifiée quand « Aujourd’hui » utilisera les données réelles',
+      'btn.backToday':'Retour à Aujourd’hui', 'd.leave':'Départ',
       'task.markDone':'Marquer comme faite', 'task.reopen':'Rouvrir', 'tasks.overdue':'En retard',
       'tasks.doneTitle':'Faites', 'toast.taskDone':'Tâche « {name} » faite', 'toast.taskReopened':'Tâche « {name} » rouverte',
       'btn.undo':'Annuler', 'd.status':'État', 'status.done':'Faite',
@@ -2126,9 +2131,9 @@
       'task.deleteConfirmLinked':'Bestätigen: Die Aufgabe wird aus „{name}“ entfernt', 'toast.taskSaved':'Aufgabe „{name}“ gespeichert', 'toast.taskDeleted':'Aufgabe „{name}“ gelöscht',
       'task.ownPrio':'{p} · eigene der Aufgabe',
       'btn.back':'Zurück', 'tasks.add':'Aufgabe hinzufügen', 'task.newTitle':'Neue Aufgabe', 'task.fromManual':'Von Hand hinzugefügt', 'd.when':'Wann', 'd.task':'Zugehörige Aufgabe', 'd.origin':'Herkunft', 'd.prioOwn':'(eigene)', 'd.prioDefault':'(die der Kategorie)',
-      'tab.today':'Heute', 'today.more1':'Und 1 weiterer heute: siehe Zeitleiste.', 'today.more':'Und {n} weitere heute: siehe Zeitleiste.',
+      'tab.today':'Heute', 'today.empty':'Für heute steht nichts mehr an.', 'today.more1':'Und 1 weiterer heute: siehe Zeitleiste.', 'today.more':'Und {n} weitere heute: siehe Zeitleiste.',
       'btn.backCal':'Zurück zum Kalender',
-      'btn.backToday':'Zurück zu Heute', 'd.leave':'Abfahrt', 'toast.demoItem':'Das sind Beispieldaten: Bearbeiten geht, sobald „Heute“ echte Daten nutzt',
+      'btn.backToday':'Zurück zu Heute', 'd.leave':'Abfahrt',
       'task.markDone':'Als erledigt markieren', 'task.reopen':'Wieder öffnen', 'tasks.overdue':'Überfällig',
       'tasks.doneTitle':'Erledigt', 'toast.taskDone':'Aufgabe „{name}“ erledigt', 'toast.taskReopened':'Aufgabe „{name}“ wieder geöffnet',
       'btn.undo':'Rückgängig', 'd.status':'Status', 'status.done':'Erledigt',
@@ -2262,7 +2267,7 @@
     // «Hoy» lleva la cabecera compacta (sin la marca y con la fecha en la misma línea)
     document.querySelector('.app-shell').classList.toggle('is-today', btn.dataset.screen === 'today');
     if(btn.dataset.screen === 'calendar'){ fitCalendar(); }
-    if(btn.dataset.screen === 'today'){ fitLoad(); }
+    if(btn.dataset.screen === 'today'){ renderToday(); }
   }
 
   function setScreenHeading(btn){
@@ -2285,39 +2290,47 @@
     var input = row.querySelector('.cat-name-input');
     return input ? (input.value || t('category')) : t('cat.' + row.dataset.cat);
   }
-  // kind: pantalla en la que se abre al pulsarlo (activity / event / task); end: fin si tiene duración.
-  // leaves: hora de salida por modo; andando solo si el destino está a menos de 1 km.
-  var TODAY_NEXT = { id:'natacion', kind:'activity', t:18, end:19, cat:'actividad', title:'Natación',
-    place:'Piscina Municipal Las Rozas', dist:'3,5 km', leave:'17:35', how:'car', leaves:{ car:'17:35' } };
-  var TODAY_LATER = [
-    { id:'clara', kind:'event', t:19.5, end:20.5, cat:'libre', title:'Merienda con Clara', place:'Casa de Clara', dist:'600 m',
-      travel:{ mode:'walk',
-        walk:{ min:10, leave:'19:20' },
-        car: { min:5,  leave:'19:25' } } },
-    { id:'abuela', kind:'event', t:20.5, end:21, cat:'cita', title:'Videollamada con la abuela', place:'En casa', dist:'20 min' },
-    { id:'piano', kind:'task', est:30, t:21, cat:'tarea', title:'Practicar: Piano', place:'En casa', dist:'30 min' },
-    { id:'lengua', kind:'task', est:60, t:22, cat:'tarea', title:'Entrega de Lengua', place:'Classroom', dist:'redacción' },
-    { id:'mates', kind:'task', est:45, t:22.5, cat:'tarea', title:'Ejercicios de Mates', place:'Classroom', dist:'pág. 24' }
-  ];
+  /* ---- Elementos de hoy: los datos reales (actividades, eventos y tareas) ----
+     kind: pantalla en la que se abre al pulsarlo (activity / event / task); end: fin si tiene duración;
+     place / dist: línea de detalle; leaves: horas de salida por modo (pendiente de Google Maps:
+     hasta entonces no se calculan los traslados). Las tareas hechas no se presentan. */
+  var TODAY_NEXT = null, TODAY_LATER = [], TODAY_LATER_ALL = [];
   // El cuerpo de la pantalla muestra como máximo TODAY_MAX deadlines (el próximo y los
   // siguientes por orden); la barra de tiempo dibuja todos los del día.
   var TODAY_MAX = 4;
-  var TODAY_LATER_ALL = TODAY_LATER.slice().sort(function(a, b){ return a.t - b.t; });
-  TODAY_LATER = TODAY_LATER_ALL.slice(0, TODAY_MAX - 1);
-  // Tareas marcadas como hechas desde «Hoy» (datos de ejemplo): no se vuelven a presentar
-  var TODAY_DONE = [];
-  function todayVisible(){ return TODAY_LATER_ALL.filter(function(e){ return TODAY_DONE.indexOf(e.id) < 0; }); }
-  function setTodayDone(id, done){
-    TODAY_DONE = TODAY_DONE.filter(function(x){ return x !== id; });
-    if(done){ TODAY_DONE.push(id); }
-    renderToday();
-    var item = TODAY_LATER_ALL.filter(function(e){ return e.id === id; })[0];
-    if(done){ toast(t('toast.taskDone', { name: item.title }), { label: t('btn.undo'), fn: function(){ setTodayDone(id, false); } }); }
+  function todayItems(){
+    var iso = isoOf(TODAY_DATE), wd = weekdayOf(TODAY_DATE), now = demoNow(), out = [];
+    USER_ACTS.forEach(function(a){
+      a.sessions.filter(function(x){ return x.day === wd; }).forEach(function(x){
+        out.push({ id:'act-' + a.id + '-' + x.start, kind:'activity', ref:a.id, t:toHours(x.start), end:toHours(x.end), cat:a.cat, title:a.name, place:a.place || '' });
+      });
+    });
+    USER_EVENTS.filter(function(e){ return e.date === iso; }).forEach(function(e){
+      var h = toHours(e.time);
+      out.push({ id:'evt-' + e.id, kind:'event', ref:e.id, t:h, end:h + (e.dur || 60) / 60, cat:e.cat, title:e.name, place:e.place || '' });
+    });
+    allTasks().filter(function(x){ return !x.done && x.due && isoOf(x.due) === iso; }).forEach(function(x){
+      out.push({ id:'tk-' + x.key.replace(':', '-'), kind:'task', ref:x.key, t:x.due.getHours() + x.due.getMinutes() / 60, cat:'tarea', title:x.name,
+                 place:x.origin, dist:x.est ? fmtEst(x.est) : '', est:x.est });
+    });
+    // Se quitan los que ya han terminado (una tarea, al pasar su hora, queda en «Atrasadas»)
+    return out.filter(function(e){ return (e.end || e.t) > NOW + 1e-9 && (e.kind !== 'task' || e.t > NOW); })
+      .map(function(e){ if(!/^(tarea|cita|actividad|libre)$/.test(e.cat) && !findCategory(e.cat)){ e.cat = 'libre'; } return e; })
+      .sort(function(p, q){ return p.t - q.t || (p.kind === 'task') - (q.kind === 'task'); });
   }
+  function loadTodayItems(){
+    var items = todayItems();
+    TODAY_NEXT = items[0] || null;
+    TODAY_LATER_ALL = items.slice(1);
+    TODAY_LATER = TODAY_LATER_ALL.slice(0, TODAY_MAX - 1);
+  }
+  function todayVisible(){ return TODAY_LATER_ALL; }
   function todayCheck(e){
-    return e.kind === 'task' ? '<button type="button" class="task-check today-check" aria-label="' + t('task.markDone') + ': ' + e.title + '" title="' + t('task.markDone') + '" ' +
-      'onclick="event.stopPropagation(); setTodayDone(\'' + e.id + '\', true)" onkeydown="event.stopPropagation()" onpointerdown="event.stopPropagation()">' + CHECK_ICON + '</button>' : '';
+    return e.kind === 'task' ? '<button type="button" class="task-check today-check" aria-label="' + t('task.markDone') + ': ' + esc(e.title) + '" title="' + t('task.markDone') + '" ' +
+      'onclick="event.stopPropagation(); setTaskDone(\'' + e.ref + '\', true)" onkeydown="event.stopPropagation()" onpointerdown="event.stopPropagation()">' + CHECK_ICON + '</button>' : '';
   }
+  // Lugar · distancia (o, en las tareas, origen · tiempo estimado)
+  function placeLine(n){ return [n.place, n.dist].filter(Boolean).map(esc).join(' · '); }
 
   /* ---- Apariencia (Configuración) ---- */
   var APPEARANCE = { layout:'list', mode:'light', bar:'dots' };
@@ -2347,8 +2360,18 @@
   }
 
   /* ---- Utilidades ---- */
-  function catColor(cat){ return 'var(--cat-' + cat + ')'; }
-  function catVars(cat){ return '--c:var(--cat-' + cat + ');--c-ink:var(--cat-' + cat + '-ink);--deep:var(--cat-' + cat + '-deep)'; }
+  // Categorías de fábrica: sus variables; las creadas por el usuario: su color y tonos derivados
+  function isBaseCat(cat){ return /^(tarea|cita|actividad|libre)$/.test(cat); }
+  function catColor(cat){
+    if(isBaseCat(cat)){ return 'var(--cat-' + cat + ')'; }
+    var c = findCategory(cat);
+    return c ? c.color : 'var(--cat-libre)';
+  }
+  function catVars(cat){
+    if(isBaseCat(cat)){ return '--c:var(--cat-' + cat + ');--c-ink:var(--cat-' + cat + '-ink);--deep:var(--cat-' + cat + '-deep)'; }
+    var c = catColor(cat);
+    return '--c:' + c + ';--c-ink:' + inkOf(cat) + ';--deep:color-mix(in srgb, ' + c + ' 30%, #000)';
+  }
   // «45 min», «2 h», «10 h 30 min»
   function untilText(t){
     var m = Math.max(0, Math.round((t - NOW) * 60)), h = Math.floor(m / 60), r = m % 60;
@@ -2356,24 +2379,19 @@
   }
   function nextState(t){ var m = (t - NOW) * 60; return m > 60 ? 'st-calm' : m > 30 ? 'st-soon' : 'st-urgent'; }
   function nextCardAttrs(n){ return ' next-card ' + nextState(n.t) + '" style="' + catVars(n.cat); }
-  /* ---- Próximos días: tareas de los siguientes LOAD_DAYS días con LOAD_MIN_EST minutos o más ----
-     (datos de ejemplo de la maqueta; al conectar los datos reales se filtran todas las tareas igual) */
+  /* ---- Próximos días: tareas pendientes de los siguientes LOAD_DAYS días con LOAD_MIN_EST minutos o más ----
+     El color es el de la categoría de la que salen (evento o actividad; si no, Tarea). */
   var LOAD_DAYS = 5, LOAD_MIN_EST = 90;
-  var LOAD_TASKS = [
-    { name:'Trabajo de Ciencias Naturales', cat:'tarea', est:120, date:'2026-09-14', time:'09:00' },
-    { name:'Estudiar examen de Inglés', cat:'tarea', est:90, date:'2026-09-15', time:'10:00' },
-    { name:'Ensayar pieza para la audición', cat:'actividad', est:150, date:'2026-09-16', time:'17:30' },
-    { name:'Lectura de Lengua', cat:'tarea', est:45, date:'2026-09-14', time:'09:00' },          // < 1,5 h: no sale
-    { name:'Maqueta de Tecnología', cat:'tarea', est:180, date:'2026-09-21', time:'09:00' }      // fuera de 5 días
-  ];
   function upcomingLoad(){
-    var now = new Date(TODAY_DATE.getTime()); now.setMinutes(Math.round(NOW * 60));
+    var now = demoNow();
     var limit = new Date(TODAY_DATE.getFullYear(), TODAY_DATE.getMonth(), TODAY_DATE.getDate() + LOAD_DAYS + 1);
-    return LOAD_TASKS.map(function(x){ var d = isoDate(x.date); d.setMinutes(Math.round(toHours(x.time) * 60)); return { x:x, due:d }; })
-      .filter(function(it){ return it.x.est >= LOAD_MIN_EST && it.due > now && it.due < limit; })
-      .sort(function(a, b){ return a.due - b.due; });
+    return allTasks().filter(function(x){ return !x.done && x.est >= LOAD_MIN_EST && x.due && x.due > now && x.due < limit; })
+      .map(function(x){
+        var cat = x.parent && x.parent.cat && (isBaseCat(x.parent.cat) || findCategory(x.parent.cat)) ? x.parent.cat : 'tarea';
+        return { x:{ name:x.name, cat:cat, est:x.est, key:x.key }, due:x.due };
+      });
   }
-  function inkOf(cat){ return /^(tarea|cita|actividad|libre)$/.test(cat) ? 'var(--cat-' + cat + '-ink)' : 'color-mix(in srgb, ' + catColor(cat) + ' 55%, #000)'; }
+  function inkOf(cat){ return isBaseCat(cat) ? 'var(--cat-' + cat + '-ink)' : 'color-mix(in srgb, ' + catColor(cat) + ' 55%, #000)'; }
   function renderLoad(){
     var items = upcomingLoad(), card = document.querySelector('.load-card');
     card.hidden = !items.length;
@@ -2381,7 +2399,7 @@
     el('load-list').innerHTML = items.map(function(it){
       return '<li style="color:' + inkOf(it.x.cat) + '" title="' + esc(it.x.name) + '"><span class="load-name">' + esc(it.x.name) + '</span>' +
         '<span class="load-meta"><span class="load-est">' + fmtEst(it.x.est) + '</span> · ' +
-        t('load.before', { t: fmtDay(it.x.date) + ' ' + it.x.time }) + '</span></li>';
+        t('load.before', { t: fmtWhen(it.due) }) + '</span></li>';
     }).join('');
   }
   // Regla: si con la tarjeta desplegada la pantalla no da para todo sin taparse, se queda plegada
@@ -2400,31 +2418,20 @@
   function toggleLoad(){ setLoadOpen(document.querySelector('.load-card').classList.contains('is-collapsed')); }
   window.addEventListener('resize', fitLoad);
   window.addEventListener('load', fitLoad);
-  /* ---- Pulsar una tarjeta de «Hoy»: se abre su ficha en la pantalla que le corresponde,
-     con un botón para volver a «Hoy». (Datos de ejemplo: la ficha se arma con ellos y
-     Editar/Eliminar avisan; con los datos reales se abrirá el elemento real.) ---- */
+  /* ---- Pulsar una tarjeta de «Hoy»: se abre la ficha del elemento en la pantalla que le
+     corresponde, con un botón para volver a «Hoy». ---- */
   var KIND_SCREEN = { activity:['activities', 'act'], event:['events', 'evt'], task:['tasks', 'task'] };
   function todayOpen(item){
-    return 'data-open="' + item.id + '" role="button" tabindex="0" aria-label="' + fmtHour(item.t) + ' ' + item.title + '" ' +
+    return 'data-open="' + item.id + '" role="button" tabindex="0" aria-label="' + fmtHour(item.t) + ' ' + esc(item.title) + '" ' +
       'onclick="openFromToday(\'' + item.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){ event.preventDefault(); openFromToday(\'' + item.id + '\'); }"';
   }
   function openFromToday(id){
-    var item = [TODAY_NEXT].concat(TODAY_LATER_ALL).filter(function(x){ return x.id === id; })[0];
+    var item = [TODAY_NEXT].concat(TODAY_LATER_ALL).filter(function(x){ return x && x.id === id; })[0];
     if(!item){ return; }
     var sc = KIND_SCREEN[item.kind];
     document.querySelector('.tab[data-screen="' + sc[0] + '"]').click();
-    var when = fmtDay(isoOf(TODAY_DATE)) + ' · ' + fmtHour(item.t) + (item.end ? '–' + fmtHour(item.end) : '');
-    var rows = item.kind === 'task'
-      ? [[t('task.dueDate'), when], [t('task.est'), fmtEst(item.est)], [t('f.cat'), catHtml({ name: catName(item.cat), color: catColor(item.cat) })]]
-      : [[t('f.cat'), catHtml({ name: catName(item.cat), color: catColor(item.cat) })], [t('d.when'), when],
-         [t('f.place'), esc(item.place) + (item.dist ? ' <span class="muted">· ' + esc(item.dist) + '</span>' : '')],
-         [t('d.leave'), item.leaves ? leaveChips(item) : '']];
-    renderDetail(sc[1], {
-      title: item.title, prio: 'Media', rows: rows,
-      edit: "toast(t('toast.demoItem'))", del: "toast(t('toast.demoItem'))",
-      delLabel: t(item.kind === 'activity' ? 'act.cancel' : item.kind === 'event' ? 'evt.cancel' : 'task.delete'),
-      back: { label: t('btn.backToday'), fn: "backToToday('" + sc[1] + "')" }
-    });
+    DETAIL_BACK = { label: t('btn.backToday'), fn: "backToToday('" + sc[1] + "')", go: function(){ backToToday(sc[1]); } };
+    if(item.kind === 'activity'){ openActivity(item.ref); } else if(item.kind === 'event'){ openEvent(item.ref); } else { openTask(item.ref); }
   }
   function openFromCalendar(kind, id){
     var sc = KIND_SCREEN[kind];
@@ -2488,19 +2495,20 @@
   }
 
   function todayEvents(){
-    return [ {t:TODAY_NEXT.t, cat:TODAY_NEXT.cat, next:true} ].concat(todayVisible().map(function(e){ return {t:e.t, cat:e.cat}; }))
+    return (TODAY_NEXT ? [ {t:TODAY_NEXT.t, cat:TODAY_NEXT.cat, next:true} ] : []).concat(todayVisible().map(function(e){ return {t:e.t, cat:e.cat}; }))
       .sort(function(a, b){ return a.t - b.t; });
   }
 
   function renderToday(){
-    TODAY_LATER = todayVisible().slice(0, TODAY_MAX - 1);
+    loadTodayItems();
     var screen = document.getElementById('screen-today');
     screen.setAttribute('data-layout', APPEARANCE.layout);
     var r = todayScale();
     var bar = document.getElementById('today-bar');
     if(APPEARANCE.bar === 'nina'){ renderNinaBar(bar, r); } else { renderDotsBar(bar, r); }
     var layout = document.getElementById('today-layout');
-    if(APPEARANCE.layout === 'postit1'){ renderPostit1(layout); }
+    if(!TODAY_NEXT){ layout.innerHTML = '<p class="today-empty">' + t('today.empty') + '</p>'; }
+    else if(APPEARANCE.layout === 'postit1'){ renderPostit1(layout); }
     else if(APPEARANCE.layout === 'postit2'){ renderPostit2(layout); }
     else { renderList(layout); }
     // Los que no caben en el cuerpo se ven en la barra de tiempo
@@ -2583,7 +2591,7 @@
   function explosion(e, i, x){
     var big = !!e.next, color = catColor(e.cat), sparks = '';
     // El próximo lleva el contorno del código de color (categoría / ámbar / rojo oscuro)
-    var line = big ? { 'st-calm':'var(--cat-' + e.cat + '-ink)', 'st-soon':'var(--amber-line)', 'st-urgent':'var(--red-line)' }[nextState(e.t)] : 'var(--ink)';
+    var line = big ? { 'st-calm':inkOf(e.cat), 'st-soon':'var(--amber-line)', 'st-urgent':'var(--red-line)' }[nextState(e.t)] : 'var(--ink)';
     if(big){
       for(var k = 0; k < 6; k++){
         var a = k / 6 * Math.PI * 2 + .3;
@@ -2666,7 +2674,7 @@
       var x = xAt(e.t), below = e.t < NOW || ahead++ % 2 === 0;
       svg += explosion(e, i, x) + '<text class="tl-label" x="' + x.toFixed(1) + '" y="' + (below ? 88 : 30) + '" text-anchor="middle">' + fmtHour(e.t) + '</text>';
     });
-    if(xAt(events[0].t) - TL_X0 > 40){
+    if(!events.length || xAt(events[0].t) - TL_X0 > 40){
       svg += '<text class="tl-label is-muted" x="20" y="88" text-anchor="start">' + fmtHour(r.start) + '</text>';
     }
     svg += '<polygon points="' + (nowX - 4) + ',72 ' + (nowX + 4) + ',72 ' + nowX + ',66" fill="var(--ink)"/>' + nowLabel +
@@ -2682,14 +2690,14 @@
     var chips = TODAY_LATER.map(function(e){
       return '<div class="later-chip" ' + todayOpen(e) + ' style="' + catVars(e.cat) + '">' +
         todayCheck(e) + '<div class="later-time">' + fmtHour(e.t) + '</div>' +
-        '<div class="later-title">' + e.title + '</div></div>';
+        '<div class="later-title">' + esc(e.title) + '</div></div>';
     }).join('');
     host.innerHTML =
       '<div><div class="section-eyebrow" style="color:var(--warn-ink)">' + t('today.soon', { t: untilText(n.t) }) + '</div>' +
-      '<div class="up-next-card' + nextCardAttrs(n) + '" ' + todayOpen(n) + '><div style="display:flex; align-items:baseline; gap:10px;">' +
+      '<div class="up-next-card' + nextCardAttrs(n) + '" ' + todayOpen(n) + '>' + todayCheck(n) + '<div style="display:flex; align-items:baseline; gap:10px;">' +
         '<span class="up-next-time">' + fmtHour(n.t) + '</span><span class="up-next-title">' + n.title + '</span></div>' +
-        '<div class="up-next-sub">' + t('today.leaves', { place: n.place, leave: n.leave, how: t('how.' + n.how) }) + '</div></div></div>' +
-      '<div><div class="section-eyebrow" style="color:var(--text-muted)">' + t('today.later') + '</div><div class="later-row">' + chips + '</div></div>';
+        (placeLine(n) || n.leave ? '<div class="up-next-sub">' + (n.leave ? t('today.leaves', { place: esc(n.place), leave: n.leave, how: t('how.' + n.how) }) : placeLine(n)) + '</div>' : '') + '</div></div>' +
+      (chips ? '<div><div class="section-eyebrow" style="color:var(--text-muted)">' + t('today.later') + '</div><div class="later-row">' + chips + '</div></div>' : '');
   }
 
   /* ---- Tema «Post-it 1» (Design.html · Siguiente ahora) ---- */
@@ -2698,15 +2706,15 @@
     var cards = TODAY_LATER.map(function(e, i){   // siguientes: solo hora y nombre
       return '<div class="fan-card" ' + todayOpen(e) + ' style="' + catVars(e.cat) + ';z-index:' + (i + 1) + '">' +
         todayCheck(e) + '<div class="fan-time">' + fmtHour(e.t) + '</div>' +
-        '<div class="fan-title">' + e.title + '</div></div>';
+        '<div class="fan-title">' + esc(e.title) + '</div></div>';
     }).join('');
     host.innerHTML =
       '<div><div class="hero-eyebrow">' + t('today.nowSoon', { t: untilText(n.t) }) + '</div>' +
-      '<div class="hero-card' + nextCardAttrs(n) + '" ' + todayOpen(n) + '>' +
-        '<div class="hero-head"><span class="hero-time">' + fmtHour(n.t) + '</span><span class="hero-title">' + n.title + '</span></div>' +
-        '<div class="hero-place">' + n.place + ' · ' + n.dist + '</div>' +
-        '<div class="hero-leave">' + leaveChips(n) + '</div></div></div>' +
-      '<div><div class="section-eyebrow" style="color:var(--text-muted)">' + t('today.afterToday') + '</div><div class="fan">' + cards + '</div></div>';
+      '<div class="hero-card' + nextCardAttrs(n) + '" ' + todayOpen(n) + '>' + todayCheck(n) +
+        '<div class="hero-head"><span class="hero-time">' + fmtHour(n.t) + '</span><span class="hero-title">' + esc(n.title) + '</span></div>' +
+        (placeLine(n) ? '<div class="hero-place">' + placeLine(n) + '</div>' : '') +
+        (n.leaves ? '<div class="hero-leave">' + leaveChips(n) + '</div>' : '') + '</div></div>' +
+      (cards ? '<div><div class="section-eyebrow" style="color:var(--text-muted)">' + t('today.afterToday') + '</div><div class="fan">' + cards + '</div></div>' : '');
   }
 
   /* ---- Tema «Post-it 2» (boceto-today.html) ---- */
@@ -2717,7 +2725,7 @@
     { dur:'6.8s', delay:'-3.1s', sway:'-1.2deg' },
     { dur:'6.1s', delay:'-1.9s', sway:'1.8deg' }
   ];
-  var noteOrder = TODAY_LATER.map(function(e){ return e.id; });
+  var noteOrder = [];
 
   function renderPostit2(host){
     var n = TODAY_NEXT;
@@ -2728,11 +2736,12 @@
     host.innerHTML =
       '<div class="pi-next' + nextCardAttrs(n) + '" ' + todayOpen(n) + '>' +
         '<span class="pi-next-time">' + fmtHour(n.t) + '</span>' +
-        '<span class="pi-next-main"><span class="pi-next-title">' + n.title + '</span>' +
-          '<span class="pi-next-place">' + n.place + ' · ' + n.dist + '</span></span>' +
+        '<span class="pi-next-main"><span class="pi-next-title">' + esc(n.title) + '</span>' +
+          (placeLine(n) ? '<span class="pi-next-place">' + placeLine(n) + '</span>' : '') + '</span>' +
         '<span class="pi-next-side"><span class="pi-next-when">' + t('today.in', { t: untilText(n.t) }) + '</span>' +
-        '<span class="pi-next-leave">' + leaveChips(n) + '</span></span></div>' +
-      '<div class="board" aria-label="' + t('aria.later') + '"></div>';
+        (n.leaves ? '<span class="pi-next-leave">' + leaveChips(n) + '</span>' : '') + todayCheck(n) + '</span></div>' +
+      (TODAY_LATER.length ? '<div class="board" aria-label="' + t('aria.later') + '"></div>' : '');
+    if(!TODAY_LATER.length){ return; }
     var board = host.querySelector('.board'), els = {};
     TODAY_LATER.forEach(function(item, i){
       var f = NOTE_FLOAT[i % NOTE_FLOAT.length];
@@ -2745,7 +2754,7 @@
       // Siguientes: solo hora y nombre
       note.innerHTML = '<div class="note-shadow"></div><div class="note-card">' +
         todayCheck(item) + '<div class="n-head"><span class="n-time">' + fmtHour(item.t) + '</span></div>' +
-        '<div class="n-title">' + item.title + '</div></div>';
+        '<div class="n-title">' + esc(item.title) + '</div></div>';
       // Un post-it de detrás viene al frente; el de delante se abre en su pantalla
       function front(){
         var k = noteOrder.indexOf(item.id);
@@ -3765,7 +3774,7 @@
       x.ref.doneAt = done ? isoOf(demoNow()) : null;
     }
     storeTasks(); storeEvents(); storeActivities();
-    renderTasks(); renderEvents(); renderActivities(); renderCalendar(calView);
+    renderTasks(); renderEvents(); renderActivities(); renderCalendar(calView); renderToday();
     refreshOpenDetails();
     if(!silent){
       toast(t(done ? 'toast.taskDone' : 'toast.taskReopened', { name: x.name }),
