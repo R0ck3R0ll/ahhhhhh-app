@@ -26,6 +26,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 3. **Horarios** (franja horaria de planificación y horario escolar)
 4. **Enlaces** (cuenta de Google para Classroom/Gmail y archivo del calendario escolar)
 5. **Categorías**: solo dos de serie, **Tarea** (prioridad alta por defecto) y **Actividad** (media): no se pueden borrar ni renombrar, solo cambiar su prioridad. Las demás las crea el usuario; cada una lleva un botón de lápiz (editar nombre y color) y una X (borrar) justo a la izquierda de la prioridad, que queda alineada con la de las categorías de serie.
+   - **Borrar una categoría**: si tiene eventos o actividades **activos** asociados (que aún no han terminado), aparece un aviso con la lista y **doble confirmación** (Continuar → «Borrar y cancelar (n)»). Al confirmar se borra la categoría y **se cancela todo lo asociado**, con las tareas de preparación de los eventos. Los eventos ya pasados se conservan como historial con su categoría original. Sin nada activo asociado, se borra directamente.
 6. **Google Calendar** (exportación)
 
 - Inserción de credenciales / conexión de cuentas externas (Google, y las que se necesiten).
@@ -66,7 +67,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - Eventos puntuales (no recurrentes): **todo lo inserta el usuario**. Con la App nueva la pantalla solo muestra el botón **Añadir evento**; después, la lista de próximos eventos ordenada por fecha y hora, cada uno con su botón Editar.
 - Campos **obligatorios**: nombre, fecha, hora de inicio, **duración** (horas y minutos), **categoría** y prioridad (Alta / Media / Baja).
 - Campos **opcionales**: descripción y ubicación.
-- **Categoría**: las mismas de Configuración. Al elegirla se propone su prioridad (se puede cambiar; si ya se eligió una prioridad a mano, no se toca). Desde el propio formulario se puede crear una **categoría nueva** (nombre y color); queda también en Configuración con la prioridad del evento. Una categoría que usan eventos no se puede borrar hasta cambiarles la categoría.
+- **Categoría**: las mismas de Configuración. Al elegirla se propone su prioridad (se puede cambiar; si ya se eligió una prioridad a mano, no se toca). Desde el propio formulario se puede crear una **categoría nueva** (nombre y color): es una categoría de usuario como cualquier otra (aparece en Configuración, donde se puede renombrar, cambiar de color y prioridad o borrar).
 - **Tarea de preparación** (opcional): si el evento requiere preparar algo antes, se puede generar una tarea asociada.
   - Tiene nombre propio (propuesta: «Preparar: <evento>»), deadline independiente (fecha y hora; propuesta: la víspera a las 20:00; tiene que ser antes del evento) y tiempo estimado de ejecución en horas y minutos, **sin tope**.
   - **Copia la prioridad del evento** (no tiene prioridad propia; si cambia la del evento, cambia la de la tarea).

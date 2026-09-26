@@ -475,6 +475,20 @@
   .btn-danger.is-confirm{ background:var(--danger-bg); color:var(--danger-text); }
   .btn-danger:focus-visible{ outline:2px solid var(--danger-bg); outline-offset:2px; }
 
+  .confirm-dialog{
+    width:min(420px, calc(100vw - 32px)); border:1px solid var(--border); border-radius:16px; padding:18px;
+    background:var(--surface); color:var(--text); box-shadow:var(--shadow); font-family:var(--font-body);
+  }
+  .confirm-dialog::backdrop{ background:rgba(0,0,0,.45); }
+  .confirm-dialog h2{ font-family:var(--font-display); font-size:20px; margin:0 0 8px; }
+  .confirm-dialog p{ font-size:13.5px; line-height:1.4; margin:0 0 8px; }
+  .confirm-dialog ul{ margin:0 0 10px; padding-left:18px; font-size:13px; color:var(--text-muted); max-height:30vh; overflow:auto; }
+  .confirm-dialog li{ margin:2px 0; }
+  .confirm-dialog li strong{ color:var(--text); }
+  .confirm-warn{ color:var(--danger-bg); font-weight:600; }
+  .confirm-dialog .form-actions{ margin-top:14px; }
+  .confirm-dialog .btn-danger{ flex:1; }
+
   .context-note{
     display:flex; align-items:flex-start; gap:8px;
     background:var(--surface-alt); border:1px solid var(--border);
@@ -1185,6 +1199,18 @@
 </div>
 </div>
 
+<!-- Borrar una categoría con elementos activos: aviso y doble confirmación -->
+<dialog class="confirm-dialog" id="cat-del-dialog" aria-labelledby="cat-del-title">
+  <h2 id="cat-del-title"></h2>
+  <p id="cat-del-body"></p>
+  <ul id="cat-del-list"></ul>
+  <p class="confirm-warn" id="cat-del-warn"></p>
+  <div class="form-actions">
+    <button type="button" class="btn-ghost" onclick="closeCatDelete()" data-i18n="btn.cancel"></button>
+    <button type="button" class="btn-danger" id="cat-del-go" onclick="confirmCatDelete()"></button>
+  </div>
+</dialog>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1215,8 +1241,11 @@
       'toast.evtSaved':'Evento «{name}» guardado', 'toast.evtCancelled':'Evento «{name}» cancelado', 'toast.evtTaskCancelled':'Evento «{name}» y su tarea cancelados',
       'err.missing':'Falta: {fields}', 'err.taskAfter':'La entrega de la tarea tiene que ser antes del evento',
       'f.dur':'Duración', 'f.cat':'Categoría', 'cal.due':'entrega {t}', 'aria.hours':'Horas', 'aria.minutes':'Minutos',
-      'toast.catInUse1':'No se puede borrar «{name}»: la usa un evento. Cámbiale antes la categoría.',
-      'toast.catInUse':'No se puede borrar «{name}»: la usan {n} eventos. Cámbiales antes la categoría.', 'toast.catAdded':'Categoría «{name}» añadida',
+      'del.title':'¿Borrar «{name}»?', 'del.body1':'Esta categoría tiene 1 elemento activo asociado:', 'del.body':'Esta categoría tiene {n} elementos activos asociados:',
+      'del.warn':'Si la borras, se cancelará todo lo asociado, también las tareas de preparación de los eventos.', 'del.continue':'Continuar',
+      'del.step2':'Segunda confirmación: se borra «{name}» y se cancelan {n} elementos. No se puede deshacer.', 'del.confirm':'Borrar y cancelar ({n})',
+      'del.withTask':'con tarea', 'toast.catDeletedAll':'Categoría «{name}» borrada y {n} elementos cancelados',
+      'toast.catAdded':'Categoría «{name}» añadida',
       'evt.taskRow':'Tarea: {task} · entrega {due} · {est}',
       'cfg.language':'Idioma', 'cfg.languageLabel':'Idioma de la App',
       'cfg.languageHint':'Fechas y horas se muestran en el idioma elegido. Lo que escribes tú (nombres de actividades, lugares…) no se traduce.',
@@ -1316,8 +1345,11 @@
       'toast.evtSaved':'Event “{name}” saved', 'toast.evtCancelled':'Event “{name}” cancelled', 'toast.evtTaskCancelled':'Event “{name}” and its task cancelled',
       'err.missing':'Missing: {fields}', 'err.taskAfter':'The task must be due before the event',
       'f.dur':'Duration', 'f.cat':'Category', 'cal.due':'due {t}', 'aria.hours':'Hours', 'aria.minutes':'Minutes',
-      'toast.catInUse1':'“{name}” can’t be deleted: an event uses it. Change its category first.',
-      'toast.catInUse':'“{name}” can’t be deleted: {n} events use it. Change their category first.', 'toast.catAdded':'Category “{name}” added',
+      'del.title':'Delete “{name}”?', 'del.body1':'This category has 1 active item linked to it:', 'del.body':'This category has {n} active items linked to it:',
+      'del.warn':'If you delete it, everything linked will be cancelled, including the events’ preparation tasks.', 'del.continue':'Continue',
+      'del.step2':'Second confirmation: “{name}” will be deleted and {n} items cancelled. This can’t be undone.', 'del.confirm':'Delete and cancel ({n})',
+      'del.withTask':'with task', 'toast.catDeletedAll':'Category “{name}” deleted and {n} items cancelled',
+      'toast.catAdded':'Category “{name}” added',
       'evt.taskRow':'Task: {task} · due {due} · {est}',
       'cfg.language':'Language', 'cfg.languageLabel':'App language',
       'cfg.languageHint':'Dates and times follow the chosen language. What you type yourself (activity names, places…) is not translated.',
@@ -1417,8 +1449,11 @@
       'toast.evtSaved':'Evento «{name}» salvato', 'toast.evtCancelled':'Evento «{name}» annullato', 'toast.evtTaskCancelled':'Evento «{name}» e il suo compito annullati',
       'err.missing':'Manca: {fields}', 'err.taskAfter':'La consegna del compito deve essere prima dell’evento',
       'f.dur':'Durata', 'f.cat':'Categoria', 'cal.due':'consegna {t}', 'aria.hours':'Ore', 'aria.minutes':'Minuti',
-      'toast.catInUse1':'Impossibile eliminare «{name}»: la usa un evento. Cambia prima la sua categoria.',
-      'toast.catInUse':'Impossibile eliminare «{name}»: la usano {n} eventi. Cambia prima la loro categoria.', 'toast.catAdded':'Categoria «{name}» aggiunta',
+      'del.title':'Eliminare «{name}»?', 'del.body1':'Questa categoria ha 1 elemento attivo associato:', 'del.body':'Questa categoria ha {n} elementi attivi associati:',
+      'del.warn':'Se la elimini, verrà annullato tutto ciò che è associato, compresi i compiti di preparazione degli eventi.', 'del.continue':'Continua',
+      'del.step2':'Seconda conferma: si elimina «{name}» e si annullano {n} elementi. Non si può annullare.', 'del.confirm':'Elimina e annulla ({n})',
+      'del.withTask':'con compito', 'toast.catDeletedAll':'Categoria «{name}» eliminata e {n} elementi annullati',
+      'toast.catAdded':'Categoria «{name}» aggiunta',
       'evt.taskRow':'Compito: {task} · consegna {due} · {est}',
       'cfg.language':'Lingua', 'cfg.languageLabel':'Lingua dell’app',
       'cfg.languageHint':'Date e orari seguono la lingua scelta. Quello che scrivi tu (nomi delle attività, luoghi…) non viene tradotto.',
@@ -1518,8 +1553,11 @@
       'toast.evtSaved':'Événement « {name} » enregistré', 'toast.evtCancelled':'Événement « {name} » annulé', 'toast.evtTaskCancelled':'Événement « {name} » et sa tâche annulés',
       'err.missing':'Manquant : {fields}', 'err.taskAfter':'L’échéance de la tâche doit être avant l’événement',
       'f.dur':'Durée', 'f.cat':'Catégorie', 'cal.due':'échéance {t}', 'aria.hours':'Heures', 'aria.minutes':'Minutes',
-      'toast.catInUse1':'Impossible de supprimer « {name} » : un événement l’utilise. Changez d’abord sa catégorie.',
-      'toast.catInUse':'Impossible de supprimer « {name} » : {n} événements l’utilisent. Changez d’abord leur catégorie.', 'toast.catAdded':'Catégorie « {name} » ajoutée',
+      'del.title':'Supprimer « {name} » ?', 'del.body1':'Cette catégorie a 1 élément actif associé :', 'del.body':'Cette catégorie a {n} éléments actifs associés :',
+      'del.warn':'Si vous la supprimez, tout ce qui y est associé sera annulé, y compris les tâches de préparation des événements.', 'del.continue':'Continuer',
+      'del.step2':'Deuxième confirmation : « {name} » sera supprimée et {n} éléments annulés. C’est irréversible.', 'del.confirm':'Supprimer et annuler ({n})',
+      'del.withTask':'avec tâche', 'toast.catDeletedAll':'Catégorie « {name} » supprimée et {n} éléments annulés',
+      'toast.catAdded':'Catégorie « {name} » ajoutée',
       'evt.taskRow':'Tâche : {task} · échéance {due} · {est}',
       'cfg.language':'Langue', 'cfg.languageLabel':'Langue de l’app',
       'cfg.languageHint':'Les dates et les heures suivent la langue choisie. Ce que vous saisissez (noms d’activités, lieux…) n’est pas traduit.',
@@ -1619,8 +1657,11 @@
       'toast.evtSaved':'Termin „{name}“ gespeichert', 'toast.evtCancelled':'Termin „{name}“ abgesagt', 'toast.evtTaskCancelled':'Termin „{name}“ und seine Aufgabe abgesagt',
       'err.missing':'Es fehlt: {fields}', 'err.taskAfter':'Die Aufgabe muss vor dem Termin fällig sein',
       'f.dur':'Dauer', 'f.cat':'Kategorie', 'cal.due':'fällig {t}', 'aria.hours':'Stunden', 'aria.minutes':'Minuten',
-      'toast.catInUse1':'„{name}“ kann nicht gelöscht werden: Ein Termin verwendet sie. Ändere zuerst dessen Kategorie.',
-      'toast.catInUse':'„{name}“ kann nicht gelöscht werden: {n} Termine verwenden sie. Ändere zuerst deren Kategorie.', 'toast.catAdded':'Kategorie „{name}“ hinzugefügt',
+      'del.title':'„{name}“ löschen?', 'del.body1':'Mit dieser Kategorie ist 1 aktiver Eintrag verknüpft:', 'del.body':'Mit dieser Kategorie sind {n} aktive Einträge verknüpft:',
+      'del.warn':'Wenn du sie löschst, wird alles Verknüpfte abgesagt, auch die Vorbereitungsaufgaben der Termine.', 'del.continue':'Weiter',
+      'del.step2':'Zweite Bestätigung: „{name}“ wird gelöscht und {n} Einträge werden abgesagt. Das lässt sich nicht rückgängig machen.', 'del.confirm':'Löschen und absagen ({n})',
+      'del.withTask':'mit Aufgabe', 'toast.catDeletedAll':'Kategorie „{name}“ gelöscht und {n} Einträge abgesagt',
+      'toast.catAdded':'Kategorie „{name}“ hinzugefügt',
       'evt.taskRow':'Aufgabe: {task} · fällig {due} · {est}',
       'cfg.language':'Sprache', 'cfg.languageLabel':'App-Sprache',
       'cfg.languageHint':'Datum und Uhrzeit folgen der gewählten Sprache. Was du selbst eingibst (Namen von Aktivitäten, Orte …), wird nicht übersetzt.',
@@ -2236,16 +2277,65 @@
     renderExportCats();
   }
 
+  // Borrar categoría: si tiene eventos o actividades activos asociados, aviso con doble
+  // confirmación; al confirmar se cancela todo lo asociado (con las tareas de los eventos).
+  var catToDelete = null;
   function removeCategory(btn){
     var row = btn.closest('.cat-row');
+    var linked = linkedToCategory(row.dataset.cat);
+    if(!linked.length){ deleteCategoryRow(row, []); return; }
+    catToDelete = { row: row, linked: linked, step: 1 };
     var name = rowName(row);
-    // No se borra una categoría que usan eventos: primero hay que cambiársela
-    var used = USER_EVENTS.filter(function(e){ return e.cat === row.dataset.cat; }).length;
-    if(used){ toast(t(used === 1 ? 'toast.catInUse1' : 'toast.catInUse', { name: name, n: used })); return; }
+    el('cat-del-title').textContent = t('del.title', { name: name });
+    el('cat-del-body').textContent = t(linked.length === 1 ? 'del.body1' : 'del.body', { n: linked.length });
+    el('cat-del-list').innerHTML = linked.map(function(it){ return '<li><strong>' + esc(it.name) + '</strong> · ' + esc(it.when) + '</li>'; }).join('');
+    el('cat-del-warn').textContent = t('del.warn');
+    var go = el('cat-del-go');
+    go.classList.remove('is-confirm');
+    go.textContent = t('del.continue');
+    el('cat-del-dialog').showModal();
+  }
+  function confirmCatDelete(){
+    var d = catToDelete, go = el('cat-del-go');
+    if(!d){ return; }
+    if(d.step === 1){
+      // Segunda confirmación
+      d.step = 2;
+      el('cat-del-warn').textContent = t('del.step2', { name: rowName(d.row), n: d.linked.length });
+      go.classList.add('is-confirm');
+      go.textContent = t('del.confirm', { n: d.linked.length });
+      return;
+    }
+    deleteCategoryRow(d.row, d.linked);
+    closeCatDelete();
+  }
+  function closeCatDelete(){ catToDelete = null; el('cat-del-dialog').close(); }
+
+  // Eventos y actividades activos (aún no terminados) de una categoría. Las actividades
+  // de la maqueta usan la categoría de serie Actividad, que no se puede borrar.
+  function linkedToCategory(id){
+    var now = new Date(TODAY_DATE.getTime()); now.setHours(Math.floor(NOW), Math.round((NOW % 1) * 60));
+    return USER_EVENTS.filter(function(e){
+      if(e.cat !== id){ return false; }
+      var end = isoDate(e.date); end.setMinutes(Math.round(toHours(e.time) * 60) + (e.dur || 60));
+      return end > now;
+    }).map(function(e){
+      return { kind:'event', id:e.id, name:e.name, when: fmtDay(e.date) + ' ' + e.time + (e.task ? ' · ' + t('del.withTask') : '') };
+    });
+  }
+
+  function deleteCategoryRow(row, linked){
+    var name = rowName(row), id = row.dataset.cat;
+    var ids = linked.map(function(it){ return it.id; });
+    USER_EVENTS = USER_EVENTS.filter(function(e){ return ids.indexOf(e.id) < 0; });
+    // Los eventos pasados conservan su copia de la categoría; no se vuelve a crear al recargar
+    DELETED_CATS.push(id);
+    storeEvents();
     row.remove();
     renderExportCats();
-    toast(t('toast.catDeleted', { name: name }));
+    toast(linked.length ? t('toast.catDeletedAll', { name: name, n: linked.length }) : t('toast.catDeleted', { name: name }));
   }
+
 
   // Categorías tal como están en Configuración: {id, name, color, prio}
   function getCategories(){
@@ -2470,12 +2560,19 @@
   (function loadEvents(){
     try{ USER_EVENTS = JSON.parse(localStorage.getItem('app-events') || '[]') || []; }catch(e){ USER_EVENTS = []; }
   })();
-  function storeEvents(){ try{ localStorage.setItem('app-events', JSON.stringify(USER_EVENTS)); }catch(e){} }
+  var DELETED_CATS = [];
+  try{ DELETED_CATS = JSON.parse(localStorage.getItem('deleted-cats') || '[]') || []; }catch(e){}
+  function storeEvents(){
+    try{
+      localStorage.setItem('app-events', JSON.stringify(USER_EVENTS));
+      localStorage.setItem('deleted-cats', JSON.stringify(DELETED_CATS));
+    }catch(e){}
+  }
   // Categorías creadas desde Eventos que no estén en Configuración (la maqueta no guarda
   // Configuración): se recrean a partir de la copia guardada en el evento.
   function restoreEventCategories(){
     USER_EVENTS.forEach(function(e){
-      if(e.cat && !findCategory(e.cat)){ addCategory({ id:e.cat, name:e.catName, color:e.catColor, prio:e.prio }); }
+      if(e.cat && !findCategory(e.cat) && DELETED_CATS.indexOf(e.cat) < 0){ addCategory({ id:e.cat, name:e.catName, color:e.catColor, prio:e.prio }); }
     });
   }
 
