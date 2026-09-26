@@ -598,7 +598,8 @@
   .task-row.is-done .row-sub, .task-row.is-done .prio-chip{ opacity:.55; }
   .task-row.is-overdue .row-sub:first-of-type{ color:var(--red-text); font-weight:600; }
   .overdue-title{ color:var(--red-text) !important; }
-  #task-overdue-wrap{ margin-bottom:14px; }
+  .overdue-group{ margin:0 0 14px; }
+  #task-overdue-wrap summary{ color:var(--red-text); }
   #task-overdue-wrap[hidden], #task-pending-title[hidden], .done-group[hidden]{ display:none; }
   .done-group{ margin-top:14px; }
   .done-group summary{ cursor:pointer; font-size:12px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); padding:6px 0; }
@@ -1373,10 +1374,10 @@
     <section class="screen" id="screen-tasks" aria-labelledby="screen-heading">
       <div id="task-list-view" class="evt-view">
         <div id="task-list-wrap" hidden>
-          <div id="task-overdue-wrap" hidden>
-            <h2 class="section-title overdue-title" data-i18n="tasks.overdue"></h2>
+          <details class="done-group overdue-group" id="task-overdue-wrap" hidden>
+            <summary><span data-i18n="tasks.overdue"></span> · <span id="tasks-overdue-count"></span></summary>
             <div class="row-list" id="task-overdue"></div>
-          </div>
+          </details>
           <h2 class="section-title" id="task-pending-title" data-i18n="tasks.title"></h2>
           <div class="row-list" id="task-list"></div>
           <details class="done-group" id="tasks-done" hidden>
@@ -3800,20 +3801,23 @@
     var list = el('task-list');
     if(!list){ return; }
     var items = allTasks();
+    // Semana visible en el calendario (lunes a domingo de la semana actual)
+    var wk0 = new Date(TODAY_DATE); wk0.setDate(wk0.getDate() - (wk0.getDay() + 6) % 7);
+    var wk1 = new Date(wk0); wk1.setDate(wk1.getDate() + 7);
     var overdue = items.filter(function(x){ return x.overdue; }),
         pending = items.filter(function(x){ return !x.done && !x.overdue; }),
-        done = items.filter(function(x){ return x.done; });
-    el('task-list-wrap').hidden = !items.length;
-    // Atrasadas arriba; las hechas en una sección plegable al final (se pueden reabrir)
-    var wasOpen = el('tasks-done') && el('tasks-done').open;
+        // Las hechas se quitan de la lista cuando su fecha queda fuera de la semana del calendario
+        done = items.filter(function(x){ return x.done && (!x.due || (x.due >= wk0 && x.due < wk1)); });
+    el('task-list-wrap').hidden = !(overdue.length + pending.length + done.length);
+    // Atrasadas arriba y Hechas al final: ambas plegadas y sólo si tienen algo dentro
     el('task-overdue-wrap').hidden = !overdue.length;
+    el('tasks-overdue-count').textContent = overdue.length;
     el('task-overdue').innerHTML = overdue.map(taskRow).join('');
     el('task-pending-title').hidden = !pending.length;
     list.innerHTML = pending.map(taskRow).join('');
     el('tasks-done').hidden = !done.length;
     el('tasks-done-count').textContent = done.length;
     el('task-done-list').innerHTML = done.map(taskRow).join('');
-    if(wasOpen){ el('tasks-done').open = true; }
   }
 
 

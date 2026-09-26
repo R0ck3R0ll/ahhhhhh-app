@@ -90,10 +90,10 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - **Eliminar** (desde la ficha) pide segunda pulsación; en una tarea de evento o actividad la quita de su evento o actividad.
 - **Completar una tarea** (fase 1 de «ejecución de tareas»):
   - Se marca con el **círculo** de cada fila de Tareas, con el botón **«Marcar como hecha»** de su ficha o con el **✓ rápido** de las tarjetas de tareas en «Hoy». Aparece un aviso con **«Deshacer»**.
-  - Una tarea hecha **no vuelve a presentarse**: sale de «Hoy» y de «Próximos días»; en el **Calendario** se ve **atenuada y con ✓** mientras siga en la semana visible; en Tareas pasa a la sección plegable **«Hechas»**, desde donde se puede **reabrir**.
+  - Una tarea hecha **no vuelve a presentarse**: sale de «Hoy» y de «Próximos días»; en el **Calendario** se ve **atenuada y con ✓** mientras siga en la semana visible; en Tareas pasa a la sección plegable **«Hechas»**, desde donde se puede **reabrir**; sale también de «Hechas» cuando su entrega queda fuera de la semana actual del calendario.
   - Tareas de **práctica de actividades**: se completa solo la de la sesión en curso; tras esa sesión vuelve a estar pendiente para la siguiente.
   - Tareas de **Classroom**: si se marcan como hechas, la App las da por cerradas (no hay dos registros separados de «tarea» y «entrega»).
-  - Una tarea cuya entrega ya pasó sin completarse aparece arriba, en **«Atrasadas»**, hasta que se marque como hecha o se elimine.
+  - Una tarea cuya entrega ya pasó sin completarse aparece arriba, en **«Atrasadas»**, hasta que se marque como hecha o se elimine. «Atrasadas» y «Hechas» aparecen **plegadas** (con el número de tareas) y **sólo si tienen algo dentro**.
 
 ### Prioridades y edición (común a Actividades, Eventos y Tareas)
 - Todo formulario tiene **«✕ Cancelar»** arriba (y «Cancelar» abajo), que vuelve al punto de partida (ficha, lista, Calendario u «Hoy»). Si se sale de un formulario abierto pulsando otra pestaña, la App pregunta **«¿Anular?»** («Seguir editando» / «Anular»).
