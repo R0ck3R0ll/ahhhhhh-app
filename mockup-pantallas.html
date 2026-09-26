@@ -559,48 +559,56 @@
   .seg-btn.is-active{ background:var(--surface); color:var(--accent-strong); box-shadow:var(--shadow); }
   .seg-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 
-  .cal-nav{ display:flex; align-items:center; justify-content:center; gap:16px; margin-top:2px; }
+  /* La página cabe sin scroll: controles en una fila, horario escolar comprimido */
+  .screen-container:has(#screen-calendar.active){ padding-bottom:18px; }
+  #screen-calendar{ gap:12px; }
+  .cal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .cal-head .seg-control{ flex:none; }
+  .cal-head .seg-btn{ flex:none; padding:5px 12px; }
+  .cal-nav{ display:flex; align-items:center; gap:8px; min-width:0; }
   .nav-arrow{
-    border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+    flex:none; border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
     width:26px; height:26px; border-radius:8px; font-size:14px; line-height:1; cursor:pointer;
   }
   .nav-arrow:hover{ background:var(--surface-alt); }
-  .cal-range{ font-size:13px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
+  .cal-range{ font-size:12.5px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-  .cal-scroll{ overflow-x:auto; margin-top:12px; }
-  .cal-legend{ display:flex; flex-wrap:wrap; gap:12px; font-size:11px; color:var(--text-muted); }
+  .cal-legend{ display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11px; color:var(--text-muted); }
   .cal-legend span{ display:inline-flex; align-items:center; gap:5px; }
   .cal-legend i{ width:8px; height:8px; border-radius:50%; display:inline-block; flex:none; }
 
   .cal-grid{ display:grid; }
   .cal-daylabel{
     text-align:center; font-size:11px; font-weight:600; color:var(--text-muted);
-    padding-bottom:6px; display:flex; flex-direction:column; align-items:center; gap:1px;
+    padding-bottom:4px; display:flex; align-items:baseline; justify-content:center; gap:3px;
   }
   .cal-daylabel.is-today{ color:var(--accent-strong); }
-  .cal-daylabel .dl-date{ font-size:13px; font-variant-numeric:tabular-nums; }
-  .cal-daylabel .dl-full{ font-size:12.5px; }
+  .cal-daylabel .dl-date{ font-size:12px; font-variant-numeric:tabular-nums; }
 
   .cal-hourcol{ position:relative; }
   .cal-hourlabel{
     position:absolute; right:6px; transform:translateY(-50%);
     font-size:9.5px; color:var(--text-muted); font-variant-numeric:tabular-nums;
   }
+  .cal-hourlabel:first-child{ transform:none; }
+  .cal-hourlabel.is-last{ transform:translateY(-100%); }
+  .cal-school-icon{ position:absolute; left:50%; width:30px; height:auto; transform:translate(-50%, -50%); overflow:visible; }
 
-  .cal-daycol{
-    position:relative; border-left:1px solid var(--border);
-    background-image:repeating-linear-gradient(to bottom, var(--border) 0, var(--border) 1px, transparent 1px, transparent 36px);
-  }
+  .cal-daycol{ position:relative; border-left:1px solid var(--border); }
   .cal-daycol.is-today{ background-color:var(--accent-soft); }
+  .cal-hourline{ position:absolute; left:0; right:0; height:1px; background:var(--border); }
 
+  /* Horario escolar: tramo comprimido y rayado (igual que en la barra de Today) */
   .school-band{
-    position:absolute; left:2px; right:2px; border-radius:4px; opacity:.75;
-    background:repeating-linear-gradient(135deg, transparent, transparent 5px, var(--border) 5px, var(--border) 6px);
-    font-size:9px; color:var(--text-muted); text-align:center; padding-top:2px;
+    position:absolute; left:0; right:0; opacity:.8;
+    border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+    background:repeating-linear-gradient(135deg, transparent, transparent 4px, var(--border) 4px, var(--border) 5px);
+    font-size:9px; color:var(--text-muted); display:flex; align-items:center; justify-content:center;
   }
+  .school-band span{ background:var(--surface-alt); padding:0 5px; border-radius:4px; }
 
   .cal-bar{
-    position:absolute; left:2px; right:2px; border-radius:6px; padding:3px 5px;
+    position:absolute; left:2px; right:2px; border-radius:5px; padding:2px 4px; min-height:14px;
     overflow:hidden; display:flex; flex-direction:column; justify-content:flex-start;
     font-size:10.5px; color:#2B2925; line-height:1.15;
   }
@@ -989,20 +997,19 @@
 
     <!-- ============ CALENDARIO ============ -->
     <section class="screen" id="screen-calendar" aria-labelledby="screen-heading">
-      <div class="seg-control" role="tablist" data-i18n-aria="tab.calendar">
-        <button class="seg-btn is-active" data-view="week" onclick="setCalView(this)" data-i18n="cal.week"></button>
-        <button class="seg-btn" data-view="day" onclick="setCalView(this)" data-i18n="cal.day"></button>
+      <div class="cal-head">
+        <div class="seg-control" role="tablist" data-i18n-aria="tab.calendar">
+          <button class="seg-btn is-active" data-view="week" onclick="setCalView(this)" data-i18n="cal.week"></button>
+          <button class="seg-btn" data-view="day" onclick="setCalView(this)" data-i18n="cal.day"></button>
+        </div>
+        <div class="cal-nav">
+          <button class="nav-arrow" onclick="toast(t('toast.weekNav'))" data-i18n-aria="aria.prevWeek">‹</button>
+          <span class="cal-range" id="cal-range"></span>
+          <button class="nav-arrow" onclick="toast(t('toast.weekNav'))" data-i18n-aria="aria.nextWeek">›</button>
+        </div>
       </div>
 
-      <div class="cal-nav">
-        <button class="nav-arrow" onclick="toast(t('toast.weekNav'))" data-i18n-aria="aria.prevWeek">‹</button>
-        <span class="cal-range" id="cal-range"></span>
-        <button class="nav-arrow" onclick="toast(t('toast.weekNav'))" data-i18n-aria="aria.nextWeek">›</button>
-      </div>
-
-      <div class="cal-scroll">
-        <div class="cal-grid" id="cal-grid"></div>
-      </div>
+      <div class="cal-grid" id="cal-grid"></div>
 
       <div class="cal-legend">
         <span><i style="background:var(--cat-actividad)"></i><span data-cat-name="actividad"></span></span>
@@ -2235,13 +2242,15 @@
 
 
   /* ---- Calendario (vista día / semana) ---- */
-  var CAL_START = 7, CAL_END = 23, CAL_HOUR_PX = 36;   // sigue la franja horaria de Config
+  // Alto fijo para que la página quepa sin scroll; el horario escolar se comprime en
+  // CAL_SCHOOL_PX y el resto del alto se reparte entre las horas fuera del cole.
+  var CAL_START = 7, CAL_END = 23, CAL_BODY_PX = 440, CAL_SCHOOL_PX = 44;   // sigue la franja horaria de Config
   // Semana del 7 al 13 de septiembre de 2026; los nombres salen del idioma elegido
   var WEEK_DAYS = [0,1,2,3,4,5,6].map(function(i){ return { d:new Date(2026, 8, 7 + i), isToday: i === 4 }; });
   function calRangeText(view){
     return view === 'week'
       ? '7–13 ' + fmtDate(WEEK_DAYS[0].d, { month:'long' })
-      : cap(fmtDate(TODAY_DATE, { weekday:'long', day:'numeric', month:'long' }));
+      : cap(fmtDate(TODAY_DATE, { weekday:'short', day:'numeric', month:'short' }));
   }
   var CAL_EVENTS = [
     {day:0, title:'Natación', start:18, end:19, cat:'actividad'},
@@ -2256,7 +2265,37 @@
   ];
   var calView = 'week';
 
-  function calPct(hour){ return ((hour - CAL_START) / (CAL_END - CAL_START)) * 100; }
+  // Escala vertical (en px) de la franja horaria con el tramo escolar comprimido.
+  // En la semana se comprime el horario de lunes a viernes; en la vista día, el de ese día.
+  function calScale(sd){
+    var start = CAL_START, end = CAL_END, school = null;
+    var segs = [{ from:start, to:end }];
+    if(sd.on){
+      var a = Math.max(toHours(sd.entry), start), z = Math.min(toHours(sd.exit), end);
+      if(a < z){
+        school = { from:a, to:z };
+        segs = [{ from:start, to:a }, { from:a, to:z, school:true }, { from:z, to:end }]
+          .filter(function(g){ return g.to > g.from; });
+      }
+    }
+    var outside = segs.reduce(function(sum, g){ return sum + (g.school ? 0 : g.to - g.from); }, 0);
+    var free = CAL_BODY_PX - (school && outside ? CAL_SCHOOL_PX : 0), y = 0;
+    segs.forEach(function(g){
+      g.h = g.school ? (outside ? CAL_SCHOOL_PX : CAL_BODY_PX) : free * (g.to - g.from) / outside;
+      g.y = y; y += g.h;
+    });
+    function pos(t){
+      if(t <= start){ return 0; }
+      if(t >= end){ return CAL_BODY_PX; }
+      for(var i = 0; i < segs.length; i++){
+        var g = segs[i];
+        if(t <= g.to){ return g.y + g.h * (t - g.from) / (g.to - g.from); }
+      }
+      return CAL_BODY_PX;
+    }
+    if(school){ school.y0 = pos(school.from); school.y1 = pos(school.to); }
+    return { school:school, pos:pos, inSchool:function(t){ return school && t > school.from && t < school.to; } };
+  }
 
   function fmtHour(h){
     var hh = Math.floor(h), mm = Math.round((h - hh) * 60);
@@ -2267,59 +2306,82 @@
     var grid = document.getElementById('cal-grid');
     grid.innerHTML = '';
     var isWeek = view === 'week';
-    var days = isWeek ? WEEK_DAYS : [WEEK_DAYS[4]];
-    var colHeight = (CAL_END - CAL_START) * CAL_HOUR_PX;
+    var days = isWeek ? WEEK_DAYS : [WEEK_DAYS[TODAY_DAY]];
+    var sc = calScale(schoolFor(isWeek ? 0 : TODAY_DAY)), pos = sc.pos;
 
-    grid.style.gridTemplateColumns = '36px repeat(' + days.length + ', 1fr)';
-    grid.style.columnGap = isWeek ? '3px' : '0';
-    grid.style.minWidth = isWeek ? '460px' : '0';
+    grid.style.gridTemplateColumns = '34px repeat(' + days.length + ', minmax(0, 1fr))';
+    grid.style.columnGap = isWeek ? '2px' : '0';
 
-    var corner = document.createElement('div');
-    grid.appendChild(corner);
+    // En la vista día la fecha ya está en la cabecera: sin fila de nombres de día
+    if(isWeek){ grid.appendChild(document.createElement('div')); }
 
-    days.forEach(function(d){
+    if(isWeek) days.forEach(function(d){
       var h = document.createElement('div');
       h.className = 'cal-daylabel' + (d.isToday ? ' is-today' : '');
-      h.innerHTML = isWeek
-        ? '<span class="dl-name">' + cap(fmtDate(d.d, { weekday:'narrow' })) + '</span><span class="dl-date">' + d.d.getDate() + '</span>'
-        : '<span class="dl-full">' + cap(fmtDate(d.d, { weekday:'long', day:'numeric', month:'short' })) + '</span>';
+      h.innerHTML = '<span class="dl-name">' + cap(fmtDate(d.d, { weekday:'narrow' })) + '</span><span class="dl-date">' + d.d.getDate() + '</span>';
       grid.appendChild(h);
     });
 
+    // Horas: cada hora fuera del cole tiene línea; etiqueta cada dos horas y en los bordes del cole
+    var lines = [], labels = [];
+    for(var hr = CAL_START; hr <= CAL_END; hr++){
+      if(sc.inSchool(hr)){ continue; }
+      if(hr > CAL_START && hr < CAL_END){ lines.push(hr); }
+      if((hr - CAL_START) % 2 === 0 || hr === CAL_END){ labels.push(hr); }
+    }
+    if(sc.school){ labels.push(sc.school.from, sc.school.to); }
+    labels.sort(function(x, y){ return x - y; });
     var hourCol = document.createElement('div');
     hourCol.className = 'cal-hourcol';
-    hourCol.style.height = colHeight + 'px';
-    for(var hr = CAL_START; hr <= CAL_END; hr += 2){
+    hourCol.style.height = CAL_BODY_PX + 'px';
+    var lastY = -99;
+    labels.forEach(function(hr, i){
+      var y = pos(hr), isEdge = sc.school && (hr === sc.school.from || hr === sc.school.to);
+      if(y - lastY < 13 && !isEdge){ return; }
       var lab = document.createElement('div');
-      lab.className = 'cal-hourlabel';
-      lab.style.top = calPct(hr) + '%';
-      lab.textContent = hr + ':00';
+      lab.className = 'cal-hourlabel' + (hr === CAL_END ? ' is-last' : '');
+      lab.style.top = y + 'px';
+      lab.textContent = fmtHour(hr);
       hourCol.appendChild(lab);
+      lastY = y;
+    });
+    if(sc.school){
+      hourCol.insertAdjacentHTML('beforeend',
+        '<svg class="cal-school-icon" viewBox="-33 -53 66 54" role="img" aria-label="' + t('aria.school') + '" style="top:' +
+        ((sc.school.y0 + sc.school.y1) / 2) + 'px">' + schoolIcon() + '</svg>');
     }
     grid.appendChild(hourCol);
 
     days.forEach(function(d, i){
-      var realDay = isWeek ? i : 4;
+      var realDay = isWeek ? i : TODAY_DAY;
       var col = document.createElement('div');
       col.className = 'cal-daycol' + (d.isToday ? ' is-today' : '');
-      col.style.height = colHeight + 'px';
+      col.style.height = CAL_BODY_PX + 'px';
+
+      lines.forEach(function(hr){
+        var ln = document.createElement('div');
+        ln.className = 'cal-hourline';
+        ln.style.top = pos(hr) + 'px';
+        col.appendChild(ln);
+      });
 
       var sd = schoolFor(realDay);
       if(sd.on){
-        var bStart = Math.max(toHours(sd.entry), CAL_START), bEnd = Math.min(toHours(sd.exit), CAL_END);
+        var y0 = pos(Math.max(toHours(sd.entry), CAL_START)), y1 = pos(Math.min(toHours(sd.exit), CAL_END));
         var band = document.createElement('div');
         band.className = 'school-band';
-        band.style.top = calPct(bStart) + '%';
-        band.style.height = Math.max(calPct(bEnd) - calPct(bStart), 0) + '%';
-        if(!isWeek){ band.textContent = t('cfg.school'); }
+        band.style.top = y0 + 'px';
+        band.style.height = Math.max(y1 - y0, 0) + 'px';
+        if(!isWeek){ band.innerHTML = '<span>' + t('cfg.school') + ' · ' + sd.entry + '–' + sd.exit + '</span>'; }
         col.appendChild(band);
       }
 
       CAL_EVENTS.filter(function(e){ return e.day === realDay; }).forEach(function(e){
         var bar = document.createElement('div');
         bar.className = 'cal-bar cat-' + e.cat;
-        bar.style.top = calPct(e.start) + '%';
-        bar.style.height = (calPct(e.end) - calPct(e.start)) + '%';
+        bar.style.top = pos(e.start) + 'px';
+        bar.style.height = (pos(e.end) - pos(e.start)) + 'px';
+        bar.title = e.title + ' · ' + fmtHour(e.start) + '–' + fmtHour(e.end);
         bar.innerHTML = '<span class="bar-title">' + e.title + '</span>' +
           (!isWeek ? '<span class="bar-time">' + fmtHour(e.start) + '–' + fmtHour(e.end) + '</span>' : '');
         col.appendChild(bar);
@@ -2328,7 +2390,7 @@
       CAL_DEADLINES.filter(function(e){ return e.day === realDay; }).forEach(function(e){
         var mk = document.createElement('div');
         mk.className = 'cal-deadline';
-        mk.style.top = calPct(e.time) + '%';
+        mk.style.top = pos(e.time) + 'px';
         mk.title = e.title + ' · ' + fmtHour(e.time);
         mk.innerHTML = '<span class="dl-dot"></span>' + (!isWeek ? '<span class="dl-label">' + e.title + ' · ' + fmtHour(e.time) + '</span>' : '');
         col.appendChild(mk);

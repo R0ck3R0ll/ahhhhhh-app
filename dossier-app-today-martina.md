@@ -45,6 +45,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - El tramo antes de entrar al cole también cuenta, así se pueden planificar tareas por la mañana si se quiere.
   - Domingos (y sábados sin clase) = toda la franja horaria disponible.
   - Este horario alimenta la banda "Horario escolar" del Calendario y las notas de contexto de Actividades y Eventos; el Calendario muestra las horas de la franja horaria.
+  - El **Calendario** (vista semana y día) cabe en una pantalla sin scroll: el horario escolar se dibuja como un tramo **comprimido y rayado** con el icono del colegio (como en la barra de Today), y el selector Semana/Día comparte fila con las flechas y la fecha. En la semana se comprime el horario de lunes a viernes; los eventos de fin de semana que caigan en ese tramo se ven más pequeños.
 - Localización del archivo con el calendario escolar (para importarlo). Se usa para consultar **festivos y días no lectivos**, que la App trata igual que un domingo (toda la franja horaria disponible).
 - Definición de categorías de eventos, cada una con un nivel de prioridad asignado: Tarea y Actividad de serie; el resto (cita, tiempo libre…) las define el usuario.
 - **Exportación a Google Calendar (solo en un sentido: App → Google Calendar).**
