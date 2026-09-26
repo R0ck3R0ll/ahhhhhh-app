@@ -26,7 +26,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 3. **Horarios** (franja horaria de planificación y horario escolar)
 4. **Enlaces** (cuenta de Google para Classroom/Gmail y archivo del calendario escolar)
 5. **Categorías**: solo dos de serie, **Tarea** (prioridad alta por defecto) y **Actividad** (media): no se pueden borrar ni renombrar, solo cambiar su prioridad. Las demás las crea el usuario; cada una lleva un botón de lápiz (editar nombre y color) y una X (borrar) justo a la izquierda de la prioridad, que queda alineada con la de las categorías de serie.
-   - **Borrar una categoría**: si tiene eventos o actividades **activos** asociados (que aún no han terminado), aparece un aviso con la lista y **doble confirmación** (Continuar → «Borrar y cancelar (n)»). Al confirmar se borra la categoría y **se cancela todo lo asociado**, con las tareas de preparación de los eventos. Los eventos ya pasados se conservan como historial con su categoría original. Sin nada activo asociado, se borra directamente.
+   - **Borrar una categoría**: si tiene eventos **activos** (que aún no han terminado) o actividades asociados, aparece un aviso con la lista y **doble confirmación** (Continuar → «Borrar y cancelar (n)»). Al confirmar se borra la categoría y **se cancela todo lo asociado**, con las tareas de preparación de los eventos. Los eventos ya pasados se conservan como historial con su categoría original. Sin nada activo asociado, se borra directamente.
 6. **Google Calendar** (exportación)
 
 - Inserción de credenciales / conexión de cuentas externas (Google, y las que se necesiten).
@@ -59,9 +59,17 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Opción de aviso a la **hora de salida** calculada cuando el evento implica traslado.
 
 ### 2.2 Actividades extraescolares
-- Insertadas manualmente por el usuario.
-- Periodicidad habitual semanal (ej.: lunes y miércoles a una hora determinada).
-- Cada actividad puede llevar asociada una ubicación (dirección/coordenadas) para el cálculo de traslados.
+- Actividades recurrentes semanales: **todo lo inserta el usuario**. Misma lógica que Eventos: con la App nueva solo aparece el botón **Añadir actividad**; después, la lista con su botón Editar.
+- Campos **obligatorios**: nombre, **día o días de la semana**, hora de inicio y de fin **de cada día**, categoría, prioridad y **ubicación** (para el cálculo de traslados).
+  - Si hay más de un día, cada uno puede tener su horario; al añadir un día se propone el mismo horario del primero.
+- Campos **opcionales**: descripción.
+- Categoría y prioridad funcionan igual que en Eventos (mismas categorías, la categoría propone su prioridad, se puede crear una categoría nueva desde el formulario).
+- **Tarea de práctica** (opcional), para actividades en las que hay que practicar entre sesiones (p. ej. música):
+  - Nombre propio (propuesta: «Practicar: <actividad>») y tiempo estimado en horas y minutos, sin tope.
+  - **Deadline automática: la siguiente sesión de la misma actividad** (cada sesión genera la tarea para la siguiente). La lista muestra la próxima entrega.
+  - Copia la prioridad de la actividad, solo se edita desde la actividad y se elimina con ella; para el resto de la App es una tarea más (Today, Calendario, avisos).
+- Eliminar una actividad pide una segunda pulsación (y avisa si se elimina también su tarea).
+- Las actividades recurrentes cuentan siempre como **activas** a efectos de borrar su categoría (ver Configuración).
 
 ### 2.3 Eventos
 - Eventos puntuales (no recurrentes): **todo lo inserta el usuario**. Con la App nueva la pantalla solo muestra el botón **Añadir evento**; después, la lista de próximos eventos ordenada por fecha y hora, cada uno con su botón Editar.

@@ -475,6 +475,15 @@
   .btn-danger.is-confirm{ background:var(--danger-bg); color:var(--danger-text); }
   .btn-danger:focus-visible{ outline:2px solid var(--danger-bg); outline-offset:2px; }
 
+  /* ---- Actividades: días y horario por día ---- */
+  .day-pick{ display:flex; gap:5px; }
+  .day-pick .toggle-btn{ flex:1; min-width:0; padding:8px 0; font-size:13px; text-align:center; }
+  .sessions{ display:flex; flex-direction:column; gap:6px; margin-top:4px; }
+  .session-row{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted); }
+  .session-row .s-day{ flex:0 0 72px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .session-row .txt-input{ flex:1; min-width:0; padding:9px 4px; text-align:center; }
+  #act-list-wrap[hidden], #act-form[hidden], #act-list-view[hidden], .card-hint[hidden]{ display:none; }
+
   .confirm-dialog{
     width:min(420px, calc(100vw - 32px)); border:1px solid var(--border); border-radius:16px; padding:18px;
     background:var(--surface); color:var(--text); box-shadow:var(--shadow); font-family:var(--font-body);
@@ -778,51 +787,104 @@
     </section>
 
     <!-- ============ ACTIVIDADES ============ -->
+    <!-- Actividades recurrentes (semanales): todo lo inserta el usuario; con la App nueva solo aparece «Añadir actividad» -->
     <section class="screen" id="screen-activities" aria-labelledby="screen-heading">
-      <div class="context-note">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <span class="school-note"></span>
-      </div>
 
-      <div>
-        <h2 class="section-title" data-i18n="act.title"></h2>
-        <div class="row-list">
-
-          <div class="row">
-            <div class="row-body">
-              <span class="row-title" style="color:var(--cat-actividad-ink)">Natación</span>
-              <span class="row-sub"><span><span data-days="0,4"></span> · 18:00–19:00</span>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                Piscina Municipal Las Rozas</span>
-            </div>
-            <button class="row-action" onclick="toast(t('toast.editAct'))" data-i18n="edit"></button>
-          </div>
-
-          <div class="row">
-            <div class="row-body">
-              <span class="row-title" style="color:var(--cat-actividad-ink)">Inglés</span>
-              <span class="row-sub"><span><span data-days="1"></span> · 17:00–18:00</span>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                Academia Oxford Las Rozas</span>
-            </div>
-            <button class="row-action" onclick="toast(t('toast.editAct'))" data-i18n="edit"></button>
-          </div>
-
-          <div class="row">
-            <div class="row-body">
-              <span class="row-title" style="color:var(--cat-actividad-ink)">Piano</span>
-              <span class="row-sub"><span><span data-days="3"></span> · 17:30–18:15</span> · <span data-i18n="noTravel"></span></span>
-            </div>
-            <button class="row-action" onclick="toast(t('toast.editAct'))" data-i18n="edit"></button>
-          </div>
-
+      <div id="act-list-view" class="evt-view">
+        <div id="act-list-wrap" hidden>
+          <h2 class="section-title" data-i18n="act.title"></h2>
+          <div class="row-list" id="act-list"></div>
         </div>
+        <button class="add-btn" onclick="openActivityForm()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span data-i18n="act.add"></span>
+        </button>
       </div>
 
-      <button class="add-btn" onclick="toast(t('toast.addAct'))">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        <span data-i18n="act.add"></span>
-      </button>
+      <form id="act-form" class="evt-form" hidden novalidate onsubmit="saveActivity(event)">
+        <h2 class="section-title" id="act-form-title"></h2>
+
+        <label class="fld">
+          <span class="field-label" data-i18n="f.name"></span>
+          <input class="txt-input" id="act-name" type="text" autocomplete="off" data-i18n-ph="f.actNamePh">
+        </label>
+
+        <!-- Días de la semana y horario de cada uno -->
+        <div class="fld">
+          <span class="field-label" id="act-days-label" data-i18n="f.days"></span>
+          <div class="day-pick" id="act-days" role="group" aria-labelledby="act-days-label"></div>
+          <div class="sessions" id="act-sessions"></div>
+          <p class="card-hint" id="act-days-hint" data-i18n="hint.days" hidden></p>
+        </div>
+
+        <div class="fld">
+          <span class="field-label" id="act-cat-label" data-i18n="f.cat"></span>
+          <div class="cat-pick" id="act-cat" role="radiogroup" aria-labelledby="act-cat-label"></div>
+          <div class="cat-new" id="act-cat-new" hidden>
+            <input class="txt-input" id="act-cat-name" type="text" autocomplete="off" data-i18n-ph="aria.catName" onkeydown="if(event.key==='Enter'){ event.preventDefault(); addFormCategory('act'); }">
+            <div class="cat-new-colors" id="act-cat-colors" role="radiogroup" data-i18n-aria="aria.catColor"></div>
+            <div class="cat-new-actions">
+              <button type="button" class="btn-ghost" onclick="toggleNewCategory('act', false)" data-i18n="btn.cancel"></button>
+              <button type="button" class="btn-primary" onclick="addFormCategory('act')" data-i18n="cat.add"></button>
+            </div>
+          </div>
+        </div>
+        <div class="fld">
+          <span class="field-label" id="act-prio-label" data-i18n="f.prio"></span>
+          <div class="toggle-row prio-row" id="act-prio" role="radiogroup" aria-labelledby="act-prio-label">
+            <button type="button" class="toggle-btn" role="radio" data-prio="Alta" onclick="setFormPrio('act', this)" data-i18n="prio.Alta"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Media" onclick="setFormPrio('act', this)" data-i18n="prio.Media"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Baja" onclick="setFormPrio('act', this)" data-i18n="prio.Baja"></button>
+          </div>
+        </div>
+
+        <label class="fld">
+          <span class="field-label" data-i18n="f.place"></span>
+          <input class="txt-input" id="act-place" type="text" autocomplete="off" data-i18n-ph="f.placePh">
+        </label>
+        <label class="fld">
+          <span class="field-label"><span data-i18n="f.desc"></span> <span class="fld-opt" data-i18n="f.optional"></span></span>
+          <textarea class="txt-input" id="act-desc" rows="2" data-i18n-ph="f.actDescPh"></textarea>
+        </label>
+
+        <!-- Tarea de práctica: deadline = la siguiente sesión de la actividad -->
+        <div class="task-box">
+          <div class="config-line">
+            <span class="config-label" id="act-task-label" data-i18n="task.genAct"></span>
+            <button type="button" class="switch" id="act-task-switch" role="switch" aria-checked="false" aria-labelledby="act-task-label" onclick="toggleActivityTask()"></button>
+          </div>
+          <p class="card-hint" data-i18n-html="hint.actTask"></p>
+          <div class="task-fields" id="act-task-fields" hidden>
+            <label class="fld">
+              <span class="field-label" data-i18n="task.name"></span>
+              <input class="txt-input" id="atask-name" type="text" autocomplete="off">
+            </label>
+            <div class="fld-row">
+              <div class="fld">
+                <span class="field-label" id="atask-est-label" data-i18n="task.est"></span>
+                <div class="dur-input" role="group" aria-labelledby="atask-est-label">
+                  <input class="txt-input" id="atask-est-h" type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-i18n-aria="aria.hours"><span>h</span>
+                  <input class="txt-input" id="atask-est-m" type="number" inputmode="numeric" min="0" max="59" step="5" placeholder="00" data-i18n-aria="aria.minutes"><span>min</span>
+                </div>
+              </div>
+              <div class="fld">
+                <span class="field-label" data-i18n="f.prio"></span>
+                <span class="prio-copy" id="atask-prio"></span>
+              </div>
+            </div>
+            <div class="fld">
+              <span class="field-label" data-i18n="task.dueDate"></span>
+              <span class="prio-copy" data-i18n="task.dueNext"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" onclick="closeActivityForm()" data-i18n="btn.cancel"></button>
+          <button type="submit" class="btn-primary" data-i18n="btn.save"></button>
+        </div>
+        <button type="button" class="btn-danger" id="act-delete" hidden onclick="cancelActivity(this)"></button>
+      </form>
     </section>
 
     <!-- ============ EVENTOS ============ -->
@@ -868,20 +930,20 @@
           <span class="field-label" id="evt-cat-label" data-i18n="f.cat"></span>
           <div class="cat-pick" id="evt-cat" role="radiogroup" aria-labelledby="evt-cat-label"></div>
           <div class="cat-new" id="evt-cat-new" hidden>
-            <input class="txt-input" id="evt-cat-name" type="text" autocomplete="off" data-i18n-ph="aria.catName" onkeydown="if(event.key==='Enter'){ event.preventDefault(); addEventCategory(); }">
+            <input class="txt-input" id="evt-cat-name" type="text" autocomplete="off" data-i18n-ph="aria.catName" onkeydown="if(event.key==='Enter'){ event.preventDefault(); addFormCategory('evt'); }">
             <div class="cat-new-colors" id="evt-cat-colors" role="radiogroup" data-i18n-aria="aria.catColor"></div>
             <div class="cat-new-actions">
-              <button type="button" class="btn-ghost" onclick="toggleNewCategory(false)" data-i18n="btn.cancel"></button>
-              <button type="button" class="btn-primary" onclick="addEventCategory()" data-i18n="cat.add"></button>
+              <button type="button" class="btn-ghost" onclick="toggleNewCategory('evt', false)" data-i18n="btn.cancel"></button>
+              <button type="button" class="btn-primary" onclick="addFormCategory('evt')" data-i18n="cat.add"></button>
             </div>
           </div>
         </div>
         <div class="fld">
           <span class="field-label" id="evt-prio-label" data-i18n="f.prio"></span>
           <div class="toggle-row prio-row" id="evt-prio" role="radiogroup" aria-labelledby="evt-prio-label">
-            <button type="button" class="toggle-btn" role="radio" data-prio="Alta" onclick="setEventPrio(this)" data-i18n="prio.Alta"></button>
-            <button type="button" class="toggle-btn" role="radio" data-prio="Media" onclick="setEventPrio(this)" data-i18n="prio.Media"></button>
-            <button type="button" class="toggle-btn" role="radio" data-prio="Baja" onclick="setEventPrio(this)" data-i18n="prio.Baja"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Alta" onclick="setFormPrio('evt', this)" data-i18n="prio.Alta"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Media" onclick="setFormPrio('evt', this)" data-i18n="prio.Media"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Baja" onclick="setFormPrio('evt', this)" data-i18n="prio.Baja"></button>
           </div>
         </div>
 
@@ -1228,8 +1290,13 @@
       'note.school':'<strong>Horario escolar:</strong> {summary}. Fuera de ese horario la agenda de {name} está libre para actividades, tareas y otros planes.',
       'act.title':'Actividades recurrentes', 'edit':'Editar', 'noTravel':'En casa (sin traslado)', 'and':' y ',
       'act.add':'Añadir actividad',
-      'toast.editAct':'La edición de actividades se activa en la fase de datos',
-      'toast.addAct':'Se podrá añadir una actividad nueva en la siguiente fase',
+      'act.new':'Nueva actividad', 'act.editTitle':'Editar actividad', 'f.days':'Días de la semana',
+      'f.start':'Inicio', 'f.end':'Fin', 'f.actNamePh':'Ej.: Piano',
+      'f.actDescPh':'Profesor, material, qué practicar…', 'hint.days':'Al añadir un día se propone el horario del primero; puedes cambiarlo.', 'task.genAct':'Generar tarea de práctica',
+      'hint.actTask':'Para actividades en las que hay que practicar entre sesiones (p. ej. música). La tarea copia la prioridad de la actividad, <strong>solo se edita aquí</strong> y su <strong>deadline es siempre la siguiente sesión</strong>.', 'task.namePreAct':'Practicar: {act}', 'task.dueNext':'La siguiente sesión de la actividad',
+      'task.samePrioAct':'{p} · la de la actividad', 'act.cancel':'Eliminar actividad', 'act.cancelConfirm':'Confirmar eliminación',
+      'act.cancelConfirmTask':'Confirmar: se elimina también su tarea', 'toast.actSaved':'Actividad «{name}» guardada', 'toast.actCancelled':'Actividad «{name}» eliminada',
+      'toast.actTaskCancelled':'Actividad «{name}» y su tarea eliminadas', 'err.endBefore':'La hora de fin tiene que ser después del inicio ({day})', 'act.taskRow':'Tarea: {task} · {est} · entrega en la siguiente sesión ({next})',
       'evt.upcoming':'Próximos eventos', 'evt.add':'Añadir evento',
       'evt.new':'Nuevo evento', 'evt.editTitle':'Editar evento',
       'f.name':'Nombre', 'f.date':'Fecha', 'f.time':'Hora', 'f.prio':'Prioridad', 'f.place':'Ubicación', 'f.desc':'Descripción', 'f.optional':'(opcional)',
@@ -1244,7 +1311,7 @@
       'del.title':'¿Borrar «{name}»?', 'del.body1':'Esta categoría tiene 1 elemento activo asociado:', 'del.body':'Esta categoría tiene {n} elementos activos asociados:',
       'del.warn':'Si la borras, se cancelará todo lo asociado, también las tareas de preparación de los eventos.', 'del.continue':'Continuar',
       'del.step2':'Segunda confirmación: se borra «{name}» y se cancelan {n} elementos. No se puede deshacer.', 'del.confirm':'Borrar y cancelar ({n})',
-      'del.withTask':'con tarea', 'toast.catDeletedAll':'Categoría «{name}» borrada y {n} elementos cancelados',
+      'del.withTask':'con tarea', 'toast.catDeletedAll1':'Categoría «{name}» borrada y 1 elemento cancelado', 'toast.catDeletedAll':'Categoría «{name}» borrada y {n} elementos cancelados',
       'toast.catAdded':'Categoría «{name}» añadida',
       'evt.taskRow':'Tarea: {task} · entrega {due} · {est}',
       'cfg.language':'Idioma', 'cfg.languageLabel':'Idioma de la App',
@@ -1332,8 +1399,13 @@
       'note.school':'<strong>School hours:</strong> {summary}. Outside those hours {name}’s schedule is free for activities, homework and other plans.',
       'act.title':'Recurring activities', 'edit':'Edit', 'noTravel':'At home (no travel)', 'and':' and ',
       'act.add':'Add activity',
-      'toast.editAct':'Editing activities comes with the data phase',
-      'toast.addAct':'Adding a new activity comes in the next phase',
+      'act.new':'New activity', 'act.editTitle':'Edit activity', 'f.days':'Days of the week',
+      'f.start':'Start', 'f.end':'End', 'f.actNamePh':'E.g. Piano',
+      'f.actDescPh':'Teacher, materials, what to practise…', 'hint.days':'When you add a day, the first day’s times are suggested; you can change them.', 'task.genAct':'Create a practice task',
+      'hint.actTask':'For activities that need practice between sessions (e.g. music). The task copies the activity’s priority, <strong>can only be edited here</strong> and its <strong>deadline is always the next session</strong>.', 'task.namePreAct':'Practise: {act}', 'task.dueNext':'The activity’s next session',
+      'task.samePrioAct':'{p} · same as the activity', 'act.cancel':'Delete activity', 'act.cancelConfirm':'Confirm deletion',
+      'act.cancelConfirmTask':'Confirm: its task is deleted too', 'toast.actSaved':'Activity “{name}” saved', 'toast.actCancelled':'Activity “{name}” deleted',
+      'toast.actTaskCancelled':'Activity “{name}” and its task deleted', 'err.endBefore':'The end time must be after the start ({day})', 'act.taskRow':'Task: {task} · {est} · due at the next session ({next})',
       'evt.upcoming':'Upcoming events', 'evt.add':'Add event',
       'evt.new':'New event', 'evt.editTitle':'Edit event',
       'f.name':'Name', 'f.date':'Date', 'f.time':'Time', 'f.prio':'Priority', 'f.place':'Location', 'f.desc':'Description', 'f.optional':'(optional)',
@@ -1348,7 +1420,7 @@
       'del.title':'Delete “{name}”?', 'del.body1':'This category has 1 active item linked to it:', 'del.body':'This category has {n} active items linked to it:',
       'del.warn':'If you delete it, everything linked will be cancelled, including the events’ preparation tasks.', 'del.continue':'Continue',
       'del.step2':'Second confirmation: “{name}” will be deleted and {n} items cancelled. This can’t be undone.', 'del.confirm':'Delete and cancel ({n})',
-      'del.withTask':'with task', 'toast.catDeletedAll':'Category “{name}” deleted and {n} items cancelled',
+      'del.withTask':'with task', 'toast.catDeletedAll1':'Category “{name}” deleted and 1 item cancelled', 'toast.catDeletedAll':'Category “{name}” deleted and {n} items cancelled',
       'toast.catAdded':'Category “{name}” added',
       'evt.taskRow':'Task: {task} · due {due} · {est}',
       'cfg.language':'Language', 'cfg.languageLabel':'App language',
@@ -1436,8 +1508,13 @@
       'note.school':'<strong>Orario scolastico:</strong> {summary}. Fuori da quell’orario l’agenda di {name} è libera per attività, compiti e altri impegni.',
       'act.title':'Attività ricorrenti', 'edit':'Modifica', 'noTravel':'A casa (nessuno spostamento)', 'and':' e ',
       'act.add':'Aggiungi attività',
-      'toast.editAct':'La modifica delle attività arriva nella fase dei dati',
-      'toast.addAct':'Si potrà aggiungere una nuova attività nella prossima fase',
+      'act.new':'Nuova attività', 'act.editTitle':'Modifica attività', 'f.days':'Giorni della settimana',
+      'f.start':'Inizio', 'f.end':'Fine', 'f.actNamePh':'Es.: Pianoforte',
+      'f.actDescPh':'Insegnante, materiale, cosa esercitare…', 'hint.days':'Quando aggiungi un giorno viene proposto l’orario del primo; puoi cambiarlo.', 'task.genAct':'Crea un compito di esercizio',
+      'hint.actTask':'Per le attività in cui bisogna esercitarsi tra una sessione e l’altra (es. musica). Il compito copia la priorità dell’attività, <strong>si modifica solo qui</strong> e la sua <strong>scadenza è sempre la sessione successiva</strong>.', 'task.namePreAct':'Esercitarsi: {act}', 'task.dueNext':'La sessione successiva dell’attività',
+      'task.samePrioAct':'{p} · quella dell’attività', 'act.cancel':'Elimina attività', 'act.cancelConfirm':'Conferma eliminazione',
+      'act.cancelConfirmTask':'Conferma: si elimina anche il compito', 'toast.actSaved':'Attività «{name}» salvata', 'toast.actCancelled':'Attività «{name}» eliminata',
+      'toast.actTaskCancelled':'Attività «{name}» e il suo compito eliminati', 'err.endBefore':'L’ora di fine deve essere dopo l’inizio ({day})', 'act.taskRow':'Compito: {task} · {est} · consegna alla sessione successiva ({next})',
       'evt.upcoming':'Prossimi eventi', 'evt.add':'Aggiungi evento',
       'evt.new':'Nuovo evento', 'evt.editTitle':'Modifica evento',
       'f.name':'Nome', 'f.date':'Data', 'f.time':'Ora', 'f.prio':'Priorità', 'f.place':'Luogo', 'f.desc':'Descrizione', 'f.optional':'(facoltativo)',
@@ -1452,7 +1529,7 @@
       'del.title':'Eliminare «{name}»?', 'del.body1':'Questa categoria ha 1 elemento attivo associato:', 'del.body':'Questa categoria ha {n} elementi attivi associati:',
       'del.warn':'Se la elimini, verrà annullato tutto ciò che è associato, compresi i compiti di preparazione degli eventi.', 'del.continue':'Continua',
       'del.step2':'Seconda conferma: si elimina «{name}» e si annullano {n} elementi. Non si può annullare.', 'del.confirm':'Elimina e annulla ({n})',
-      'del.withTask':'con compito', 'toast.catDeletedAll':'Categoria «{name}» eliminata e {n} elementi annullati',
+      'del.withTask':'con compito', 'toast.catDeletedAll1':'Categoria «{name}» eliminata e 1 elemento annullato', 'toast.catDeletedAll':'Categoria «{name}» eliminata e {n} elementi annullati',
       'toast.catAdded':'Categoria «{name}» aggiunta',
       'evt.taskRow':'Compito: {task} · consegna {due} · {est}',
       'cfg.language':'Lingua', 'cfg.languageLabel':'Lingua dell’app',
@@ -1540,8 +1617,13 @@
       'note.school':'<strong>Horaires scolaires :</strong> {summary}. En dehors de ces horaires, l’agenda de {name} est libre pour les activités, les devoirs et d’autres projets.',
       'act.title':'Activités récurrentes', 'edit':'Modifier', 'noTravel':'À la maison (sans trajet)', 'and':' et ',
       'act.add':'Ajouter une activité',
-      'toast.editAct':'La modification des activités arrive avec la phase de données',
-      'toast.addAct':'L’ajout d’une activité arrive dans la prochaine phase',
+      'act.new':'Nouvelle activité', 'act.editTitle':'Modifier l’activité', 'f.days':'Jours de la semaine',
+      'f.start':'Début', 'f.end':'Fin', 'f.actNamePh':'Ex. : Piano',
+      'f.actDescPh':'Professeur, matériel, quoi travailler…', 'hint.days':'Quand vous ajoutez un jour, l’horaire du premier est proposé ; vous pouvez le modifier.', 'task.genAct':'Créer une tâche d’entraînement',
+      'hint.actTask':'Pour les activités où il faut s’entraîner entre les séances (p. ex. la musique). La tâche reprend la priorité de l’activité, <strong>ne se modifie qu’ici</strong> et son <strong>échéance est toujours la séance suivante</strong>.', 'task.namePreAct':'S’entraîner : {act}', 'task.dueNext':'La séance suivante de l’activité',
+      'task.samePrioAct':'{p} · celle de l’activité', 'act.cancel':'Supprimer l’activité', 'act.cancelConfirm':'Confirmer la suppression',
+      'act.cancelConfirmTask':'Confirmer : sa tâche est aussi supprimée', 'toast.actSaved':'Activité « {name} » enregistrée', 'toast.actCancelled':'Activité « {name} » supprimée',
+      'toast.actTaskCancelled':'Activité « {name} » et sa tâche supprimées', 'err.endBefore':'L’heure de fin doit être après le début ({day})', 'act.taskRow':'Tâche : {task} · {est} · à rendre à la séance suivante ({next})',
       'evt.upcoming':'Événements à venir', 'evt.add':'Ajouter un événement',
       'evt.new':'Nouvel événement', 'evt.editTitle':'Modifier l’événement',
       'f.name':'Nom', 'f.date':'Date', 'f.time':'Heure', 'f.prio':'Priorité', 'f.place':'Lieu', 'f.desc':'Description', 'f.optional':'(facultatif)',
@@ -1556,7 +1638,7 @@
       'del.title':'Supprimer « {name} » ?', 'del.body1':'Cette catégorie a 1 élément actif associé :', 'del.body':'Cette catégorie a {n} éléments actifs associés :',
       'del.warn':'Si vous la supprimez, tout ce qui y est associé sera annulé, y compris les tâches de préparation des événements.', 'del.continue':'Continuer',
       'del.step2':'Deuxième confirmation : « {name} » sera supprimée et {n} éléments annulés. C’est irréversible.', 'del.confirm':'Supprimer et annuler ({n})',
-      'del.withTask':'avec tâche', 'toast.catDeletedAll':'Catégorie « {name} » supprimée et {n} éléments annulés',
+      'del.withTask':'avec tâche', 'toast.catDeletedAll1':'Catégorie « {name} » supprimée et 1 élément annulé', 'toast.catDeletedAll':'Catégorie « {name} » supprimée et {n} éléments annulés',
       'toast.catAdded':'Catégorie « {name} » ajoutée',
       'evt.taskRow':'Tâche : {task} · échéance {due} · {est}',
       'cfg.language':'Langue', 'cfg.languageLabel':'Langue de l’app',
@@ -1644,8 +1726,13 @@
       'note.school':'<strong>Schulzeiten:</strong> {summary}. Außerhalb dieser Zeiten ist {name}s Kalender frei für Aktivitäten, Hausaufgaben und andere Pläne.',
       'act.title':'Wiederkehrende Aktivitäten', 'edit':'Bearbeiten', 'noTravel':'Zu Hause (keine Fahrt)', 'and':' und ',
       'act.add':'Aktivität hinzufügen',
-      'toast.editAct':'Aktivitäten bearbeiten kommt in der Datenphase',
-      'toast.addAct':'Neue Aktivitäten kommen in der nächsten Phase',
+      'act.new':'Neue Aktivität', 'act.editTitle':'Aktivität bearbeiten', 'f.days':'Wochentage',
+      'f.start':'Beginn', 'f.end':'Ende', 'f.actNamePh':'Z. B. Klavier',
+      'f.actDescPh':'Lehrkraft, Material, was üben …', 'hint.days':'Wenn du einen Tag hinzufügst, werden die Zeiten des ersten vorgeschlagen; du kannst sie ändern.', 'task.genAct':'Übungsaufgabe erstellen',
+      'hint.actTask':'Für Aktivitäten, bei denen zwischen den Terminen geübt werden muss (z. B. Musik). Die Aufgabe übernimmt die Priorität der Aktivität, <strong>wird nur hier bearbeitet</strong> und ist <strong>immer bis zur nächsten Stunde fällig</strong>.', 'task.namePreAct':'Üben: {act}', 'task.dueNext':'Die nächste Stunde der Aktivität',
+      'task.samePrioAct':'{p} · wie die Aktivität', 'act.cancel':'Aktivität löschen', 'act.cancelConfirm':'Löschen bestätigen',
+      'act.cancelConfirmTask':'Bestätigen: Die Aufgabe wird auch gelöscht', 'toast.actSaved':'Aktivität „{name}“ gespeichert', 'toast.actCancelled':'Aktivität „{name}“ gelöscht',
+      'toast.actTaskCancelled':'Aktivität „{name}“ und ihre Aufgabe gelöscht', 'err.endBefore':'Das Ende muss nach dem Beginn liegen ({day})', 'act.taskRow':'Aufgabe: {task} · {est} · fällig zur nächsten Stunde ({next})',
       'evt.upcoming':'Anstehende Termine', 'evt.add':'Termin hinzufügen',
       'evt.new':'Neuer Termin', 'evt.editTitle':'Termin bearbeiten',
       'f.name':'Name', 'f.date':'Datum', 'f.time':'Uhrzeit', 'f.prio':'Priorität', 'f.place':'Ort', 'f.desc':'Beschreibung', 'f.optional':'(optional)',
@@ -1660,7 +1747,7 @@
       'del.title':'„{name}“ löschen?', 'del.body1':'Mit dieser Kategorie ist 1 aktiver Eintrag verknüpft:', 'del.body':'Mit dieser Kategorie sind {n} aktive Einträge verknüpft:',
       'del.warn':'Wenn du sie löschst, wird alles Verknüpfte abgesagt, auch die Vorbereitungsaufgaben der Termine.', 'del.continue':'Weiter',
       'del.step2':'Zweite Bestätigung: „{name}“ wird gelöscht und {n} Einträge werden abgesagt. Das lässt sich nicht rückgängig machen.', 'del.confirm':'Löschen und absagen ({n})',
-      'del.withTask':'mit Aufgabe', 'toast.catDeletedAll':'Kategorie „{name}“ gelöscht und {n} Einträge abgesagt',
+      'del.withTask':'mit Aufgabe', 'toast.catDeletedAll1':'Kategorie „{name}“ gelöscht und 1 Eintrag abgesagt', 'toast.catDeletedAll':'Kategorie „{name}“ gelöscht und {n} Einträge abgesagt',
       'toast.catAdded':'Kategorie „{name}“ hinzugefügt',
       'evt.taskRow':'Aufgabe: {task} · fällig {due} · {est}',
       'cfg.language':'Sprache', 'cfg.languageLabel':'App-Sprache',
@@ -1801,6 +1888,8 @@
     renderExportCats();
     renderEvents();
     refreshEventForm();
+    renderActivities();
+    refreshActivityForm();
     onScheduleChanged();
     applyAppearance();
   }
@@ -2311,8 +2400,7 @@
   }
   function closeCatDelete(){ catToDelete = null; el('cat-del-dialog').close(); }
 
-  // Eventos y actividades activos (aún no terminados) de una categoría. Las actividades
-  // de la maqueta usan la categoría de serie Actividad, que no se puede borrar.
+  // Eventos activos (aún no terminados) y actividades de una categoría
   function linkedToCategory(id){
     var now = new Date(TODAY_DATE.getTime()); now.setHours(Math.floor(NOW), Math.round((NOW % 1) * 60));
     return USER_EVENTS.filter(function(e){
@@ -2321,19 +2409,25 @@
       return end > now;
     }).map(function(e){
       return { kind:'event', id:e.id, name:e.name, when: fmtDay(e.date) + ' ' + e.time + (e.task ? ' · ' + t('del.withTask') : '') };
-    });
+    }).concat(USER_ACTS.filter(function(a){ return a.cat === id; }).map(function(a){
+      // Las actividades recurrentes siempre están activas
+      return { kind:'activity', id:a.id, name:a.name, when: sessionsText(a) + (a.task ? ' · ' + t('del.withTask') : '') };
+    }));
   }
 
   function deleteCategoryRow(row, linked){
     var name = rowName(row), id = row.dataset.cat;
     var ids = linked.map(function(it){ return it.id; });
     USER_EVENTS = USER_EVENTS.filter(function(e){ return ids.indexOf(e.id) < 0; });
+    USER_ACTS = USER_ACTS.filter(function(a){ return ids.indexOf(a.id) < 0; });
+    storeActivities();
+    renderActivities();
     // Los eventos pasados conservan su copia de la categoría; no se vuelve a crear al recargar
     DELETED_CATS.push(id);
     storeEvents();
     row.remove();
     renderExportCats();
-    toast(linked.length ? t('toast.catDeletedAll', { name: name, n: linked.length }) : t('toast.catDeleted', { name: name }));
+    toast(linked.length ? t(linked.length === 1 ? 'toast.catDeletedAll1' : 'toast.catDeletedAll', { name: name, n: linked.length }) : t('toast.catDeleted', { name: name }));
   }
 
 
@@ -2524,6 +2618,7 @@
     updateConfigSummaries();
     // Nombre, color o prioridad de una categoría cambian también eventos y Calendario
     renderEvents();
+    renderActivities();
     renderCalendar(calView);
   }
   document.getElementById('category-list').addEventListener('input', renderExportCats);
@@ -2550,13 +2645,69 @@
   }
 
 
+  /* ---- Categoría y prioridad en los formularios (Eventos y Actividades) ---- */
+  // Elegir categoría propone su prioridad, salvo que ya se haya elegido una a mano.
+  // Desde el formulario se puede crear una categoría nueva: es una categoría de usuario más.
+  var PICK = {
+    evt: { cat:null, prio:null, touched:false, newColor:null, refresh:function(){ refreshEventForm(); } },
+    act: { cat:null, prio:null, touched:false, newColor:null, refresh:function(){ refreshActivityForm(); } }
+  };
+  function resetPick(f, cat, prio, touched){ PICK[f].cat = cat || null; PICK[f].prio = prio || null; PICK[f].touched = touched; }
+  // extra: categoría guardada en el elemento que ya no está en Configuración (se sigue mostrando)
+  function renderPick(f, extra){
+    var st = PICK[f], cats = getCategories();
+    if(extra && st.cat === extra.id && !cats.some(function(c){ return c.id === extra.id; })){ cats.push(extra); }
+    el(f + '-cat').innerHTML = cats.map(function(c){
+      var on = c.id === st.cat;
+      return '<button type="button" class="cat-chip' + (on ? ' is-active' : '') + '" role="radio" aria-checked="' + on + '" onclick="setFormCat(\'' + f + '\', \'' + c.id + '\')">' +
+        '<i style="background:' + c.color + '"></i>' + esc(c.name) + '</button>';
+    }).join('') +
+      '<button type="button" class="cat-chip is-add" onclick="toggleNewCategory(\'' + f + '\', true)">+ ' + t('cat.new') + '</button>';
+    document.querySelectorAll('#' + f + '-prio .toggle-btn').forEach(function(b){
+      var on = b.dataset.prio === st.prio;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-checked', on);
+    });
+    el(f + '-cat-colors').innerHTML = CAT_PALETTE.map(function(c, i){
+      return '<button type="button" role="radio" aria-checked="' + (c === st.newColor) + '" aria-label="' + t('aria.catColor') + ' ' + (i + 1) + '" style="background:' + c + '" onclick="pickNewCatColor(\'' + f + '\', \'' + c + '\')"></button>';
+    }).join('');
+  }
+  function setFormCat(f, id){
+    var st = PICK[f], c = findCategory(id);
+    st.cat = id;
+    if(c && !st.touched){ st.prio = c.prio; }
+    el(f + '-cat').classList.remove('is-invalid');
+    el(f + '-prio').classList.remove('is-invalid');
+    st.refresh();
+  }
+  function setFormPrio(f, btn){ PICK[f].prio = btn.dataset.prio; PICK[f].touched = true; el(f + '-prio').classList.remove('is-invalid'); PICK[f].refresh(); }
+  function toggleNewCategory(f, on){
+    el(f + '-cat-new').hidden = !on;
+    if(on){
+      PICK[f].newColor = CAT_PALETTE[document.querySelectorAll('#category-list .cat-row').length % CAT_PALETTE.length];
+      el(f + '-cat-name').value = '';
+      PICK[f].refresh();
+      el(f + '-cat-name').focus();
+    }
+  }
+  function pickNewCatColor(f, c){ PICK[f].newColor = c; PICK[f].refresh(); }
+  function addFormCategory(f){
+    var input = el(f + '-cat-name'), name = input.value.trim();
+    if(!name){ input.classList.add('is-invalid'); input.focus(); return; }
+    input.classList.remove('is-invalid');
+    var row = addCategory({ name: name, color: PICK[f].newColor, prio: PICK[f].prio || 'Media' });
+    toggleNewCategory(f, false);
+    setFormCat(f, row.dataset.cat);
+    toast(t('toast.catAdded', { name: name }));
+  }
+
   /* ================= EVENTOS ================= */
   // Eventos puntuales: todo lo inserta el usuario (con la App nueva, la lista está vacía).
   // Campos obligatorios: nombre, fecha, hora de inicio, duración, categoría y prioridad.
   // Cada evento puede llevar una tarea de preparación: copia la prioridad del evento, solo
   // se edita desde aquí y se cancela con él; para Today, el Calendario y los avisos es una
   // tarea más. En la maqueta se guardan en el dispositivo (ver dossier).
-  var USER_EVENTS = [], editingEvent = null, eventPrio = null, eventCat = null, prioTouched = false, newCatColor = null;
+  var USER_EVENTS = [], editingEvent = null;
   (function loadEvents(){
     try{ USER_EVENTS = JSON.parse(localStorage.getItem('app-events') || '[]') || []; }catch(e){ USER_EVENTS = []; }
   })();
@@ -2571,7 +2722,7 @@
   // Categorías creadas desde Eventos que no estén en Configuración (la maqueta no guarda
   // Configuración): se recrean a partir de la copia guardada en el evento.
   function restoreEventCategories(){
-    USER_EVENTS.forEach(function(e){
+    USER_EVENTS.concat(USER_ACTS).forEach(function(e){
       if(e.cat && !findCategory(e.cat) && DELETED_CATS.indexOf(e.cat) < 0){ addCategory({ id:e.cat, name:e.catName, color:e.catColor, prio:e.prio }); }
     });
   }
@@ -2635,16 +2786,14 @@
     setDur('evt-dur', e.dur);
     el('evt-place').value = e.place || '';
     el('evt-desc').value = e.desc || '';
-    eventCat = e.cat || null;
-    eventPrio = e.prio || null;
-    prioTouched = !!editingEvent;
+    resetPick('evt', e.cat, e.prio, !!editingEvent);
     var tk = e.task;
     el('task-name').value = tk ? tk.name : '';
     el('task-date').value = tk ? tk.date : '';
     el('task-time').value = tk ? tk.time : '';
     setDur('task-est', tk ? tk.est : 0);
     setTaskOn(!!tk);
-    toggleNewCategory(false);
+    toggleNewCategory('evt', false);
     el('evt-delete').hidden = !editingEvent;
     document.querySelectorAll('#evt-form .is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); });
     refreshEventForm();
@@ -2669,56 +2818,11 @@
   function refreshEventForm(){
     if(!el('evt-form')){ return; }
     el('evt-form-title').textContent = t(editingEvent ? 'evt.editTitle' : 'evt.new');
-    var cats = getCategories();
-    if(editingEvent && eventCat && !cats.some(function(c){ return c.id === eventCat; })){ cats.push(eventCategory(editingEvent)); }
-    el('evt-cat').innerHTML = cats.map(function(c){
-      var on = c.id === eventCat;
-      return '<button type="button" class="cat-chip' + (on ? ' is-active' : '') + '" role="radio" aria-checked="' + on + '" onclick="setEventCat(\'' + c.id + '\')">' +
-        '<i style="background:' + c.color + '"></i>' + esc(c.name) + '</button>';
-    }).join('') +
-      '<button type="button" class="cat-chip is-add" onclick="toggleNewCategory(true)">+ ' + t('cat.new') + '</button>';
-    document.querySelectorAll('#evt-prio .toggle-btn').forEach(function(b){
-      var on = b.dataset.prio === eventPrio;
-      b.classList.toggle('is-active', on);
-      b.setAttribute('aria-checked', on);
-    });
-    el('task-prio').textContent = eventPrio ? t('task.samePrio', { p: t('prio.' + eventPrio) }) : '—';
-    el('task-prio').className = 'prio-copy' + (eventPrio ? ' prio-' + eventPrio : '');
-    el('evt-cat-colors').innerHTML = CAT_PALETTE.map(function(c, i){
-      return '<button type="button" role="radio" aria-checked="' + (c === newCatColor) + '" aria-label="' + t('aria.catColor') + ' ' + (i + 1) + '" style="background:' + c + '" onclick="pickNewCatColor(\'' + c + '\')"></button>';
-    }).join('');
+    renderPick('evt', editingEvent && eventCategory(editingEvent));
+    var p = PICK.evt.prio;
+    el('task-prio').textContent = p ? t('task.samePrio', { p: t('prio.' + p) }) : '—';
+    el('task-prio').className = 'prio-copy' + (p ? ' prio-' + p : '');
     resetCancelButton();
-  }
-
-  // Elegir categoría propone su prioridad, salvo que ya se haya elegido una a mano
-  function setEventCat(id){
-    eventCat = id;
-    var c = findCategory(id);
-    if(c && !prioTouched){ eventPrio = c.prio; }
-    el('evt-cat').classList.remove('is-invalid');
-    refreshEventForm();
-  }
-  function setEventPrio(btn){ eventPrio = btn.dataset.prio; prioTouched = true; el('evt-prio').classList.remove('is-invalid'); refreshEventForm(); }
-
-  // Nueva categoría desde el formulario: queda también en Configuración
-  function toggleNewCategory(on){
-    el('evt-cat-new').hidden = !on;
-    if(on){
-      newCatColor = CAT_PALETTE[document.querySelectorAll('#category-list .cat-row').length % CAT_PALETTE.length];
-      el('evt-cat-name').value = '';
-      refreshEventForm();
-      el('evt-cat-name').focus();
-    }
-  }
-  function pickNewCatColor(c){ newCatColor = c; refreshEventForm(); }
-  function addEventCategory(){
-    var name = el('evt-cat-name').value.trim();
-    if(!name){ el('evt-cat-name').classList.add('is-invalid'); el('evt-cat-name').focus(); return; }
-    el('evt-cat-name').classList.remove('is-invalid');
-    var row = addCategory({ name: name, color: newCatColor, prio: eventPrio || 'Media' });
-    toggleNewCategory(false);
-    setEventCat(row.dataset.cat);
-    toast(t('toast.catAdded', { name: name }));
   }
 
   function setTaskOn(on){
@@ -2756,8 +2860,8 @@
     need(el('evt-date').value, ['evt-date'], 'f.date');
     need(el('evt-time').value, ['evt-time'], 'f.time');
     need(getDur('evt-dur') > 0, ['evt-dur-h', 'evt-dur-m'], 'f.dur');
-    need(eventCat, ['evt-cat'], 'f.cat');
-    need(eventPrio, ['evt-prio'], 'f.prio');
+    need(PICK.evt.cat, ['evt-cat'], 'f.cat');
+    need(PICK.evt.prio, ['evt-prio'], 'f.prio');
     if(withTask){
       need(el('task-name').value.trim(), ['task-name'], 'task.name');
       need(el('task-date').value, ['task-date'], 'task.dueDate');
@@ -2769,11 +2873,11 @@
       el('task-date').classList.add('is-invalid'); el('task-time').classList.add('is-invalid');
       toast(t('err.taskAfter')); return;
     }
-    var c = eventCategory({ cat: eventCat, catName: editingEvent && editingEvent.catName, catColor: editingEvent && editingEvent.catColor });
+    var c = eventCategory({ cat: PICK.evt.cat, catName: editingEvent && editingEvent.catName, catColor: editingEvent && editingEvent.catColor });
     var data = {
       id: editingEvent ? editingEvent.id : 'e' + Date.now(),
       name: el('evt-name').value.trim(), date: el('evt-date').value, time: el('evt-time').value, dur: getDur('evt-dur'),
-      cat: c.id, catName: c.name, catColor: c.color, prio: eventPrio,
+      cat: c.id, catName: c.name, catColor: c.color, prio: PICK.evt.prio,
       place: el('evt-place').value.trim(), desc: el('evt-desc').value.trim(),
       // La tarea no tiene prioridad propia: siempre la del evento
       task: withTask ? { name: el('task-name').value.trim(), date: el('task-date').value, time: el('task-time').value, est: getDur('task-est') } : null
@@ -2826,6 +2930,234 @@
     }).filter(function(e){ return e.day >= 0; });
   }
 
+  /* ================= ACTIVIDADES ================= */
+  // Actividades recurrentes semanales: todo lo inserta el usuario. Obligatorios: nombre,
+  // días (con hora de inicio y fin por día), categoría, prioridad y ubicación. Pueden llevar
+  // una tarea de práctica entre sesiones: copia la prioridad, solo se edita aquí y su
+  // deadline es siempre la siguiente sesión de la misma actividad.
+  var USER_ACTS = [], editingAct = null, actSessions = {};   // actSessions: día (lunes = 0) → {start, end}
+  try{ USER_ACTS = JSON.parse(localStorage.getItem('app-activities') || '[]') || []; }catch(e){ USER_ACTS = []; }
+  function storeActivities(){
+    try{
+      localStorage.setItem('app-activities', JSON.stringify(USER_ACTS));
+      localStorage.setItem('deleted-cats', JSON.stringify(DELETED_CATS));
+    }catch(e){}
+  }
+
+  // Momento actual de la maqueta (viernes 11/09 a las 17:15)
+  function demoNow(){ var d = new Date(TODAY_DATE.getTime()); d.setMinutes(Math.round(NOW * 60)); return d; }
+  function weekdayOf(d){ return (d.getDay() + 6) % 7; }
+  // Próxima sesión de una actividad a partir de «from» → Date del inicio
+  function nextSession(a, from){
+    for(var off = 0; off <= 7; off++){
+      var d = new Date(from.getFullYear(), from.getMonth(), from.getDate() + off);
+      var todays = a.sessions.filter(function(x){ return x.day === weekdayOf(d); })
+        .map(function(x){ var s = new Date(d.getTime()); s.setMinutes(Math.round(toHours(x.start) * 60)); return s; })
+        .filter(function(s){ return s > from; }).sort(function(p, q){ return p - q; });
+      if(todays.length){ return todays[0]; }
+    }
+    return null;
+  }
+  function sessionsText(a){
+    return a.sessions.slice().sort(function(p, q){ return p.day - q.day; }).map(function(x){
+      return cap(weekdayName(x.day, 'short').replace('.', '')) + ' ' + x.start + '–' + x.end;
+    }).join(', ');
+  }
+
+  function renderActivities(){
+    var list = el('act-list');
+    if(!list){ return; }
+    el('act-list-wrap').hidden = !USER_ACTS.length;
+    var now = demoNow();
+    list.innerHTML = USER_ACTS.map(function(a){
+      var c = eventCategory(a), next = a.task && nextSession(a, now);
+      var sub = '<span>' + sessionsText(a) + ' · </span>' + PIN_SVG + '<span>' + esc(a.place) + '</span>';
+      var task = a.task ? '<div class="evt-task">' + TASK_SVG + '<span>' + esc(t('act.taskRow', {
+        task: a.task.name, est: fmtEst(a.task.est), next: next ? fmtDay(isoOf(next)) + ' ' + fmtHour(next.getHours() + next.getMinutes() / 60) : '—' })) + '</span></div>' : '';
+      return '<div class="row evt-row">' +
+        '<div class="row-body">' +
+          '<span class="evt-title-line"><span class="row-title">' + esc(a.name) + '</span>' +
+            '<span class="prio-chip prio-' + a.prio + '">' + t('prio.' + a.prio) + '</span></span>' +
+          (c ? '<span class="row-sub"><span class="evt-cat"><i style="background:' + c.color + '"></i>' + esc(c.name) + '</span></span>' : '') +
+          '<span class="row-sub">' + sub + '</span>' +
+          (a.desc ? '<span class="evt-desc">' + esc(a.desc) + '</span>' : '') + task +
+        '</div>' +
+        '<button class="row-action" onclick="openActivityForm(\'' + a.id + '\')">' + t('edit') + '</button>' +
+      '</div>';
+    }).join('');
+  }
+  function isoOf(d){ return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+
+  function openActivityForm(id){
+    editingAct = id ? USER_ACTS.filter(function(a){ return a.id === id; })[0] : null;
+    var a = editingAct || { sessions: [] };
+    el('act-name').value = a.name || '';
+    el('act-place').value = a.place || '';
+    el('act-desc').value = a.desc || '';
+    actSessions = {};
+    a.sessions.forEach(function(x){ actSessions[x.day] = { start: x.start, end: x.end }; });
+    resetPick('act', a.cat, a.prio, !!editingAct);
+    el('atask-name').value = a.task ? a.task.name : '';
+    setDur('atask-est', a.task ? a.task.est : 0);
+    setActTaskOn(!!a.task);
+    toggleNewCategory('act', false);
+    el('act-delete').hidden = !editingAct;
+    document.querySelectorAll('#act-form .is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); });
+    refreshActivityForm();
+    el('act-list-view').hidden = true;
+    el('act-form').hidden = false;
+    el('screen-activities').parentElement.scrollTop = 0;
+    el('act-name').focus();
+  }
+  function closeActivityForm(){ editingAct = null; el('act-form').hidden = true; el('act-list-view').hidden = false; }
+
+  function refreshActivityForm(){
+    if(!el('act-form')){ return; }
+    el('act-form-title').textContent = t(editingAct ? 'act.editTitle' : 'act.new');
+    // Días: L M X J V S D
+    el('act-days').innerHTML = [0,1,2,3,4,5,6].map(function(i){
+      var on = !!actSessions[i];
+      return '<button type="button" class="toggle-btn' + (on ? ' is-active' : '') + '" aria-pressed="' + on + '" aria-label="' + cap(weekdayName(i)) + '" onclick="toggleActDay(' + i + ')">' +
+        cap(weekdayName(i, 'narrow')) + '</button>';
+    }).join('');
+    renderSessions();
+    renderPick('act', editingAct && eventCategory(editingAct));
+    var p = PICK.act.prio;
+    el('atask-prio').textContent = p ? t('task.samePrioAct', { p: t('prio.' + p) }) : '—';
+    el('atask-prio').className = 'prio-copy' + (p ? ' prio-' + p : '');
+    var b = el('act-delete'); b.classList.remove('is-confirm'); b.textContent = t('act.cancel');
+  }
+  function renderSessions(){
+    var days = Object.keys(actSessions).map(Number).sort();
+    el('act-sessions').innerHTML = days.map(function(i){
+      var x = actSessions[i];
+      return '<div class="session-row"><span class="s-day">' + cap(weekdayName(i)) + '</span>' +
+        '<input class="txt-input" type="time" id="act-s' + i + '-start" value="' + x.start + '" aria-label="' + t('f.start') + ' · ' + weekdayName(i) + '" oninput="setSession(' + i + ', \'start\', this.value)">' +
+        '<span>–</span>' +
+        '<input class="txt-input" type="time" id="act-s' + i + '-end" value="' + x.end + '" aria-label="' + t('f.end') + ' · ' + weekdayName(i) + '" oninput="setSession(' + i + ', \'end\', this.value)">' +
+      '</div>';
+    }).join('');
+    el('act-days-hint').hidden = days.length < 2;
+  }
+  // Un día nuevo propone el horario del primer día que ya tenga horas
+  function toggleActDay(i){
+    if(actSessions[i]){ delete actSessions[i]; }
+    else {
+      var first = Object.keys(actSessions).map(Number).sort().map(function(d){ return actSessions[d]; })
+        .filter(function(x){ return x.start || x.end; })[0];
+      actSessions[i] = first ? { start: first.start, end: first.end } : { start:'', end:'' };
+    }
+    el('act-days').classList.remove('is-invalid');
+    refreshActivityForm();
+  }
+  function setSession(i, key, v){ if(actSessions[i]){ actSessions[i][key] = v; } }
+
+  function setActTaskOn(on){
+    el('act-task-switch').setAttribute('aria-checked', on);
+    el('act-task-fields').hidden = !on;
+  }
+  function toggleActivityTask(){
+    var on = el('act-task-switch').getAttribute('aria-checked') !== 'true';
+    setActTaskOn(on);
+    if(on){
+      if(!el('atask-name').value && el('act-name').value.trim()){
+        el('atask-name').value = t('task.namePreAct', { act: el('act-name').value.trim() });
+      }
+      el('atask-name').focus();
+    }
+  }
+
+  function saveActivity(ev){
+    ev.preventDefault();
+    var withTask = el('act-task-switch').getAttribute('aria-checked') === 'true';
+    var missing = [], days = Object.keys(actSessions).map(Number).sort();
+    document.querySelectorAll('#act-form .is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); });
+    function need(ok, fields, key){
+      if(ok){ return; }
+      fields.forEach(function(f){ el(f).classList.add('is-invalid'); });
+      if(missing.indexOf(t(key)) < 0){ missing.push(t(key)); }
+    }
+    need(el('act-name').value.trim(), ['act-name'], 'f.name');
+    need(days.length, ['act-days'], 'f.days');
+    days.forEach(function(i){
+      need(actSessions[i].start, ['act-s' + i + '-start'], 'f.start');
+      need(actSessions[i].end, ['act-s' + i + '-end'], 'f.end');
+    });
+    need(PICK.act.cat, ['act-cat'], 'f.cat');
+    need(PICK.act.prio, ['act-prio'], 'f.prio');
+    need(el('act-place').value.trim(), ['act-place'], 'f.place');
+    if(withTask){
+      need(el('atask-name').value.trim(), ['atask-name'], 'task.name');
+      need(getDur('atask-est') > 0, ['atask-est-h', 'atask-est-m'], 'task.est');
+    }
+    if(missing.length){ toast(t('err.missing', { fields: missing.join(', ') })); return; }
+    var bad = days.filter(function(i){ return actSessions[i].end <= actSessions[i].start; });
+    if(bad.length){
+      bad.forEach(function(i){ el('act-s' + i + '-end').classList.add('is-invalid'); });
+      toast(t('err.endBefore', { day: weekdayName(bad[0]) })); return;
+    }
+    var c = eventCategory({ cat: PICK.act.cat, catName: editingAct && editingAct.catName, catColor: editingAct && editingAct.catColor });
+    var data = {
+      id: editingAct ? editingAct.id : 'a' + Date.now(),
+      name: el('act-name').value.trim(),
+      sessions: days.map(function(i){ return { day: i, start: actSessions[i].start, end: actSessions[i].end }; }),
+      cat: c.id, catName: c.name, catColor: c.color, prio: PICK.act.prio,
+      place: el('act-place').value.trim(), desc: el('act-desc').value.trim(),
+      // Tarea de práctica: sin deadline propia (siempre la siguiente sesión) ni prioridad propia
+      task: withTask ? { name: el('atask-name').value.trim(), est: getDur('atask-est') } : null
+    };
+    if(editingAct){ USER_ACTS[USER_ACTS.indexOf(editingAct)] = data; } else { USER_ACTS.push(data); }
+    storeActivities();
+    closeActivityForm();
+    renderActivities();
+    renderCalendar(calView);
+    toast(t('toast.actSaved', { name: data.name }));
+  }
+
+  // Eliminar una actividad pide una segunda pulsación y se lleva su tarea
+  function cancelActivity(btn){
+    var a = editingAct;
+    if(!a){ return; }
+    if(!btn.classList.contains('is-confirm')){
+      btn.classList.add('is-confirm');
+      btn.textContent = t(a.task ? 'act.cancelConfirmTask' : 'act.cancelConfirm');
+      return;
+    }
+    USER_ACTS.splice(USER_ACTS.indexOf(a), 1);
+    storeActivities();
+    closeActivityForm();
+    renderActivities();
+    renderCalendar(calView);
+    toast(t(a.task ? 'toast.actTaskCancelled' : 'toast.actCancelled', { name: a.name }));
+  }
+
+  // Para el Calendario: cada sesión de la semana y, si hay tarea de práctica, su entrega
+  // al empezar esa sesión (es la deadline de la tarea de la sesión anterior)
+  function weekUserActs(){
+    var out = [];
+    USER_ACTS.forEach(function(a){
+      var c = eventCategory(a);
+      a.sessions.forEach(function(x){
+        out.push({ day: x.day, title: a.name, start: toHours(x.start), end: toHours(x.end), color: c ? c.color : null, catLabel: c ? c.name : '' });
+      });
+    });
+    return out;
+  }
+  function weekActTasks(){
+    var out = [];
+    USER_ACTS.forEach(function(a){
+      if(!a.task){ return; }
+      a.sessions.forEach(function(x){ out.push({ day: x.day, title: a.task.name, time: toHours(x.start), cat: 'tarea' }); });
+    });
+    return out;
+  }
+
+  el('act-form').addEventListener('input', function(ev){
+    ev.target.classList.remove('is-invalid');
+    var pair = ev.target.closest('.dur-input');
+    if(pair){ pair.querySelectorAll('.is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); }); }
+  });
+
   /* ---- Calendario (vista día / semana) ---- */
   // Alto de la cuadrícula: en el móvil, el que quede libre en la pantalla (ver fitCalendar);
   // en la maqueta de escritorio, fijo. El horario escolar se comprime en CAL_SCHOOL_PX y el
@@ -2838,12 +3170,7 @@
       ? '7–13 ' + fmtDate(WEEK_DAYS[0].d, { month:'long' })
       : cap(fmtDate(TODAY_DATE, { weekday:'short', day:'numeric', month:'short' }));
   }
-  var CAL_EVENTS = [
-    {day:0, title:'Natación', start:18, end:19, cat:'actividad'},
-    {day:1, title:'Inglés', start:17, end:18, cat:'actividad'},
-    {day:3, title:'Piano', start:17.5, end:18.25, cat:'actividad'},
-    {day:4, title:'Natación', start:18, end:19, cat:'actividad'}
-  ];
+  var CAL_EVENTS = [];   // las actividades y los eventos los inserta el usuario
   var CAL_DEADLINES = [
     {day:4, title:'Entrega Lengua', time:22, cat:'tarea'}
   ];
@@ -2905,7 +3232,7 @@
   function renderCalendar(view){
     var grid = document.getElementById('cal-grid');
     grid.innerHTML = '';
-    var legend = { actividad:true };
+    var legend = {};
     var isWeek = view === 'week';
     var days = isWeek ? WEEK_DAYS : [WEEK_DAYS[TODAY_DAY]];
     var sc = calScale(schoolFor(isWeek ? 0 : TODAY_DAY)), pos = sc.pos;
@@ -2981,7 +3308,7 @@
       // Actividades, eventos y entregas de tareas. La entrega se dibuja como un bloque
       // estándar de TASK_VIEW_H que termina en la deadline (solo visual: avisos y barra
       // de tiempo usan la deadline). Los bloques que se solapan se reparten el ancho.
-      var items = CAL_EVENTS.concat(weekUserEvents()).concat(CAL_DEADLINES.concat(weekUserTasks()).map(function(e){
+      var items = CAL_EVENTS.concat(weekUserActs(), weekUserEvents()).concat(CAL_DEADLINES.concat(weekUserTasks(), weekActTasks()).map(function(e){
         return { day:e.day, title:e.title, start:Math.max(e.time - TASK_VIEW_H, CAL_START), end:e.time, cat:'tarea', due:true };
       })).filter(function(e){ return e.day === realDay; });
       layoutLanes(items);
