@@ -21,6 +21,7 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
 
 ### 2.1 Configuración
 Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, al abrir uno, se cierra el que estuviera abierto, para no tener que hacer scroll), cada uno con un resumen de su valor actual en la cabecera. Orden:
+0. **Perfil**: **nombre** de quien usa la App (por defecto «Martina»; editable para poder dejar la App a otra persona). Aparece en los textos («plan de …», «Entregas y tareas de …», el calendario exportado…).
 1. **Idioma**
 2. **Aspecto** (tema de Today, fondo claro/oscuro, barra de tiempo)
 3. **Horarios** (franja horaria de planificación y horario escolar)
@@ -87,8 +88,15 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - Lista única de **todas las tareas**, ordenada por entrega: las de Classroom (extraídas y aprobadas), las generadas por eventos y actividades y las **tareas sueltas** añadidas a mano con el botón **Añadir tarea** (nombre, entrega, tiempo estimado y descripción; prioridad por defecto la de la categoría Tarea). Cada una muestra prioridad, entrega, tiempo estimado (o «falta tiempo estimado»), de dónde viene y la descripción.
 - **Se abre pulsando encima** (ficha de consulta) y con **Editar** se cambia: nombre, entrega (fecha y hora; en las de actividades es siempre la siguiente sesión y no se edita), tiempo estimado (obligatorio, horas y minutos), prioridad y descripción (opcional).
 - **Eliminar** (desde la ficha) pide segunda pulsación; en una tarea de evento o actividad la quita de su evento o actividad.
+- **Completar una tarea** (fase 1 de «ejecución de tareas»):
+  - Se marca con el **círculo** de cada fila de Tareas, con el botón **«Marcar como hecha»** de su ficha o con el **✓ rápido** de las tarjetas de tareas en «Hoy». Aparece un aviso con **«Deshacer»**.
+  - Una tarea hecha **no vuelve a presentarse**: sale de «Hoy» y de «Próximos días»; en el **Calendario** se ve **atenuada y con ✓** mientras siga en la semana visible; en Tareas pasa a la sección plegable **«Hechas»**, desde donde se puede **reabrir**.
+  - Tareas de **práctica de actividades**: se completa solo la de la sesión en curso; tras esa sesión vuelve a estar pendiente para la siguiente.
+  - Tareas de **Classroom**: si se marcan como hechas, la App las da por cerradas (no hay dos registros separados de «tarea» y «entrega»).
+  - Una tarea cuya entrega ya pasó sin completarse aparece arriba, en **«Atrasadas»**, hasta que se marque como hecha o se elimine.
 
 ### Prioridades y edición (común a Actividades, Eventos y Tareas)
+- Todo formulario tiene **«✕ Cancelar»** arriba (y «Cancelar» abajo), que vuelve al punto de partida (ficha, lista, Calendario u «Hoy»). Si se sale de un formulario abierto pulsando otra pestaña, la App pregunta **«¿Anular?»** («Seguir editando» / «Anular»).
 - Pulsar un elemento de la lista abre su **ficha de consulta** (todos los detalles, solo lectura, con «‹ Volver»). En la ficha están los botones **Editar** (abre el formulario) y **Eliminar** (pide una segunda pulsación de confirmación). Al guardar se vuelve a la ficha; al cancelar la edición, también.
 - Cada elemento toma **por defecto la prioridad de su categoría** (las tareas de eventos y actividades, la de su evento o actividad; las de Classroom, la de la categoría Tarea). Se puede cambiar **solo para ese elemento** al insertarlo o al editarlo en su pantalla, **sin cambiar la prioridad de la categoría**.
 
@@ -134,6 +142,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 - Al abrir la app, se conecta con Classroom y con el correo de Google.
 - Debe leer **solo lo que ha cambiado** desde la última conexión → requiere un log propio interno que registre qué contenido ya ha sido procesado (para no re-leer ni duplicar).
+  - El log guarda también lo que el usuario **ha cancelado, eliminado o cerrado** (p. ej. una tarea de Classroom completada o un evento extraído de un correo y descartado), para **no volver a cargarlo** en las siguientes sincronizaciones.
 - El login con Google debe diseñarse de forma que no rompa la experiencia de uso (evitar fricción/discontinuidad en cada apertura) — a estudiar la mejor estrategia de sesión persistente/refresco de token.
 - El contenido nuevo (correos y publicaciones de Classroom) se procesa con IA para extraer la información relevante para la planificación (cambios de horario, cancelaciones, plazos de entrega, permisos, etc.).
 

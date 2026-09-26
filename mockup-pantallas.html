@@ -147,6 +147,12 @@
   .is-today .topbar{ flex-wrap:nowrap; }
   .is-today .topbar .subtitle{ margin:0; flex:1; min-width:0; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #screen-today{ gap:14px; }
+  /* ✓ rápido en las tarjetas de tareas de «Hoy» */
+  .later-chip, .fan-card{ position:relative; }
+  .today-check{ position:absolute; top:6px; right:6px; width:22px; height:22px; background:rgba(255,255,255,.55); border-color:currentColor; color:transparent; z-index:2; }
+  .today-check:hover{ color:var(--cat-tarea-ink); }
+  .note .today-check{ top:12px; left:12px; right:auto; width:26px; height:26px; border-color:var(--deep); }
+  .fan-card .today-check{ top:auto; bottom:6px; right:6px; width:22px; height:22px; border-color:var(--deep); }
   .today-more{ margin:0; font-size:12.5px; color:var(--text-muted); text-align:center; }
   #screen-today.active{ min-height:100%; }
   /* Próximos días: abajo del todo, pegada a la barra de pestañas aunque el resto se desplace */
@@ -562,6 +568,7 @@
   /* ---- Ficha de consulta (Actividades, Eventos, Tareas) ---- */
   .detail{ display:flex; flex-direction:column; gap:14px; }
   .detail[hidden]{ display:none; }
+  .form-cancel{ margin-bottom:-6px; }
   .detail-back{
     align-self:flex-start; display:inline-flex; align-items:center; gap:4px; cursor:pointer;
     background:none; border:none; padding:4px 0; font-family:var(--font-body); font-size:13.5px; font-weight:600; color:var(--accent-strong);
@@ -577,6 +584,32 @@
   .detail-list dd i{ width:10px; height:10px; border-radius:50%; flex:none; }
   .detail-list .muted{ color:var(--text-muted); font-size:12.5px; }
   .detail .form-actions .btn-danger{ flex:1; }
+
+  /* ---- Tareas hechas / atrasadas ---- */
+  .task-check{
+    flex:none; align-self:center; width:26px; height:26px; border-radius:50%; padding:0; cursor:pointer;
+    border:2px solid var(--cat-tarea-ink); background:transparent; color:transparent;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .task-check:hover{ color:var(--cat-tarea-ink); }
+  .task-check.is-done{ background:var(--cat-tarea); border-color:var(--cat-tarea-ink); color:#fff; }
+  .task-check:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .task-row.is-done .row-title{ text-decoration:line-through; opacity:.6; }
+  .task-row.is-done .row-sub, .task-row.is-done .prio-chip{ opacity:.55; }
+  .task-row.is-overdue .row-sub:first-of-type{ color:var(--red-text); font-weight:600; }
+  .overdue-title{ color:var(--red-text) !important; }
+  #task-overdue-wrap{ margin-bottom:14px; }
+  #task-overdue-wrap[hidden], #task-pending-title[hidden], .done-group[hidden]{ display:none; }
+  .done-group{ margin-top:14px; }
+  .done-group summary{ cursor:pointer; font-size:12px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); padding:6px 0; }
+  .btn-done{
+    display:flex; align-items:center; justify-content:center; gap:8px; width:100%; cursor:pointer;
+    font-family:var(--font-body); font-weight:700; font-size:14px; padding:11px; border-radius:10px;
+    background:var(--cat-tarea); color:#fff; border:none;
+  }
+  .btn-done.is-done{ background:transparent; color:var(--cat-tarea-ink); border:1.5px solid var(--cat-tarea-ink); }
+  .btn-done:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .cal-bar.is-done{ opacity:.45; }
 
   .confirm-dialog{
     width:min(420px, calc(100vw - 32px)); border:1px solid var(--border); border-radius:16px; padding:18px;
@@ -849,6 +882,9 @@
     opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;
     max-width:90vw; text-align:center; z-index:20;
   }
+  .toast.has-action{ display:flex; align-items:center; gap:12px; width:min(90vw, 360px); text-align:left; }
+  .toast.has-action.show{ pointer-events:auto; }   /* solo mientras se ve: oculto no debe tapar la barra de pestañas */
+  .toast-action{ flex:none; font:inherit; font-weight:700; color:var(--accent-soft); background:none; border:none; padding:2px 4px; cursor:pointer; text-decoration:underline; }
   .toast.show{ opacity:1; transform:translate(-50%,0); }
 
   @media (prefers-reduced-motion: reduce){
@@ -904,6 +940,7 @@
       <div class="detail" id="act-detail" hidden></div>
 
       <form id="act-form" class="evt-form" hidden novalidate onsubmit="saveActivity(event)">
+        <button type="button" class="detail-back form-cancel" onclick="closeActivityForm()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg><span data-i18n="btn.cancel"></span></button>
         <h2 class="section-title" id="act-form-title"></h2>
 
         <label class="fld">
@@ -1007,6 +1044,7 @@
       <div class="detail" id="evt-detail" hidden></div>
 
       <form id="evt-form" class="evt-form" hidden novalidate onsubmit="saveEvent(event)">
+        <button type="button" class="detail-back form-cancel" onclick="closeEventForm()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg><span data-i18n="btn.cancel"></span></button>
         <h2 class="section-title" id="evt-form-title"></h2>
 
         <label class="fld">
@@ -1110,6 +1148,18 @@
     <section class="screen" id="screen-config" aria-labelledby="screen-heading">
 
       <div class="cfg-groups">
+      <details class="cfg-group" data-group="profile">
+        <summary><span class="cfg-group-title" data-i18n="grp.profile"></span><span class="cfg-group-sum" id="sum-profile"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="config-card">
+          <label class="fld">
+            <span class="field-label" data-i18n="cfg.kidName"></span>
+            <input class="txt-input" id="kid-name" type="text" autocomplete="off" maxlength="30" onchange="setKidName(this.value)">
+          </label>
+          <p class="card-hint" data-i18n="hint.kidName"></p>
+        </div>
+        </div>
+      </details>
       <details class="cfg-group" data-group="language">
         <summary><span class="cfg-group-title" data-i18n="grp.language"></span><span class="cfg-group-sum" id="sum-language"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="cfg-group-body">
@@ -1323,8 +1373,16 @@
     <section class="screen" id="screen-tasks" aria-labelledby="screen-heading">
       <div id="task-list-view" class="evt-view">
         <div id="task-list-wrap" hidden>
-          <h2 class="section-title" data-i18n="tasks.title"></h2>
+          <div id="task-overdue-wrap" hidden>
+            <h2 class="section-title overdue-title" data-i18n="tasks.overdue"></h2>
+            <div class="row-list" id="task-overdue"></div>
+          </div>
+          <h2 class="section-title" id="task-pending-title" data-i18n="tasks.title"></h2>
           <div class="row-list" id="task-list"></div>
+          <details class="done-group" id="tasks-done" hidden>
+            <summary><span data-i18n="tasks.doneTitle"></span> · <span id="tasks-done-count"></span></summary>
+            <div class="row-list" id="task-done-list"></div>
+          </details>
         </div>
         <button class="add-btn" onclick="openTaskForm()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
@@ -1335,6 +1393,7 @@
       <div class="detail" id="task-detail" hidden></div>
 
       <form id="task-form" class="evt-form" hidden novalidate onsubmit="saveTask(event)">
+        <button type="button" class="detail-back form-cancel" onclick="closeTaskForm()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg><span data-i18n="btn.cancel"></span></button>
         <h2 class="section-title" id="tk-form-title"></h2>
         <p class="task-origin" id="tk-origin"></p>
 
@@ -1447,6 +1506,16 @@
   </div>
 </dialog>
 
+<!-- Salir de un formulario abierto con la barra de pestañas -->
+<dialog class="confirm-dialog" id="discard-dialog" aria-labelledby="discard-title">
+  <h2 id="discard-title" data-i18n="discard.title"></h2>
+  <p data-i18n="discard.body"></p>
+  <div class="form-actions">
+    <button type="button" class="btn-ghost" onclick="el('discard-dialog').close()" data-i18n="discard.keep"></button>
+    <button type="button" class="btn-danger" onclick="discardAndGo()" data-i18n="discard.go"></button>
+  </div>
+</dialog>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1551,6 +1620,12 @@
       'tab.today':'Hoy', 'today.more1':'Y 1 más hoy: la ves en la barra de tiempo.', 'today.more':'Y {n} más hoy: los ves en la barra de tiempo.',
       'btn.backCal':'Volver al Calendario',
       'btn.backToday':'Volver a Hoy', 'd.leave':'Salida', 'toast.demoItem':'Es un dato de ejemplo: se podrá editar cuando «Hoy» use los datos reales',
+      'task.markDone':'Marcar como hecha', 'task.reopen':'Reabrir', 'tasks.overdue':'Atrasadas',
+      'tasks.doneTitle':'Hechas', 'toast.taskDone':'Tarea «{name}» hecha', 'toast.taskReopened':'Tarea «{name}» reabierta',
+      'btn.undo':'Deshacer', 'd.status':'Estado', 'status.done':'Hecha',
+      'status.overdue':'Atrasada', 'status.pending':'Pendiente', 'grp.profile':'Perfil',
+      'cfg.kidName':'Nombre', 'hint.kidName':'Nombre de quien usa la App; aparece en los textos (por ejemplo, «plan de {name}»).', 'discard.title':'¿Anular?',
+      'discard.body':'Hay un formulario abierto: si sales ahora, se pierden los cambios sin guardar.', 'discard.keep':'Seguir editando', 'discard.go':'Anular',
       'tab.calendar':'Calendario', 'sub.calendar':'Actividades en vista día o semana',
       'tab.config':'Config', 'title.config':'Configuración', 'sub.config':'Idioma, aspecto, horarios, enlaces y categorías',
       'today.soon':'Se acerca · faltan {t}', 'today.later':'Más tarde', 'today.leaves':'{place} · sale {leave} {how}',
@@ -1672,6 +1747,12 @@
       'tab.today':'Today', 'today.more1':'And 1 more today: see it on the time bar.', 'today.more':'And {n} more today: see them on the time bar.',
       'btn.backCal':'Back to Calendar',
       'btn.backToday':'Back to Today', 'd.leave':'Departure', 'toast.demoItem':'This is sample data: it can be edited once Today uses real data',
+      'task.markDone':'Mark as done', 'task.reopen':'Reopen', 'tasks.overdue':'Overdue',
+      'tasks.doneTitle':'Done', 'toast.taskDone':'Task “{name}” done', 'toast.taskReopened':'Task “{name}” reopened',
+      'btn.undo':'Undo', 'd.status':'Status', 'status.done':'Done',
+      'status.overdue':'Overdue', 'status.pending':'Pending', 'grp.profile':'Profile',
+      'cfg.kidName':'Name', 'hint.kidName':'Name of the person using the App; it appears in the texts (e.g. “{name}’s plan”).', 'discard.title':'Discard?',
+      'discard.body':'A form is open: if you leave now, unsaved changes will be lost.', 'discard.keep':'Keep editing', 'discard.go':'Discard',
       'tab.calendar':'Calendar', 'sub.calendar':'Activities by day or week',
       'tab.config':'Settings', 'title.config':'Settings', 'sub.config':'Language, appearance, schedules, connections and categories',
       'today.soon':'Coming up · in {t}', 'today.later':'Later', 'today.leaves':'{place} · leave {leave} {how}',
@@ -1793,6 +1874,12 @@
       'tab.today':'Oggi', 'today.more1':'E 1 altro oggi: lo vedi nella barra del tempo.', 'today.more':'E altri {n} oggi: li vedi nella barra del tempo.',
       'btn.backCal':'Torna al Calendario',
       'btn.backToday':'Torna a Oggi', 'd.leave':'Partenza', 'toast.demoItem':'È un dato di esempio: si potrà modificare quando «Oggi» userà i dati reali',
+      'task.markDone':'Segna come fatto', 'task.reopen':'Riapri', 'tasks.overdue':'In ritardo',
+      'tasks.doneTitle':'Fatti', 'toast.taskDone':'Compito «{name}» fatto', 'toast.taskReopened':'Compito «{name}» riaperto',
+      'btn.undo':'Annulla', 'd.status':'Stato', 'status.done':'Fatto',
+      'status.overdue':'In ritardo', 'status.pending':'Da fare', 'grp.profile':'Profilo',
+      'cfg.kidName':'Nome', 'hint.kidName':'Nome di chi usa l’app; compare nei testi (es. «piano di {name}»).', 'discard.title':'Annullare?',
+      'discard.body':'C’è un modulo aperto: se esci ora, le modifiche non salvate andranno perse.', 'discard.keep':'Continua a modificare', 'discard.go':'Annulla',
       'tab.calendar':'Calendario', 'sub.calendar':'Attività in vista giorno o settimana',
       'tab.config':'Opzioni', 'title.config':'Impostazioni', 'sub.config':'Lingua, aspetto, orari, collegamenti e categorie',
       'today.soon':'Sta arrivando · mancano {t}', 'today.later':'Più tardi', 'today.leaves':'{place} · partenza {leave} {how}',
@@ -1914,6 +2001,12 @@
       'tab.today':'Aujourd’hui', 'today.more1':'Et 1 de plus aujourd’hui : voyez-le sur la barre de temps.', 'today.more':'Et {n} de plus aujourd’hui : voyez-les sur la barre de temps.',
       'btn.backCal':'Retour au Calendrier',
       'btn.backToday':'Retour à Aujourd’hui', 'd.leave':'Départ', 'toast.demoItem':'C’est une donnée d’exemple : elle pourra être modifiée quand « Aujourd’hui » utilisera les données réelles',
+      'task.markDone':'Marquer comme faite', 'task.reopen':'Rouvrir', 'tasks.overdue':'En retard',
+      'tasks.doneTitle':'Faites', 'toast.taskDone':'Tâche « {name} » faite', 'toast.taskReopened':'Tâche « {name} » rouverte',
+      'btn.undo':'Annuler', 'd.status':'État', 'status.done':'Faite',
+      'status.overdue':'En retard', 'status.pending':'À faire', 'grp.profile':'Profil',
+      'cfg.kidName':'Prénom', 'hint.kidName':'Prénom de la personne qui utilise l’app ; il apparaît dans les textes (p. ex. « plan de {name} »).', 'discard.title':'Abandonner ?',
+      'discard.body':'Un formulaire est ouvert : si vous quittez maintenant, les modifications non enregistrées seront perdues.', 'discard.keep':'Continuer', 'discard.go':'Abandonner',
       'tab.calendar':'Calendrier', 'sub.calendar':'Activités en vue jour ou semaine',
       'tab.config':'Réglages', 'title.config':'Réglages', 'sub.config':'Langue, apparence, horaires, liens et catégories',
       'today.soon':'Bientôt · dans {t}', 'today.later':'Plus tard', 'today.leaves':'{place} · départ {leave} {how}',
@@ -2035,6 +2128,12 @@
       'tab.today':'Heute', 'today.more1':'Und 1 weiterer heute: siehe Zeitleiste.', 'today.more':'Und {n} weitere heute: siehe Zeitleiste.',
       'btn.backCal':'Zurück zum Kalender',
       'btn.backToday':'Zurück zu Heute', 'd.leave':'Abfahrt', 'toast.demoItem':'Das sind Beispieldaten: Bearbeiten geht, sobald „Heute“ echte Daten nutzt',
+      'task.markDone':'Als erledigt markieren', 'task.reopen':'Wieder öffnen', 'tasks.overdue':'Überfällig',
+      'tasks.doneTitle':'Erledigt', 'toast.taskDone':'Aufgabe „{name}“ erledigt', 'toast.taskReopened':'Aufgabe „{name}“ wieder geöffnet',
+      'btn.undo':'Rückgängig', 'd.status':'Status', 'status.done':'Erledigt',
+      'status.overdue':'Überfällig', 'status.pending':'Offen', 'grp.profile':'Profil',
+      'cfg.kidName':'Name', 'hint.kidName':'Name der Person, die die App nutzt; erscheint in den Texten (z. B. „Plan von {name}“).', 'discard.title':'Verwerfen?',
+      'discard.body':'Ein Formular ist geöffnet: Wenn du jetzt gehst, gehen nicht gespeicherte Änderungen verloren.', 'discard.keep':'Weiter bearbeiten', 'discard.go':'Verwerfen',
       'tab.calendar':'Kalender', 'sub.calendar':'Aktivitäten in Tages- oder Wochenansicht',
       'tab.config':'Optionen', 'title.config':'Einstellungen', 'sub.config':'Sprache, Darstellung, Zeiten, Verknüpfungen und Kategorien',
       'today.soon':'Gleich · in {t}', 'today.later':'Später', 'today.leaves':'{place} · Abfahrt {leave} {how}',
@@ -2084,6 +2183,15 @@
     return cap(fmtDate(TODAY_DATE, { weekday:'long', day:'numeric', month:'long' })) + ' · ' + t('planOf');
   }
 
+  // Nombre de quien usa la App (editable en Configuración > Perfil)
+  function loadKidName(){ try{ var n = localStorage.getItem('kid-name'); if(n){ KID = n; } }catch(e){} }
+  function setKidName(v){
+    v = v.trim();
+    if(!v){ el('kid-name').value = KID; return; }
+    KID = v;
+    try{ localStorage.setItem('kid-name', v); }catch(e){}
+    applyI18n();
+  }
   function loadLanguage(){
     try{ var l = localStorage.getItem('app-language'); if(l && I18N[l]){ LANG = l; } }catch(e){}
   }
@@ -2097,6 +2205,7 @@
   // Aplica el idioma a todo lo que está en el HTML y vuelve a dibujar lo generado
   function applyI18n(){
     document.documentElement.lang = LANG;
+    if(document.getElementById('kid-name')){ document.getElementById('kid-name').value = KID; }
     var sel = document.getElementById('lang-select');
     if(sel){ sel.value = LANG; }
     document.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent = t(el.dataset.i18n); });
@@ -2128,7 +2237,21 @@
     applyAppearance();
   }
 
+  var FORM_CLOSE = { 'evt-form':'closeEventForm', 'act-form':'closeActivityForm', 'task-form':'closeTaskForm' }, pendingTab = null;
+  function openForm(){
+    var f = document.querySelector('.screen.active form.evt-form:not([hidden])');
+    return f ? f.id : null;
+  }
+  function discardAndGo(){
+    var f = openForm(), btn = pendingTab;
+    el('discard-dialog').close();
+    if(f){ window[FORM_CLOSE[f]](); }
+    pendingTab = null;
+    if(btn){ showScreen(btn); }
+  }
   function showScreen(btn){
+    // Con un formulario abierto, cambiar de pestaña pide confirmación
+    if(openForm() && !btn.classList.contains('is-active')){ pendingTab = btn; el('discard-dialog').showModal(); return; }
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('is-active'));
     btn.classList.add('is-active');
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -2180,6 +2303,20 @@
   var TODAY_MAX = 4;
   var TODAY_LATER_ALL = TODAY_LATER.slice().sort(function(a, b){ return a.t - b.t; });
   TODAY_LATER = TODAY_LATER_ALL.slice(0, TODAY_MAX - 1);
+  // Tareas marcadas como hechas desde «Hoy» (datos de ejemplo): no se vuelven a presentar
+  var TODAY_DONE = [];
+  function todayVisible(){ return TODAY_LATER_ALL.filter(function(e){ return TODAY_DONE.indexOf(e.id) < 0; }); }
+  function setTodayDone(id, done){
+    TODAY_DONE = TODAY_DONE.filter(function(x){ return x !== id; });
+    if(done){ TODAY_DONE.push(id); }
+    renderToday();
+    var item = TODAY_LATER_ALL.filter(function(e){ return e.id === id; })[0];
+    if(done){ toast(t('toast.taskDone', { name: item.title }), { label: t('btn.undo'), fn: function(){ setTodayDone(id, false); } }); }
+  }
+  function todayCheck(e){
+    return e.kind === 'task' ? '<button type="button" class="task-check today-check" aria-label="' + t('task.markDone') + ': ' + e.title + '" title="' + t('task.markDone') + '" ' +
+      'onclick="event.stopPropagation(); setTodayDone(\'' + e.id + '\', true)" onkeydown="event.stopPropagation()" onpointerdown="event.stopPropagation()">' + CHECK_ICON + '</button>' : '';
+  }
 
   /* ---- Apariencia (Configuración) ---- */
   var APPEARANCE = { layout:'list', mode:'light', bar:'dots' };
@@ -2350,11 +2487,12 @@
   }
 
   function todayEvents(){
-    return [ {t:TODAY_NEXT.t, cat:TODAY_NEXT.cat, next:true} ].concat(TODAY_LATER_ALL.map(function(e){ return {t:e.t, cat:e.cat}; }))
+    return [ {t:TODAY_NEXT.t, cat:TODAY_NEXT.cat, next:true} ].concat(todayVisible().map(function(e){ return {t:e.t, cat:e.cat}; }))
       .sort(function(a, b){ return a.t - b.t; });
   }
 
   function renderToday(){
+    TODAY_LATER = todayVisible().slice(0, TODAY_MAX - 1);
     var screen = document.getElementById('screen-today');
     screen.setAttribute('data-layout', APPEARANCE.layout);
     var r = todayScale();
@@ -2365,7 +2503,7 @@
     else if(APPEARANCE.layout === 'postit2'){ renderPostit2(layout); }
     else { renderList(layout); }
     // Los que no caben en el cuerpo se ven en la barra de tiempo
-    var more = TODAY_LATER_ALL.length - TODAY_LATER.length;
+    var more = todayVisible().length - TODAY_LATER.length;
     if(more > 0){ layout.insertAdjacentHTML('beforeend', '<p class="today-more">' + t(more === 1 ? 'today.more1' : 'today.more', { n: more }) + '</p>'); }
     renderLoad();
     fitLoad();
@@ -2542,7 +2680,7 @@
     // Solo el primer deadline lleva detalles; los siguientes, hora y nombre
     var chips = TODAY_LATER.map(function(e){
       return '<div class="later-chip" ' + todayOpen(e) + ' style="' + catVars(e.cat) + '">' +
-        '<div class="later-time">' + fmtHour(e.t) + '</div>' +
+        todayCheck(e) + '<div class="later-time">' + fmtHour(e.t) + '</div>' +
         '<div class="later-title">' + e.title + '</div></div>';
     }).join('');
     host.innerHTML =
@@ -2558,7 +2696,7 @@
     var n = TODAY_NEXT;
     var cards = TODAY_LATER.map(function(e, i){   // siguientes: solo hora y nombre
       return '<div class="fan-card" ' + todayOpen(e) + ' style="' + catVars(e.cat) + ';z-index:' + (i + 1) + '">' +
-        '<div class="fan-time">' + fmtHour(e.t) + '</div>' +
+        todayCheck(e) + '<div class="fan-time">' + fmtHour(e.t) + '</div>' +
         '<div class="fan-title">' + e.title + '</div></div>';
     }).join('');
     host.innerHTML =
@@ -2582,6 +2720,10 @@
 
   function renderPostit2(host){
     var n = TODAY_NEXT;
+    // El orden de los post-its sigue a los que quedan (si se marca uno como hecho, sale)
+    var ids = TODAY_LATER.map(function(e){ return e.id; });
+    noteOrder = noteOrder.filter(function(id){ return ids.indexOf(id) >= 0; })
+      .concat(ids.filter(function(id){ return noteOrder.indexOf(id) < 0; }));
     host.innerHTML =
       '<div class="pi-next' + nextCardAttrs(n) + '" ' + todayOpen(n) + '>' +
         '<span class="pi-next-time">' + fmtHour(n.t) + '</span>' +
@@ -2601,7 +2743,7 @@
       note.setAttribute('style', catVars(item.cat) + ';--dur:' + f.dur + ';--delay:' + f.delay + ';--sway:' + f.sway + ';--in-delay:' + (0.15 + i * 0.18) + 's');
       // Siguientes: solo hora y nombre
       note.innerHTML = '<div class="note-shadow"></div><div class="note-card">' +
-        '<div class="n-head"><span class="n-time">' + fmtHour(item.t) + '</span></div>' +
+        todayCheck(item) + '<div class="n-head"><span class="n-time">' + fmtHour(item.t) + '</span></div>' +
         '<div class="n-title">' + item.title + '</div></div>';
       // Un post-it de detrás viene al frente; el de delante se abre en su pantalla
       function front(){
@@ -2641,12 +2783,20 @@
   }
 
   var toastTimer;
-  function toast(msg){
+  // action (opcional): { label, fn } → botón en el aviso, p. ej. «Deshacer»
+  function toast(msg, action){
     var el = document.getElementById('toast');
     el.textContent = msg;
+    el.classList.toggle('has-action', !!action);
+    if(action){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'toast-action'; b.textContent = action.label;
+      b.onclick = function(){ el.classList.remove('show'); clearTimeout(toastTimer); action.fn(); };
+      el.appendChild(b);
+    }
     el.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2200);
+    toastTimer = setTimeout(function(){ el.classList.remove('show'); }, action ? 4500 : 2200);
   }
 
   /* ---- Categorías y prioridades (editable) ---- */
@@ -2948,6 +3098,7 @@
   // Resumen del valor actual en la cabecera de cada bloque plegado
   function updateConfigSummaries(){
     function put(id, text){ var el = document.getElementById('sum-' + id); if(el){ el.textContent = text; } }
+    put('profile', KID);
     put('language', LANGS[LANG]);
     put('look', [t(APPEARANCE.layout === 'list' ? 'layout.list' : (APPEARANCE.layout === 'postit1' ? 'Post-it 1' : 'Post-it 2')),
                  t('mode.' + APPEARANCE.mode), t('bar.' + APPEARANCE.bar)].join(' · '));
@@ -2983,6 +3134,7 @@
           return '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>';
         }).join('') + '</dl>' +
       '</div>' +
+      (d.extra || '') +
       '<div class="form-actions">' +
         '<button type="button" class="btn-danger" onclick="' + d.del + '">' + d.delLabel + '</button>' +
         '<button type="button" class="btn-primary" onclick="' + d.edit + '">' + t('edit') + '</button>' +
@@ -3297,7 +3449,7 @@
   function weekUserTasks(){
     return USER_EVENTS.filter(function(e){ return e.task; }).map(function(e){ return { tk:e.task, key:'e:' + e.id }; })
       .concat(OWN_TASKS.map(function(tk){ return { tk:tk, key:'s:' + tk.id }; })).map(function(x){
-      return { day: weekDayIndex(x.tk.date), title: x.tk.name, time: toHours(x.tk.time), cat: 'tarea', ref: { kind:'task', id:x.key } };
+      return { day: weekDayIndex(x.tk.date), title: x.tk.name, time: toHours(x.tk.time), cat: 'tarea', done: !!x.tk.done, ref: { kind:'task', id:x.key } };
     }).filter(function(e){ return e.day >= 0; });
   }
 
@@ -3541,7 +3693,10 @@
     var out = [];
     USER_ACTS.forEach(function(a){
       if(!a.task){ return; }
-      a.sessions.forEach(function(x){ out.push({ day: x.day, title: a.task.name, time: toHours(x.start), cat: 'tarea', ref: { kind:'task', id:'a:' + a.id } }); });
+      a.sessions.forEach(function(x){
+        var due = new Date(WEEK_DAYS[x.day].d.getTime()); due.setMinutes(Math.round(toHours(x.start) * 60));
+        out.push({ day: x.day, title: a.task.name, time: toHours(x.start), cat: 'tarea', done: (a.task.doneFor || []).indexOf(occKey(due)) >= 0, ref: { kind:'task', id:'a:' + a.id } });
+      });
     });
     return out;
   }
@@ -3587,8 +3742,39 @@
       out.push({ key:'a:' + a.id, kind:'activity', name:a.task.name, due:nextSession(a, now), est:a.task.est, own:a.task.prio, basePrio:a.prio,
                  desc:a.task.desc, origin:t('task.fromAct', { name: a.name }), ref:a.task, parent:a });
     });
-    out.forEach(function(x){ x.prio = x.own || x.basePrio; });
+    out.forEach(function(x){
+      x.prio = x.own || x.basePrio;
+      // Hecha: en las de práctica, solo la sesión en curso (la siguiente vuelve a estar pendiente)
+      x.done = x.kind === 'activity' ? !!(x.due && (x.ref.doneFor || []).indexOf(occKey(x.due)) >= 0) : !!x.ref.done;
+      x.overdue = !x.done && !!x.due && x.due < now;
+    });
     return out.sort(function(p, q){ return (p.due || Infinity) - (q.due || Infinity); });
+  }
+  function occKey(d){ return isoOf(d) + 'T' + fmtHour(d.getHours() + d.getMinutes() / 60); }
+
+  // Marcar / reabrir una tarea (con «Deshacer» en el aviso)
+  function setTaskDone(key, done, silent){
+    var x = allTasks().filter(function(it){ return it.key === key; })[0];
+    if(!x){ return; }
+    if(x.kind === 'activity'){
+      var list = x.ref.doneFor = (x.ref.doneFor || []).filter(function(k){ return k !== occKey(x.due); });
+      if(done){ list.push(occKey(x.due)); }
+    } else {
+      x.ref.done = done;
+      x.ref.doneAt = done ? isoOf(demoNow()) : null;
+    }
+    storeTasks(); storeEvents(); storeActivities();
+    renderTasks(); renderEvents(); renderActivities(); renderCalendar(calView);
+    refreshOpenDetails();
+    if(!silent){
+      toast(t(done ? 'toast.taskDone' : 'toast.taskReopened', { name: x.name }),
+        { label: t('btn.undo'), fn: function(){ setTaskDone(key, !done, true); } });
+    }
+  }
+  var CHECK_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  function checkBtn(key, done){
+    return '<button type="button" class="task-check' + (done ? ' is-done' : '') + '" aria-pressed="' + done + '" aria-label="' + t(done ? 'task.reopen' : 'task.markDone') + '" title="' + t(done ? 'task.reopen' : 'task.markDone') + '" ' +
+      'onclick="event.stopPropagation(); setTaskDone(\'' + key + '\', ' + !done + ')" onkeydown="event.stopPropagation()">' + CHECK_ICON + '</button>';
   }
 
   function openAttrs(fn, id){
@@ -3596,25 +3782,40 @@
   }
   var ROW_CHEV = '<svg class="row-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
 
+  function taskRow(x){
+    var when = x.due ? t('task.dueAt', { t: fmtWhen(x.due) }) : '—';
+    var est = x.est ? fmtEst(x.est) : '<span class="est-missing">' + t('task.noEst') + '</span>';
+    return '<div class="row evt-row row-open task-row' + (x.done ? ' is-done' : '') + (x.overdue ? ' is-overdue' : '') + '" ' + openAttrs('openTask', x.key) + '>' +
+      checkBtn(x.key, x.done) +
+      '<div class="row-body">' +
+        '<span class="evt-title-line"><span class="row-title">' + esc(x.name) + '</span>' +
+          '<span class="prio-chip prio-' + x.prio + '">' + t('prio.' + x.prio) + '</span></span>' +
+        '<span class="row-sub"><span>' + when + ' · ' + est + '</span></span>' +
+        '<span class="row-sub">' + TASK_SVG + '<span>' + esc(x.origin) + '</span></span>' +
+        (x.desc && !x.done ? '<span class="evt-desc">' + esc(x.desc) + '</span>' : '') +
+      '</div>' + ROW_CHEV +
+    '</div>';
+  }
   function renderTasks(){
     var list = el('task-list');
     if(!list){ return; }
     var items = allTasks();
+    var overdue = items.filter(function(x){ return x.overdue; }),
+        pending = items.filter(function(x){ return !x.done && !x.overdue; }),
+        done = items.filter(function(x){ return x.done; });
     el('task-list-wrap').hidden = !items.length;
-    list.innerHTML = items.map(function(x){
-      var when = x.due ? t('task.dueAt', { t: fmtWhen(x.due) }) : '—';
-      var est = x.est ? fmtEst(x.est) : '<span class="est-missing">' + t('task.noEst') + '</span>';
-      return '<div class="row evt-row row-open" ' + openAttrs('openTask', x.key) + '>' +
-        '<div class="row-body">' +
-          '<span class="evt-title-line"><span class="row-title">' + esc(x.name) + '</span>' +
-            '<span class="prio-chip prio-' + x.prio + '">' + t('prio.' + x.prio) + '</span></span>' +
-          '<span class="row-sub"><span>' + when + ' · ' + est + '</span></span>' +
-          '<span class="row-sub">' + TASK_SVG + '<span>' + esc(x.origin) + '</span></span>' +
-          (x.desc ? '<span class="evt-desc">' + esc(x.desc) + '</span>' : '') +
-        '</div>' + ROW_CHEV +
-      '</div>';
-    }).join('');
+    // Atrasadas arriba; las hechas en una sección plegable al final (se pueden reabrir)
+    var wasOpen = el('tasks-done') && el('tasks-done').open;
+    el('task-overdue-wrap').hidden = !overdue.length;
+    el('task-overdue').innerHTML = overdue.map(taskRow).join('');
+    el('task-pending-title').hidden = !pending.length;
+    list.innerHTML = pending.map(taskRow).join('');
+    el('tasks-done').hidden = !done.length;
+    el('tasks-done-count').textContent = done.length;
+    el('task-done-list').innerHTML = done.map(taskRow).join('');
+    if(wasOpen){ el('tasks-done').open = true; }
   }
+
 
   function openTask(key){
     var x = allTasks().filter(function(it){ return it.key === key; })[0];
@@ -3628,8 +3829,10 @@
         [t('task.dueDate'), x.kind === 'activity' ? t('task.dueNextAt', { t: dueTxt }) : dueTxt],
         [t('task.est'), x.est ? fmtEst(x.est) : '<span class="est-missing">' + t('task.noEst') + '</span>'],
         [t('f.prio'), prioHtml(x.prio, !!x.own)],
-        [t('f.desc'), x.desc ? esc(x.desc) : '']
+        [t('f.desc'), x.desc ? esc(x.desc) : ''],
+        [t('d.status'), t(x.done ? 'status.done' : x.overdue ? 'status.overdue' : 'status.pending')]
       ],
+      extra: '<button type="button" class="btn-done' + (x.done ? ' is-done' : '') + '" onclick="setTaskDone(\'' + key + '\', ' + !x.done + ')">' + CHECK_ICON + t(x.done ? 'task.reopen' : 'task.markDone') + '</button>',
       edit: "openTaskForm('" + key + "')", del: 'deleteTask(this)', delLabel: t('task.delete')
     });
   }
@@ -3881,12 +4084,12 @@
       // estándar de TASK_VIEW_H que termina en la deadline (solo visual: avisos y barra
       // de tiempo usan la deadline). Los bloques que se solapan se reparten el ancho.
       var items = CAL_EVENTS.concat(weekUserActs(), weekUserEvents()).concat(CAL_DEADLINES.concat(weekUserTasks(), weekActTasks()).map(function(e){
-        return { day:e.day, title:e.title, start:Math.max(e.time - TASK_VIEW_H, CAL_START), end:e.time, cat:'tarea', due:true, ref:e.ref };
+        return { day:e.day, title:e.title, start:Math.max(e.time - TASK_VIEW_H, CAL_START), end:e.time, cat:'tarea', due:true, done:e.done, ref:e.ref };
       })).filter(function(e){ return e.day === realDay; });
       layoutLanes(items);
       items.forEach(function(e){
         var bar = document.createElement('div');
-        bar.className = 'cal-bar' + (e.cat ? ' cat-' + e.cat : '');
+        bar.className = 'cal-bar' + (e.cat ? ' cat-' + e.cat : '') + (e.done ? ' is-done' : '');
         if(e.color){ bar.style.background = e.color; }
         bar.style.top = pos(e.start) + 'px';
         bar.style.height = (pos(e.end) - pos(e.start)) + 'px';
@@ -3904,6 +4107,8 @@
         }
         // Bloques bajos (p. ej. la media hora de una entrega): título y hora en una sola línea
         var h = pos(e.end) - pos(e.start);
+        // Tarea hecha: atenuada y con ✓
+        if(e.done){ e.title = '✓ ' + e.title; }
         bar.innerHTML = isWeek ? '<span class="bar-title">' + esc(e.title) + '</span>'
           : h < 30 ? '<span class="bar-title">' + esc(e.title) + ' <span class="bar-time">· ' + when + '</span></span>'
           : '<span class="bar-title">' + esc(e.title) + '</span><span class="bar-time">' + when + '</span>';
@@ -3951,6 +4156,7 @@
 
   loadAppearance();
   loadLanguage();
+  loadKidName();
   restoreEventCategories();
   applyI18n();
 </script>
