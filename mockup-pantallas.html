@@ -665,6 +665,25 @@
   .plan-handle:focus-visible{ outline:2px solid var(--accent); border-radius:4px; }
   .plan-scale{ display:flex; justify-content:space-between; font-size:10.5px; color:var(--text-muted); font-variant-numeric:tabular-nums; }
   .plan-empty{ font-size:13px; color:var(--text-muted); text-align:center; margin:4px 0; }
+  /* ---- Pulsación larga ---- */
+  #cal-grid, #today-bar{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
+  .press-hint{ margin:6px 0 0; font-size:11px; color:var(--text-muted); }
+  @media (max-width:360px), (max-height:620px){ .press-hint{ display:none; } }
+  .press-mark{ position:fixed; width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%; border:2px solid var(--accent); pointer-events:none; z-index:50;
+    animation:pressGrow .55s ease-out forwards; }
+  @keyframes pressGrow{ from{ transform:scale(.3); opacity:.2; } to{ transform:scale(1); opacity:.9; } }
+  .press-choices[hidden], .press-tasks[hidden]{ display:none; }
+  .press-choices, .press-tasks{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .press-choice{ display:flex; align-items:center; gap:12px; text-align:left; width:100%; cursor:pointer; padding:12px; border-radius:12px;
+    border:1.5px solid var(--border); background:var(--surface-alt); color:var(--text); font-family:var(--font-body); font-size:14px; }
+  .press-choice svg{ flex:none; color:var(--accent-strong); }
+  .press-choice.is-task svg{ color:var(--cat-tarea-ink); }
+  .press-choice span{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .press-choice small{ font-size:12px; color:var(--text-muted); }
+  .press-choice:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .press-tasks .press-choice{ padding:10px 12px; }
+  .press-tasks .press-choice strong{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .press-empty{ font-size:13px; color:var(--text-muted); margin:6px 0 0; }
   .tut-demo{ padding:6px 0 10px; }
   .tut-gap{ position:relative; height:30px; border-radius:8px; background:var(--surface-alt); border:1px dashed var(--border); }
   .tut-block{ position:absolute; top:3px; bottom:3px; left:20%; width:40%; border-radius:6px; background-color:var(--cat-tarea); border:1.5px solid var(--cat-tarea-ink);
@@ -1546,6 +1565,7 @@
       <div class="cal-grid" id="cal-grid"></div>
 
       <div class="cal-legend" id="cal-legend"></div>
+      <p class="press-hint" data-i18n="press.hint"></p>
     </section>
 
   </main>
@@ -1600,9 +1620,30 @@
     <li data-i18n="tut.1"></li>
     <li data-i18n="tut.2"></li>
     <li data-i18n="tut.3"></li>
+    <li data-i18n="tut.4"></li>
   </ul>
   <div class="form-actions">
     <button type="button" class="btn-primary" onclick="closeTutorial()" data-i18n="tut.ok"></button>
+  </div>
+</dialog>
+
+<!-- Pulsación larga en un hueco libre (barra de tiempo de «Hoy» o Calendario) -->
+<dialog class="confirm-dialog press-dialog" id="press-dialog" aria-labelledby="press-title">
+  <h2 id="press-title"></h2>
+  <p id="press-q"></p>
+  <div class="press-choices" id="press-main">
+    <button type="button" class="press-choice" onclick="pressEvent()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>
+      <span><strong data-i18n="press.event"></strong><small id="press-event-sub"></small></span>
+    </button>
+    <button type="button" class="press-choice is-task" onclick="pressTaskList()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span><strong data-i18n="press.task"></strong><small data-i18n="press.taskSub"></small></span>
+    </button>
+  </div>
+  <div class="press-tasks" id="press-tasks" hidden></div>
+  <div class="form-actions">
+    <button type="button" class="btn-ghost" onclick="closePress()" data-i18n="btn.cancel"></button>
   </div>
 </dialog>
 
@@ -1717,7 +1758,7 @@
       'task.deleteConfirmLinked':'Confirmar: se quita la tarea de «{name}»', 'toast.taskSaved':'Tarea «{name}» guardada', 'toast.taskDeleted':'Tarea «{name}» eliminada',
       'task.ownPrio':'{p} · propia de la tarea',
       'btn.back':'Volver', 'tasks.add':'Añadir tarea', 'task.newTitle':'Nueva tarea', 'task.fromManual':'Añadida a mano', 'd.when':'Cuándo', 'd.task':'Tarea asociada', 'd.origin':'Origen', 'd.prioOwn':'(propia)', 'd.prioDefault':'(la de la categoría)',
-      'tab.today':'Hoy', 'task.plan':'Planificar', 'plan.title':'Planificar', 'plan.sum':'Estimado {est} · planificado {plan} · falta {left}', 'plan.sumFull':'Estimado {est} · planificado {plan} ✓', 'plan.sumNoEst':'Sin tiempo estimado · planificado {plan}', 'plan.noEst':'Esta tarea no tiene tiempo estimado: cada bloque nuevo es de 30 min.', 'plan.add':'Añadir bloque', 'plan.save':'Guardar', 'plan.none':'No hay huecos libres antes de la entrega.', 'plan.empty':'Sin bloques. Pulsa «Añadir bloque» para reservar tiempo.', 'plan.prevGap':'Hueco anterior', 'plan.nextGap':'Hueco siguiente', 'plan.remove':'Quitar bloque', 'plan.gap':'Hueco libre {a}–{b}', 'plan.move':'Mover el bloque', 'plan.startH':'Inicio del bloque', 'plan.endH':'Fin del bloque', 'toast.planSaved':'Planificación de «{name}» guardada', 'd.blocks':'Bloques de trabajo', 'block.label':'Bloque de trabajo', 'legend.block':'Bloque de trabajo', 'tut.title':'Bloques de trabajo', 'tut.1':'La App te propone bloques en los huecos libres antes de la entrega.', 'tut.2':'Arrastra el bloque para moverlo, o sus extremos para alargarlo o acortarlo: nunca sale del hueco libre.', 'tut.3':'Con ‹ › lo pasas al hueco anterior o siguiente; con la papelera lo quitas.', 'tut.ok':'Entendido', 'today.empty':'No queda nada más para hoy.', 'today.more1':'Y 1 más hoy: la ves en la barra de tiempo.', 'today.more':'Y {n} más hoy: los ves en la barra de tiempo.',
+      'tab.today':'Hoy', 'task.plan':'Planificar', 'plan.title':'Planificar', 'plan.sum':'Estimado {est} · planificado {plan} · falta {left}', 'plan.sumFull':'Estimado {est} · planificado {plan} ✓', 'plan.sumNoEst':'Sin tiempo estimado · planificado {plan}', 'plan.noEst':'Esta tarea no tiene tiempo estimado: cada bloque nuevo es de 30 min.', 'plan.add':'Añadir bloque', 'plan.save':'Guardar', 'plan.none':'No hay huecos libres antes de la entrega.', 'plan.empty':'Sin bloques. Pulsa «Añadir bloque» para reservar tiempo.', 'plan.prevGap':'Hueco anterior', 'plan.nextGap':'Hueco siguiente', 'plan.remove':'Quitar bloque', 'plan.gap':'Hueco libre {a}–{b}', 'plan.move':'Mover el bloque', 'plan.startH':'Inicio del bloque', 'plan.endH':'Fin del bloque', 'toast.planSaved':'Planificación de «{name}» guardada', 'd.blocks':'Bloques de trabajo', 'block.label':'Bloque de trabajo', 'legend.block':'Bloque de trabajo', 'tut.title':'Bloques de trabajo', 'tut.1':'La App te propone bloques en los huecos libres antes de la entrega.', 'tut.2':'Arrastra el bloque para moverlo, o sus extremos para alargarlo o acortarlo: nunca sale del hueco libre.', 'tut.3':'Con ‹ › lo pasas al hueco anterior o siguiente; con la papelera lo quitas.', 'tut.ok':'Entendido', 'press.hint':'Mantén pulsado un hueco libre para añadir un evento o un bloque de trabajo.', 'press.q':'¿Quieres añadir un evento o trabajar en una tarea?', 'press.event':'Añadir evento', 'press.eventSub':'De {a} a {b} (hasta lo siguiente)', 'press.task':'Trabajar en una tarea', 'press.taskSub':'Un bloque de trabajo que empieza aquí', 'press.pick':'¿En qué tarea?', 'press.left':'faltan {t}', 'press.allPlanned':'todo planificado', 'press.noTasks':'No hay tareas pendientes con entrega posterior.', 'press.past':'Ese momento ya ha pasado.', 'press.busy':'Ahí ya hay algo: mantén pulsado un hueco libre.', 'tut.4':'También puedes mantener pulsado un hueco libre en la barra de tiempo o en el Calendario.', 'today.empty':'No queda nada más para hoy.', 'today.more1':'Y 1 más hoy: la ves en la barra de tiempo.', 'today.more':'Y {n} más hoy: los ves en la barra de tiempo.',
       'btn.backCal':'Volver al Calendario',
       'btn.backToday':'Volver a Hoy', 'd.leave':'Salida',
       'task.markDone':'Marcar como hecha', 'task.reopen':'Reabrir', 'tasks.overdue':'Atrasadas',
@@ -1844,7 +1885,7 @@
       'task.deleteConfirmLinked':'Confirm: the task is removed from “{name}”', 'toast.taskSaved':'Task “{name}” saved', 'toast.taskDeleted':'Task “{name}” deleted',
       'task.ownPrio':'{p} · set for this task',
       'btn.back':'Back', 'tasks.add':'Add task', 'task.newTitle':'New task', 'task.fromManual':'Added by hand', 'd.when':'When', 'd.task':'Linked task', 'd.origin':'Source', 'd.prioOwn':'(own)', 'd.prioDefault':'(the category’s)',
-      'tab.today':'Today', 'task.plan':'Plan', 'plan.title':'Plan', 'plan.sum':'Estimated {est} · planned {plan} · {left} left', 'plan.sumFull':'Estimated {est} · planned {plan} ✓', 'plan.sumNoEst':'No estimated time · planned {plan}', 'plan.noEst':'This task has no estimated time: each new block is 30 min.', 'plan.add':'Add block', 'plan.save':'Save', 'plan.none':'There are no free slots before the deadline.', 'plan.empty':'No blocks. Tap “Add block” to set time aside.', 'plan.prevGap':'Previous slot', 'plan.nextGap':'Next slot', 'plan.remove':'Remove block', 'plan.gap':'Free slot {a}–{b}', 'plan.move':'Move the block', 'plan.startH':'Block start', 'plan.endH':'Block end', 'toast.planSaved':'Plan for “{name}” saved', 'd.blocks':'Work blocks', 'block.label':'Work block', 'legend.block':'Work block', 'tut.title':'Work blocks', 'tut.1':'The app suggests blocks in the free slots before the deadline.', 'tut.2':'Drag the block to move it, or its ends to make it longer or shorter: it never leaves the free slot.', 'tut.3':'Use ‹ › to move it to the previous or next slot; the bin removes it.', 'tut.ok':'Got it', 'today.empty':'Nothing else for today.', 'today.more1':'And 1 more today: see it on the time bar.', 'today.more':'And {n} more today: see them on the time bar.',
+      'tab.today':'Today', 'task.plan':'Plan', 'plan.title':'Plan', 'plan.sum':'Estimated {est} · planned {plan} · {left} left', 'plan.sumFull':'Estimated {est} · planned {plan} ✓', 'plan.sumNoEst':'No estimated time · planned {plan}', 'plan.noEst':'This task has no estimated time: each new block is 30 min.', 'plan.add':'Add block', 'plan.save':'Save', 'plan.none':'There are no free slots before the deadline.', 'plan.empty':'No blocks. Tap “Add block” to set time aside.', 'plan.prevGap':'Previous slot', 'plan.nextGap':'Next slot', 'plan.remove':'Remove block', 'plan.gap':'Free slot {a}–{b}', 'plan.move':'Move the block', 'plan.startH':'Block start', 'plan.endH':'Block end', 'toast.planSaved':'Plan for “{name}” saved', 'd.blocks':'Work blocks', 'block.label':'Work block', 'legend.block':'Work block', 'tut.title':'Work blocks', 'tut.1':'The app suggests blocks in the free slots before the deadline.', 'tut.2':'Drag the block to move it, or its ends to make it longer or shorter: it never leaves the free slot.', 'tut.3':'Use ‹ › to move it to the previous or next slot; the bin removes it.', 'tut.ok':'Got it', 'press.hint':'Press and hold a free slot to add an event or a work block.', 'press.q':'Do you want to add an event or work on a task?', 'press.event':'Add event', 'press.eventSub':'From {a} to {b} (until the next item)', 'press.task':'Work on a task', 'press.taskSub':'A work block starting here', 'press.pick':'Which task?', 'press.left':'{t} left', 'press.allPlanned':'all planned', 'press.noTasks':'No pending tasks due after this time.', 'press.past':'That time has already passed.', 'press.busy':'Something is already there: press and hold a free slot.', 'tut.4':'You can also press and hold a free slot on the time bar or in the Calendar.', 'today.empty':'Nothing else for today.', 'today.more1':'And 1 more today: see it on the time bar.', 'today.more':'And {n} more today: see them on the time bar.',
       'btn.backCal':'Back to Calendar',
       'btn.backToday':'Back to Today', 'd.leave':'Departure',
       'task.markDone':'Mark as done', 'task.reopen':'Reopen', 'tasks.overdue':'Overdue',
@@ -1971,7 +2012,7 @@
       'task.deleteConfirmLinked':'Conferma: il compito viene tolto da «{name}»', 'toast.taskSaved':'Compito «{name}» salvato', 'toast.taskDeleted':'Compito «{name}» eliminato',
       'task.ownPrio':'{p} · propria del compito',
       'btn.back':'Indietro', 'tasks.add':'Aggiungi compito', 'task.newTitle':'Nuovo compito', 'task.fromManual':'Aggiunto a mano', 'd.when':'Quando', 'd.task':'Compito associato', 'd.origin':'Origine', 'd.prioOwn':'(propria)', 'd.prioDefault':'(quella della categoria)',
-      'tab.today':'Oggi', 'task.plan':'Pianifica', 'plan.title':'Pianifica', 'plan.sum':'Stimato {est} · pianificato {plan} · mancano {left}', 'plan.sumFull':'Stimato {est} · pianificato {plan} ✓', 'plan.sumNoEst':'Senza tempo stimato · pianificato {plan}', 'plan.noEst':'Questo compito non ha tempo stimato: ogni nuovo blocco è di 30 min.', 'plan.add':'Aggiungi blocco', 'plan.save':'Salva', 'plan.none':'Non ci sono spazi liberi prima della consegna.', 'plan.empty':'Nessun blocco. Tocca «Aggiungi blocco» per riservare tempo.', 'plan.prevGap':'Spazio precedente', 'plan.nextGap':'Spazio successivo', 'plan.remove':'Togli blocco', 'plan.gap':'Spazio libero {a}–{b}', 'plan.move':'Sposta il blocco', 'plan.startH':'Inizio del blocco', 'plan.endH':'Fine del blocco', 'toast.planSaved':'Pianificazione di «{name}» salvata', 'd.blocks':'Blocchi di lavoro', 'block.label':'Blocco di lavoro', 'legend.block':'Blocco di lavoro', 'tut.title':'Blocchi di lavoro', 'tut.1':'L’app ti propone blocchi negli spazi liberi prima della consegna.', 'tut.2':'Trascina il blocco per spostarlo, o i suoi estremi per allungarlo o accorciarlo: non esce mai dallo spazio libero.', 'tut.3':'Con ‹ › lo sposti allo spazio precedente o successivo; con il cestino lo togli.', 'tut.ok':'Capito', 'today.empty':'Per oggi non resta nient’altro.', 'today.more1':'E 1 altro oggi: lo vedi nella barra del tempo.', 'today.more':'E altri {n} oggi: li vedi nella barra del tempo.',
+      'tab.today':'Oggi', 'task.plan':'Pianifica', 'plan.title':'Pianifica', 'plan.sum':'Stimato {est} · pianificato {plan} · mancano {left}', 'plan.sumFull':'Stimato {est} · pianificato {plan} ✓', 'plan.sumNoEst':'Senza tempo stimato · pianificato {plan}', 'plan.noEst':'Questo compito non ha tempo stimato: ogni nuovo blocco è di 30 min.', 'plan.add':'Aggiungi blocco', 'plan.save':'Salva', 'plan.none':'Non ci sono spazi liberi prima della consegna.', 'plan.empty':'Nessun blocco. Tocca «Aggiungi blocco» per riservare tempo.', 'plan.prevGap':'Spazio precedente', 'plan.nextGap':'Spazio successivo', 'plan.remove':'Togli blocco', 'plan.gap':'Spazio libero {a}–{b}', 'plan.move':'Sposta il blocco', 'plan.startH':'Inizio del blocco', 'plan.endH':'Fine del blocco', 'toast.planSaved':'Pianificazione di «{name}» salvata', 'd.blocks':'Blocchi di lavoro', 'block.label':'Blocco di lavoro', 'legend.block':'Blocco di lavoro', 'tut.title':'Blocchi di lavoro', 'tut.1':'L’app ti propone blocchi negli spazi liberi prima della consegna.', 'tut.2':'Trascina il blocco per spostarlo, o i suoi estremi per allungarlo o accorciarlo: non esce mai dallo spazio libero.', 'tut.3':'Con ‹ › lo sposti allo spazio precedente o successivo; con il cestino lo togli.', 'tut.ok':'Capito', 'press.hint':'Tieni premuto uno spazio libero per aggiungere un evento o un blocco di lavoro.', 'press.q':'Vuoi aggiungere un evento o lavorare a un compito?', 'press.event':'Aggiungi evento', 'press.eventSub':'Dalle {a} alle {b} (fino al successivo)', 'press.task':'Lavora a un compito', 'press.taskSub':'Un blocco di lavoro che inizia qui', 'press.pick':'Quale compito?', 'press.left':'mancano {t}', 'press.allPlanned':'tutto pianificato', 'press.noTasks':'Nessun compito in sospeso con consegna successiva.', 'press.past':'Quel momento è già passato.', 'press.busy':'Lì c’è già qualcosa: tieni premuto uno spazio libero.', 'tut.4':'Puoi anche tenere premuto uno spazio libero sulla barra del tempo o nel Calendario.', 'today.empty':'Per oggi non resta nient’altro.', 'today.more1':'E 1 altro oggi: lo vedi nella barra del tempo.', 'today.more':'E altri {n} oggi: li vedi nella barra del tempo.',
       'btn.backCal':'Torna al Calendario',
       'btn.backToday':'Torna a Oggi', 'd.leave':'Partenza',
       'task.markDone':'Segna come fatto', 'task.reopen':'Riapri', 'tasks.overdue':'In ritardo',
@@ -2098,7 +2139,7 @@
       'task.deleteConfirmLinked':'Confirmer : la tâche est retirée de « {name} »', 'toast.taskSaved':'Tâche « {name} » enregistrée', 'toast.taskDeleted':'Tâche « {name} » supprimée',
       'task.ownPrio':'{p} · propre à la tâche',
       'btn.back':'Retour', 'tasks.add':'Ajouter une tâche', 'task.newTitle':'Nouvelle tâche', 'task.fromManual':'Ajoutée à la main', 'd.when':'Quand', 'd.task':'Tâche associée', 'd.origin':'Origine', 'd.prioOwn':'(propre)', 'd.prioDefault':'(celle de la catégorie)',
-      'tab.today':'Aujourd’hui', 'task.plan':'Planifier', 'plan.title':'Planifier', 'plan.sum':'Estimé {est} · planifié {plan} · reste {left}', 'plan.sumFull':'Estimé {est} · planifié {plan} ✓', 'plan.sumNoEst':'Sans temps estimé · planifié {plan}', 'plan.noEst':'Cette tâche n’a pas de temps estimé : chaque nouveau bloc dure 30 min.', 'plan.add':'Ajouter un bloc', 'plan.save':'Enregistrer', 'plan.none':'Aucun créneau libre avant l’échéance.', 'plan.empty':'Aucun bloc. Touchez « Ajouter un bloc » pour réserver du temps.', 'plan.prevGap':'Créneau précédent', 'plan.nextGap':'Créneau suivant', 'plan.remove':'Retirer le bloc', 'plan.gap':'Créneau libre {a}–{b}', 'plan.move':'Déplacer le bloc', 'plan.startH':'Début du bloc', 'plan.endH':'Fin du bloc', 'toast.planSaved':'Planification de « {name} » enregistrée', 'd.blocks':'Blocs de travail', 'block.label':'Bloc de travail', 'legend.block':'Bloc de travail', 'tut.title':'Blocs de travail', 'tut.1':'L’app propose des blocs dans les créneaux libres avant l’échéance.', 'tut.2':'Faites glisser le bloc pour le déplacer, ou ses bords pour l’allonger ou le raccourcir : il ne sort jamais du créneau libre.', 'tut.3':'Avec ‹ › vous le passez au créneau précédent ou suivant ; la corbeille le retire.', 'tut.ok':'Compris', 'today.empty':'Plus rien pour aujourd’hui.', 'today.more1':'Et 1 de plus aujourd’hui : voyez-le sur la barre de temps.', 'today.more':'Et {n} de plus aujourd’hui : voyez-les sur la barre de temps.',
+      'tab.today':'Aujourd’hui', 'task.plan':'Planifier', 'plan.title':'Planifier', 'plan.sum':'Estimé {est} · planifié {plan} · reste {left}', 'plan.sumFull':'Estimé {est} · planifié {plan} ✓', 'plan.sumNoEst':'Sans temps estimé · planifié {plan}', 'plan.noEst':'Cette tâche n’a pas de temps estimé : chaque nouveau bloc dure 30 min.', 'plan.add':'Ajouter un bloc', 'plan.save':'Enregistrer', 'plan.none':'Aucun créneau libre avant l’échéance.', 'plan.empty':'Aucun bloc. Touchez « Ajouter un bloc » pour réserver du temps.', 'plan.prevGap':'Créneau précédent', 'plan.nextGap':'Créneau suivant', 'plan.remove':'Retirer le bloc', 'plan.gap':'Créneau libre {a}–{b}', 'plan.move':'Déplacer le bloc', 'plan.startH':'Début du bloc', 'plan.endH':'Fin du bloc', 'toast.planSaved':'Planification de « {name} » enregistrée', 'd.blocks':'Blocs de travail', 'block.label':'Bloc de travail', 'legend.block':'Bloc de travail', 'tut.title':'Blocs de travail', 'tut.1':'L’app propose des blocs dans les créneaux libres avant l’échéance.', 'tut.2':'Faites glisser le bloc pour le déplacer, ou ses bords pour l’allonger ou le raccourcir : il ne sort jamais du créneau libre.', 'tut.3':'Avec ‹ › vous le passez au créneau précédent ou suivant ; la corbeille le retire.', 'tut.ok':'Compris', 'press.hint':'Maintenez appuyé un créneau libre pour ajouter un événement ou un bloc de travail.', 'press.q':'Voulez-vous ajouter un événement ou travailler sur une tâche ?', 'press.event':'Ajouter un événement', 'press.eventSub':'De {a} à {b} (jusqu’au suivant)', 'press.task':'Travailler sur une tâche', 'press.taskSub':'Un bloc de travail qui commence ici', 'press.pick':'Quelle tâche ?', 'press.left':'reste {t}', 'press.allPlanned':'tout planifié', 'press.noTasks':'Aucune tâche en attente avec une échéance plus tard.', 'press.past':'Ce moment est déjà passé.', 'press.busy':'Il y a déjà quelque chose : maintenez appuyé un créneau libre.', 'tut.4':'Vous pouvez aussi maintenir appuyé un créneau libre sur la barre de temps ou dans le Calendrier.', 'today.empty':'Plus rien pour aujourd’hui.', 'today.more1':'Et 1 de plus aujourd’hui : voyez-le sur la barre de temps.', 'today.more':'Et {n} de plus aujourd’hui : voyez-les sur la barre de temps.',
       'btn.backCal':'Retour au Calendrier',
       'btn.backToday':'Retour à Aujourd’hui', 'd.leave':'Départ',
       'task.markDone':'Marquer comme faite', 'task.reopen':'Rouvrir', 'tasks.overdue':'En retard',
@@ -2225,7 +2266,7 @@
       'task.deleteConfirmLinked':'Bestätigen: Die Aufgabe wird aus „{name}“ entfernt', 'toast.taskSaved':'Aufgabe „{name}“ gespeichert', 'toast.taskDeleted':'Aufgabe „{name}“ gelöscht',
       'task.ownPrio':'{p} · eigene der Aufgabe',
       'btn.back':'Zurück', 'tasks.add':'Aufgabe hinzufügen', 'task.newTitle':'Neue Aufgabe', 'task.fromManual':'Von Hand hinzugefügt', 'd.when':'Wann', 'd.task':'Zugehörige Aufgabe', 'd.origin':'Herkunft', 'd.prioOwn':'(eigene)', 'd.prioDefault':'(die der Kategorie)',
-      'tab.today':'Heute', 'task.plan':'Planen', 'plan.title':'Planen', 'plan.sum':'Geschätzt {est} · geplant {plan} · offen {left}', 'plan.sumFull':'Geschätzt {est} · geplant {plan} ✓', 'plan.sumNoEst':'Keine geschätzte Zeit · geplant {plan}', 'plan.noEst':'Diese Aufgabe hat keine geschätzte Zeit: Jeder neue Block dauert 30 Min.', 'plan.add':'Block hinzufügen', 'plan.save':'Speichern', 'plan.none':'Vor der Abgabe gibt es keine freien Lücken.', 'plan.empty':'Keine Blöcke. Tippe auf „Block hinzufügen“, um Zeit zu reservieren.', 'plan.prevGap':'Vorherige Lücke', 'plan.nextGap':'Nächste Lücke', 'plan.remove':'Block entfernen', 'plan.gap':'Freie Lücke {a}–{b}', 'plan.move':'Block verschieben', 'plan.startH':'Blockbeginn', 'plan.endH':'Blockende', 'toast.planSaved':'Plan für „{name}“ gespeichert', 'd.blocks':'Arbeitsblöcke', 'block.label':'Arbeitsblock', 'legend.block':'Arbeitsblock', 'tut.title':'Arbeitsblöcke', 'tut.1':'Die App schlägt Blöcke in den freien Lücken vor der Abgabe vor.', 'tut.2':'Zieh den Block, um ihn zu verschieben, oder seine Enden, um ihn zu verlängern oder zu kürzen: Er verlässt nie die freie Lücke.', 'tut.3':'Mit ‹ › geht er zur vorherigen oder nächsten Lücke; der Papierkorb entfernt ihn.', 'tut.ok':'Verstanden', 'today.empty':'Für heute steht nichts mehr an.', 'today.more1':'Und 1 weiterer heute: siehe Zeitleiste.', 'today.more':'Und {n} weitere heute: siehe Zeitleiste.',
+      'tab.today':'Heute', 'task.plan':'Planen', 'plan.title':'Planen', 'plan.sum':'Geschätzt {est} · geplant {plan} · offen {left}', 'plan.sumFull':'Geschätzt {est} · geplant {plan} ✓', 'plan.sumNoEst':'Keine geschätzte Zeit · geplant {plan}', 'plan.noEst':'Diese Aufgabe hat keine geschätzte Zeit: Jeder neue Block dauert 30 Min.', 'plan.add':'Block hinzufügen', 'plan.save':'Speichern', 'plan.none':'Vor der Abgabe gibt es keine freien Lücken.', 'plan.empty':'Keine Blöcke. Tippe auf „Block hinzufügen“, um Zeit zu reservieren.', 'plan.prevGap':'Vorherige Lücke', 'plan.nextGap':'Nächste Lücke', 'plan.remove':'Block entfernen', 'plan.gap':'Freie Lücke {a}–{b}', 'plan.move':'Block verschieben', 'plan.startH':'Blockbeginn', 'plan.endH':'Blockende', 'toast.planSaved':'Plan für „{name}“ gespeichert', 'd.blocks':'Arbeitsblöcke', 'block.label':'Arbeitsblock', 'legend.block':'Arbeitsblock', 'tut.title':'Arbeitsblöcke', 'tut.1':'Die App schlägt Blöcke in den freien Lücken vor der Abgabe vor.', 'tut.2':'Zieh den Block, um ihn zu verschieben, oder seine Enden, um ihn zu verlängern oder zu kürzen: Er verlässt nie die freie Lücke.', 'tut.3':'Mit ‹ › geht er zur vorherigen oder nächsten Lücke; der Papierkorb entfernt ihn.', 'tut.ok':'Verstanden', 'press.hint':'Halte eine freie Lücke gedrückt, um einen Termin oder einen Arbeitsblock hinzuzufügen.', 'press.q':'Möchtest du einen Termin hinzufügen oder an einer Aufgabe arbeiten?', 'press.event':'Termin hinzufügen', 'press.eventSub':'Von {a} bis {b} (bis zum nächsten Eintrag)', 'press.task':'An einer Aufgabe arbeiten', 'press.taskSub':'Ein Arbeitsblock, der hier beginnt', 'press.pick':'Welche Aufgabe?', 'press.left':'offen {t}', 'press.allPlanned':'alles geplant', 'press.noTasks':'Keine offenen Aufgaben mit späterer Abgabe.', 'press.past':'Dieser Zeitpunkt ist schon vorbei.', 'press.busy':'Da ist schon etwas: Halte eine freie Lücke gedrückt.', 'tut.4':'Du kannst auch eine freie Lücke in der Zeitleiste oder im Kalender gedrückt halten.', 'today.empty':'Für heute steht nichts mehr an.', 'today.more1':'Und 1 weiterer heute: siehe Zeitleiste.', 'today.more':'Und {n} weitere heute: siehe Zeitleiste.',
       'btn.backCal':'Zurück zum Kalender',
       'btn.backToday':'Zurück zu Heute', 'd.leave':'Abfahrt',
       'task.markDone':'Als erledigt markieren', 'task.reopen':'Wieder öffnen', 'tasks.overdue':'Überfällig',
@@ -2352,6 +2393,7 @@
   function showScreen(btn){
     // Con un formulario abierto, cambiar de pestaña pide confirmación
     if(openForm() && !btn.classList.contains('is-active')){ pendingTab = btn; el('discard-dialog').showModal(); return; }
+    PRESS_BACK = null;
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('is-active'));
     btn.classList.add('is-active');
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -3449,6 +3491,7 @@
   });
   // Cancelar el formulario vuelve a la ficha (al editar) o a la lista (al añadir)
   function closeEventForm(){
+    if(PRESS_BACK){ PRESS_BACK(); return; }
     if(editingEvent){ openEvent(editingEvent.id); } else { showView('evt', 'list'); }
   }
   function openEvent(id){
@@ -3546,7 +3589,7 @@
     renderEvents();
     renderTasks();
     renderCalendar(calView);
-    openEvent(data.id);
+    if(PRESS_BACK){ PRESS_BACK(); } else { openEvent(data.id); }
     toast(t('toast.evtSaved', { name: data.name }));
   }
 
@@ -4167,13 +4210,20 @@
 
   /* ---- Pantalla «Planificar» ---- */
   var PLAN = null;   // { key, x, drafts }
-  function openPlan(key){
+  // at (pulsación larga): { date, h, back } → un bloque nuevo que empieza en ese punto
+  function openPlan(key, at){
     var x = allTasks().filter(function(it){ return it.key === key; })[0];
     if(!x){ return; }
     var drafts = blocksOf(key).map(function(b){ return Object.assign({}, b); });
-    PLAN = { key:key, x:x, drafts:drafts };
+    PLAN = { key:key, x:x, drafts:drafts, back: at && at.back };
+    if(at){
+      var left = x.est ? x.est / 60 - blockHours(drafts) : 0;
+      if(left < BLOCK_MIN - 1e-9){ left = BLOCK_NEW; }
+      var g = planGaps(x.due, [], drafts).filter(function(g){ return g.date === at.date && g.s <= at.h + 1e-9 && g.e >= at.h + BLOCK_MIN - 1e-9; })[0];
+      if(g){ drafts.push({ id:'b' + Date.now().toString(36), task:key, date:at.date, start:at.h, end:at.h + Math.min(left, BLOCK_MAX, g.e - at.h) }); }
+    }
     // Sin bloques: la App propone los suyos para lo que falta
-    if(!drafts.length && x.est){ PLAN.drafts = suggestBlocks(x, x.est / 60, []); }
+    else if(!drafts.length && x.est){ PLAN.drafts = suggestBlocks(x, x.est / 60, []); }
     el('task-list-view').hidden = true; el('task-detail').hidden = true; el('task-form').hidden = true;
     el('task-plan').hidden = false;
     el('task-plan').closest('.screen').parentElement.scrollTop = 0;
@@ -4189,9 +4239,9 @@
   }
   function closePlan(){
     el('task-plan').hidden = true;
-    var key = PLAN && PLAN.key;
+    var key = PLAN && PLAN.key, back = PLAN && PLAN.back;
     PLAN = null;
-    if(key){ openTask(key); } else { showView('task', 'list'); }
+    if(back){ back(); } else if(key){ openTask(key); } else { showView('task', 'list'); }
   }
   function savePlan(ev){
     if(ev){ ev.preventDefault(); }
@@ -4323,6 +4373,114 @@
     if(card){ card.querySelector('[data-mode="' + mode + '"]').focus(); }
   });
 
+  /* ================= PULSACIÓN LARGA ================= */
+  // Mantener pulsado un hueco libre de la barra de tiempo de «Hoy» o del Calendario pregunta si se
+  // quiere añadir un evento (fecha y hora de ese punto; dura hasta el siguiente elemento) o
+  // trabajar en una tarea (como «Planificar», con un bloque que empieza en ese punto).
+  var PRESS_MS = 550, PRESS = null, PRESS_BACK = null, CAL_POS = null;
+  function onLongPress(host, where, fire){
+    var timer = null, sx = 0, sy = 0, fired = false, mark = null;
+    function clear(){ clearTimeout(timer); timer = null; if(mark){ mark.remove(); mark = null; } }
+    host.addEventListener('pointerdown', function(ev){
+      if(ev.button > 0){ return; }
+      var at = where(ev);
+      if(!at){ return; }
+      sx = ev.clientX; sy = ev.clientY; fired = false;
+      clear();
+      mark = document.createElement('div'); mark.className = 'press-mark';
+      mark.style.left = sx + 'px'; mark.style.top = sy + 'px';
+      document.body.appendChild(mark);
+      timer = setTimeout(function(){ clear(); fired = true; fire(at); }, PRESS_MS);
+    });
+    host.addEventListener('pointermove', function(ev){ if(timer && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 10){ clear(); } });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(n){ host.addEventListener(n, function(){ if(timer){ clear(); } }); });
+    host.addEventListener('contextmenu', function(ev){ ev.preventDefault(); });
+    // tras la pulsación larga no cuenta el «clic» de soltar
+    host.addEventListener('click', function(ev){ if(fired){ fired = false; ev.stopPropagation(); ev.preventDefault(); } }, true);
+  }
+  // Inversa de una escala creciente (horas → posición) por bisección
+  function invScale(pos, v, lo, hi){
+    for(var i = 0; i < 40; i++){ var m = (lo + hi) / 2; if(pos(m) < v){ lo = m; } else { hi = m; } }
+    return (lo + hi) / 2;
+  }
+  // Calendario: en una columna de día, fuera de los bloques
+  onLongPress(el('cal-grid'), function(ev){
+    var col = ev.target.closest('.cal-daycol');
+    if(!col || ev.target.closest('.cal-bar') || !CAL_POS){ return null; }
+    var y = ev.clientY - col.getBoundingClientRect().top;
+    return { iso: isoOf(WEEK_DAYS[+col.dataset.day].d), h: invScale(CAL_POS, y, CAL_START, CAL_END), from:'calendar' };
+  }, pressAt);
+  // Barra de tiempo de «Hoy» (Puntos o Niña soldado)
+  onLongPress(el('today-bar'), function(ev){
+    var r = todayScale(), box, frac;
+    var svg = ev.target.closest('svg');
+    if(APPEARANCE.bar === 'nina' && svg){
+      box = svg.getBoundingClientRect();
+      var vb = svg.viewBox.baseVal, x = vb.x + (ev.clientX - box.left) / box.width * vb.width;
+      frac = (x - TL_X0) / (TL_X1 - TL_X0);
+    } else {
+      var strip = el('today-bar').querySelector('.day-strip');
+      if(!strip){ return null; }
+      box = strip.getBoundingClientRect(); frac = (ev.clientX - box.left) / box.width;
+    }
+    if(frac < 0 || frac > 1){ return null; }
+    return { iso: isoOf(TODAY_DATE), h: invScale(r.pos, frac, r.start, r.end), from:'today' };
+  }, pressAt);
+
+  function pressAt(at){
+    var now = demoNow(), nowH = now.getHours() + now.getMinutes() / 60, today = isoOf(now);
+    var h = Math.round(at.h * 4) / 4;   // al cuarto de hora
+    if(at.iso < today || (at.iso === today && at.h < nowH)){ toast(t('press.past')); return; }
+    var l = planLimits(at.iso, null);
+    var gap = freeGaps(at.iso, l.from, 24, [], []).filter(function(g){ return g[0] <= at.h + 1e-9 && g[1] >= at.h - 1e-9; })[0];
+    if(!gap){ toast(t('press.busy')); return; }
+    h = Math.min(Math.max(h, gap[0]), gap[1] - BLOCK_MIN);
+    if(h < gap[0] - 1e-9){ toast(t('press.busy')); return; }
+    PRESS = { iso: at.iso, h: h, end: gap[1], from: at.from };
+    el('press-title').textContent = fmtDay(at.iso) + ' · ' + fmtHour(h);
+    el('press-q').textContent = t('press.q');
+    el('press-event-sub').textContent = t('press.eventSub', { a: fmtHour(h), b: fmtHour(gap[1]) });
+    el('press-main').hidden = false; el('press-tasks').hidden = true;
+    el('press-dialog').showModal();
+  }
+  function closePress(){ el('press-dialog').close(); PRESS = null; }
+  // A dónde se vuelve al guardar o cancelar lo abierto con la pulsación larga
+  function pressBack(from, f){
+    return function(){
+      PRESS_BACK = null;
+      showView(f, 'list');
+      document.querySelector('.tab[data-screen="' + (from === 'today' ? 'today' : 'calendar') + '"]').click();
+    };
+  }
+  // Evento: formulario nuevo con fecha, hora y duración (hasta el siguiente elemento)
+  function pressEvent(){
+    var p = PRESS; closePress();
+    document.querySelector('.tab[data-screen="events"]').click();
+    openEventForm();
+    el('evt-date').value = p.iso;
+    el('evt-time').value = fmtHour(p.h);
+    setDur('evt-dur', Math.round((p.end - p.h) * 60 / 5) * 5);
+    PRESS_BACK = pressBack(p.from, 'evt');
+  }
+  // Trabajar en una tarea: las pendientes cuya entrega es posterior a ese momento
+  function pressTaskList(){
+    var p = PRESS, when = atTime(p.iso, fmtHour(p.h));
+    var list = allTasks().filter(function(x){ return !x.done && x.due && x.due > when; });
+    el('press-q').textContent = t('press.pick');
+    el('press-main').hidden = true; el('press-tasks').hidden = false;
+    el('press-tasks').innerHTML = list.length ? list.map(function(x){
+      var left = x.est ? Math.max(0, x.est - Math.round(blockHours(blocksOf(x.key)) * 60)) : 0;
+      return '<button type="button" class="press-choice" onclick="pressTask(\'' + x.key + '\')">' + TASK_SVG +
+        '<span><strong>' + esc(x.name) + '</strong><small>' + t('task.dueAt', { t: fmtWhen(x.due) }) +
+        (x.est ? ' · ' + (left ? t('press.left', { t: fmtEst(left) }) : t('press.allPlanned')) : '') + '</small></span></button>';
+    }).join('') : '<p class="press-empty">' + t('press.noTasks') + '</p>';
+  }
+  function pressTask(key){
+    var p = PRESS; closePress();
+    document.querySelector('.tab[data-screen="tasks"]').click();
+    openPlan(key, { date: p.iso, h: p.h, back: pressBack(p.from, 'task') });
+  }
+
   el('task-form').addEventListener('input', function(ev){
     ev.target.classList.remove('is-invalid');
     var pair = ev.target.closest('.dur-input');
@@ -4427,6 +4585,7 @@
       if(clash){ base = {on:false}; }
     }
     var sc = calScale(base), pos = sc.pos;
+    CAL_POS = pos;
 
     grid.style.gridTemplateColumns = '34px repeat(' + days.length + ', minmax(0, 1fr))';
     grid.style.columnGap = isWeek ? '2px' : '0';
@@ -4476,6 +4635,7 @@
       var realDay = isWeek ? i : TODAY_DAY;
       var col = document.createElement('div');
       col.className = 'cal-daycol' + (d.isToday ? ' is-today' : '');
+      col.dataset.day = realDay;
       col.style.height = CAL_BODY_PX + 'px';
 
       lines.forEach(function(hr){
