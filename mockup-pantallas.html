@@ -164,7 +164,6 @@
 
   /* ---- Barra de tiempo «Puntos»: color de categoría + línea en la hora actual ---- */
   @keyframes needlePulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(43,41,37,.5); } 70%{ box-shadow:0 0 0 10px rgba(43,41,37,0); } }
-  @keyframes amberPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(232,184,57,.65); } 70%{ box-shadow:0 0 0 12px rgba(232,184,57,0); } }
   .day-strip{ position:relative; height:78px; }
   .day-strip .bar{
     position:absolute; left:0; right:0; top:32px; height:12px; border-radius:999px;
@@ -268,9 +267,13 @@
      30 min o menos: borde y texto rojo oscuro (todo en negrita), relleno del color de la categoría */
   :root{ --calm-fill:color-mix(in srgb, var(--bg) 88%, #000); --amber-line:#e0a100; --amber-text:#7a5000; --red-line:#a31515; --red-text:#8b1111; }
   :root[data-theme="dark"]{ --calm-fill:color-mix(in srgb, var(--bg) 72%, #000); }
-  .next-card.st-calm{ --st-line:var(--c-ink); --st-text:var(--c-ink); --st-fill:var(--calm-fill); }
-  .next-card.st-soon{ --st-line:var(--amber-line); --st-text:var(--amber-text); --st-fill:var(--c); }
-  .next-card.st-urgent{ --st-line:var(--red-line); --st-text:var(--red-text); --st-fill:var(--c); }
+  /* (también el punto del próximo en la barra de tiempo) */
+  .st-calm{ --st-line:var(--c-ink); --st-text:var(--c-ink); --st-fill:var(--calm-fill); }
+  .st-soon{ --st-line:var(--amber-line); --st-text:var(--amber-text); --st-fill:var(--c); }
+  .st-urgent{ --st-line:var(--red-line); --st-text:var(--red-text); --st-fill:var(--c); }
+  .day-strip .marker.next-dot{ background:var(--st-fill); border:3px solid var(--st-line); animation:statePulse 2.2s ease-out infinite; }
+  .day-strip .stem.next-stem{ background:var(--st-line); }
+  @keyframes statePulse{ 0%,100%{ box-shadow:0 0 0 0 color-mix(in srgb, var(--st-line) 60%, transparent); } 70%{ box-shadow:0 0 0 10px color-mix(in srgb, var(--st-line) 0%, transparent); } }
   .up-next-card.next-card, .hero-card.next-card, .pi-next.next-card{ background:var(--st-fill); color:var(--st-text); border:3px solid var(--st-line); }
   .pi-next.next-card{ box-shadow:0 3px 0 var(--st-line); }
   .hero-card.next-card{ animation:breathe 3.2s ease-in-out infinite; }
@@ -349,7 +352,7 @@
   .n-leave{ display:flex; align-items:center; gap:5px; font-size:11px; font-weight:700; margin-top:5px; }
 
   @media (prefers-reduced-motion: reduce){
-    .now-dot, .pulse-amber, .boom, .spark, .w-bob, .ponytail, .hero-card, .fan-card,
+    .now-dot, .next-dot, .boom, .spark, .w-bob, .ponytail, .hero-card, .fan-card,
     .pi-next::after, .note, .note-card, .note-shadow{ animation:none !important; }
     .note{ transition-duration:.01s; }
   }
@@ -2260,8 +2263,10 @@
     todayEvents().forEach(function(e){
       var p = pct(e.t), end = p > 97 ? ' at-end' : '';
       if(e.next){
-        html += '<div class="marker pulse-amber' + end + '" style="left:' + p + '%; top:18px; width:16px; height:16px; background:var(--warn-bg);"></div>' +
-                '<div class="stem' + end + '" style="left:' + p + '%; top:44px; height:14px; width:2px; background:var(--warn-bg);"></div>';
+        // Mismo código de color que la tarjeta del próximo (según lo que falta)
+        var st = nextState(e.t) + '" style="' + catVars(e.cat) + ';left:' + p + '%;';
+        html += '<div class="marker next-dot ' + st + ' top:16px; width:20px; height:20px;"></div>' +
+                '<div class="stem next-stem ' + st + ' top:44px; height:14px; width:2px;"></div>';
       } else {
         html += '<div class="marker' + end + '" style="left:' + p + '%; top:28px; width:9px; height:9px; background:' + catColor(e.cat) + ';"></div>' +
                 '<div class="stem' + end + '" style="left:' + p + '%; top:44px; height:12px; background:' + catColor(e.cat) + ';"></div>';
@@ -2296,6 +2301,8 @@
 
   function explosion(e, i, x){
     var big = !!e.next, color = catColor(e.cat), sparks = '';
+    // El próximo lleva el contorno del código de color (categoría / ámbar / rojo oscuro)
+    var line = big ? { 'st-calm':'var(--cat-' + e.cat + '-ink)', 'st-soon':'var(--amber-line)', 'st-urgent':'var(--red-line)' }[nextState(e.t)] : 'var(--ink)';
     if(big){
       for(var k = 0; k < 6; k++){
         var a = k / 6 * Math.PI * 2 + .3;
@@ -2305,7 +2312,7 @@
     }
     return '<g transform="translate(' + x.toFixed(1) + ' ' + TL_Y + ')">' + sparks +
       '<g class="boom' + (big ? ' is-next' : '') + '" style="--dur:' + (2.6 + i * .45) + 's;--delay:' + (-i * .7) + 's">' +
-        '<polygon points="' + boomPoints(7 + i * 13, big ? 18 : 14.5, 7.5, 11) + '" fill="' + color + '" stroke="var(--ink)" stroke-width="1.3" stroke-linejoin="round"/>' +
+        '<polygon points="' + boomPoints(7 + i * 13, big ? 18 : 14.5, 7.5, 11) + '" fill="' + color + '" stroke="' + line + '" stroke-width="' + (big ? 2.6 : 1.3) + '" stroke-linejoin="round"/>' +
         '<polygon points="' + boomPoints(3 + i * 29, big ? 9.5 : 7.5, 4.4, 9) + '" fill="' + (big ? '#ffe066' : '#fff4c2') + '" stroke="var(--ink)" stroke-width=".9" stroke-linejoin="round"/>' +
       '</g></g>';
   }

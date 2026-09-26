@@ -110,6 +110,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Más de 1 h: borde y texto del color de la categoría; relleno algo más oscuro que el fondo.
   - Entre 1 h y 30 min: borde y texto en **ámbar**, todo en negrita; relleno del color de la categoría.
   - 30 min o menos: borde y texto en **rojo oscuro**, todo en negrita; relleno del color de la categoría.
+  - El **punto del próximo deadline en la barra de tiempo** sigue el mismo código (borde y relleno; en la barra de la niña, el contorno de su explosión).
 - Muestra los deadlines del día: hora de inicio de actividades/citas programadas, y para tareas de Classroom, la hora de entrega como deadline.
 - Si un evento implica desplazamiento, se muestran **dos datos**: el deadline en sí, y la hora de salida calculada según el tiempo de traslado (Google Maps).
   - Distancias menores de 1 km: preguntar al usuario si se va andando.
