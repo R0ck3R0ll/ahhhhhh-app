@@ -484,6 +484,16 @@
   .session-row .txt-input{ flex:1; min-width:0; padding:9px 4px; text-align:center; }
   #act-list-wrap[hidden], #act-form[hidden], #act-list-view[hidden], .card-hint[hidden]{ display:none; }
 
+  /* Filas que se abren pulsando encima */
+  .row-open{ cursor:pointer; }
+  .row-open:hover{ background:var(--surface-alt); }
+  .row-open:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .row-chev{ flex:none; align-self:center; color:var(--text-muted); }
+  .task-origin{ margin:0; font-size:12.5px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+  .task-origin strong{ color:var(--text); }
+  .est-missing{ color:var(--warn-ink); font-weight:700; }
+  #task-list-wrap[hidden], #task-form[hidden], #task-list-view[hidden], #tk-due-row[hidden], #tk-due-auto[hidden], .context-note[hidden]{ display:none; }
+
   .confirm-dialog{
     width:min(420px, calc(100vw - 32px)); border:1px solid var(--border); border-radius:16px; padding:18px;
     background:var(--surface); color:var(--text); box-shadow:var(--shadow); font-family:var(--font-body);
@@ -726,10 +736,10 @@
   /* ---- Tab bar ---- */
   .tabbar{
     position:sticky; bottom:0;
-    display:grid; grid-template-columns:repeat(5,1fr);
+    display:grid; grid-template-columns:repeat(6,1fr);
     border-top:1px solid var(--border);
     background:var(--surface);
-    padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+    padding:8px 4px calc(8px + env(safe-area-inset-bottom));
   }
   .tab{
     display:flex; flex-direction:column; align-items:center; gap:3px;
@@ -740,6 +750,9 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
   }
   .tab svg{ flex:none; }
+  @media (max-width:380px){ .tab{ font-size:9px; letter-spacing:-.01em; } }
+  /* Móviles estrechos: cada pestaña ocupa lo que necesita su texto */
+  @media (max-width:340px){ .tabbar{ display:flex; justify-content:space-between; padding-left:2px; padding-right:2px; } .tab{ flex:0 1 auto; font-size:8.4px; letter-spacing:-.03em; padding:6px 1px; } }
   .tab.is-active{ color:var(--accent); }
   .tab:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
 
@@ -836,6 +849,7 @@
             <button type="button" class="toggle-btn" role="radio" data-prio="Media" onclick="setFormPrio('act', this)" data-i18n="prio.Media"></button>
             <button type="button" class="toggle-btn" role="radio" data-prio="Baja" onclick="setFormPrio('act', this)" data-i18n="prio.Baja"></button>
           </div>
+          <p class="card-hint" data-i18n="hint.prio"></p>
         </div>
 
         <label class="fld">
@@ -945,6 +959,7 @@
             <button type="button" class="toggle-btn" role="radio" data-prio="Media" onclick="setFormPrio('evt', this)" data-i18n="prio.Media"></button>
             <button type="button" class="toggle-btn" role="radio" data-prio="Baja" onclick="setFormPrio('evt', this)" data-i18n="prio.Baja"></button>
           </div>
+          <p class="card-hint" data-i18n="hint.prio"></p>
         </div>
 
         <label class="fld">
@@ -1214,6 +1229,68 @@
 
     </section>
 
+    <!-- ============ TAREAS ============ -->
+    <!-- Todas las tareas (Classroom, eventos y actividades): se abren pulsando encima y se editan aquí -->
+    <section class="screen" id="screen-tasks" aria-labelledby="screen-heading">
+      <div id="task-list-view" class="evt-view">
+        <div id="task-list-wrap" hidden>
+          <h2 class="section-title" data-i18n="tasks.title"></h2>
+          <div class="row-list" id="task-list"></div>
+        </div>
+        <p class="context-note" id="task-empty" data-i18n="tasks.empty"></p>
+      </div>
+
+      <form id="task-form" class="evt-form" hidden novalidate onsubmit="saveTask(event)">
+        <h2 class="section-title" data-i18n="task.editTitle"></h2>
+        <p class="task-origin" id="tk-origin"></p>
+
+        <label class="fld">
+          <span class="field-label" data-i18n="task.name"></span>
+          <input class="txt-input" id="tk-name" type="text" autocomplete="off">
+        </label>
+        <div class="fld-row" id="tk-due-row">
+          <label class="fld">
+            <span class="field-label" data-i18n="task.dueDate"></span>
+            <input class="txt-input" id="tk-date" type="date">
+          </label>
+          <label class="fld fld-time">
+            <span class="field-label" data-i18n="task.dueTime"></span>
+            <input class="txt-input" id="tk-time" type="time">
+          </label>
+        </div>
+        <div class="fld" id="tk-due-auto" hidden>
+          <span class="field-label" data-i18n="task.dueDate"></span>
+          <span class="prio-copy" id="tk-due-auto-text"></span>
+        </div>
+        <div class="fld">
+          <span class="field-label" id="tk-est-label" data-i18n="task.est"></span>
+          <div class="dur-input" role="group" aria-labelledby="tk-est-label">
+            <input class="txt-input" id="tk-est-h" type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-i18n-aria="aria.hours"><span>h</span>
+            <input class="txt-input" id="tk-est-m" type="number" inputmode="numeric" min="0" max="59" step="5" placeholder="00" data-i18n-aria="aria.minutes"><span>min</span>
+          </div>
+        </div>
+        <div class="fld">
+          <span class="field-label" id="tk-prio-label" data-i18n="f.prio"></span>
+          <div class="toggle-row prio-row" id="tk-prio" role="radiogroup" aria-labelledby="tk-prio-label">
+            <button type="button" class="toggle-btn" role="radio" data-prio="Alta" onclick="setTaskPrio(this)" data-i18n="prio.Alta"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Media" onclick="setTaskPrio(this)" data-i18n="prio.Media"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Baja" onclick="setTaskPrio(this)" data-i18n="prio.Baja"></button>
+          </div>
+          <p class="card-hint" id="tk-prio-hint"></p>
+        </div>
+        <label class="fld">
+          <span class="field-label"><span data-i18n="f.desc"></span> <span class="fld-opt" data-i18n="f.optional"></span></span>
+          <textarea class="txt-input" id="tk-desc" rows="3" data-i18n-ph="f.taskDescPh"></textarea>
+        </label>
+
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" onclick="closeTaskForm()" data-i18n="btn.cancel"></button>
+          <button type="submit" class="btn-primary" data-i18n="btn.save"></button>
+        </div>
+        <button type="button" class="btn-danger" id="tk-delete" onclick="deleteTask(this)"></button>
+      </form>
+    </section>
+
     <!-- ============ CALENDARIO ============ -->
     <section class="screen" id="screen-calendar" aria-labelledby="screen-heading">
       <div class="cal-head">
@@ -1247,6 +1324,10 @@
     <button class="tab" data-screen="events" data-title="tab.events" data-sub="sub.events" onclick="showScreen(this)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/></svg>
       <span data-i18n="tab.events"></span>
+    </button>
+    <button class="tab" data-screen="tasks" data-title="tab.tasks" data-sub="sub.tasks" onclick="showScreen(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span data-i18n="tab.tasks"></span>
     </button>
     <button class="tab" data-screen="calendar" data-title="tab.calendar" data-sub="sub.calendar" onclick="showScreen(this)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
@@ -1365,6 +1446,14 @@
       'legend.event':'Evento', 'legend.task':'Tarea (deadline)',
       'tab.activities':'Actividades', 'sub.activities':'Extraescolares recurrentes de {name}',
       'tab.events':'Eventos', 'sub.events':'Eventos puntuales de {name}',
+      'tab.tasks':'Tareas', 'sub.tasks':'Entregas y tareas de {name}', 'tasks.title':'Próximas entregas',
+      'tasks.empty':'Aún no hay tareas. Llegarán de Classroom y de los eventos y actividades que generen una tarea.', 'task.editTitle':'Tarea', 'f.taskDescPh':'Detalles, material, instrucciones…',
+      'hint.prio':'Por defecto, la de la categoría. Cambiarla aquí solo afecta a este elemento, no a la categoría.', 'task.fromClassroom':'Classroom · {name}', 'task.fromEvent':'Evento · {name}',
+      'task.fromAct':'Actividad · {name}', 'task.dueAt':'entrega {t}', 'task.noEst':'falta tiempo estimado',
+      'task.dueNextAt':'La siguiente sesión: {t}', 'hint.taskPrioEvt':'Por defecto, la del evento ({p}). Cambiarla aquí solo afecta a esta tarea.', 'hint.taskPrioAct':'Por defecto, la de la actividad ({p}). Cambiarla aquí solo afecta a esta tarea.',
+      'hint.taskPrioCat':'Por defecto, la de la categoría Tarea ({p}). Cambiarla aquí solo afecta a esta tarea.', 'task.delete':'Eliminar tarea', 'task.deleteConfirm':'Confirmar eliminación',
+      'task.deleteConfirmLinked':'Confirmar: se quita la tarea de «{name}»', 'toast.taskSaved':'Tarea «{name}» guardada', 'toast.taskDeleted':'Tarea «{name}» eliminada',
+      'task.ownPrio':'{p} · propia de la tarea',
       'tab.calendar':'Calendario', 'sub.calendar':'Actividades en vista día o semana',
       'tab.config':'Config', 'title.config':'Configuración', 'sub.config':'Idioma, aspecto, horarios, enlaces y categorías',
       'today.soon':'Se acerca · faltan {t}', 'today.later':'Más tarde', 'today.leaves':'{place} · sale {leave} {how}',
@@ -1474,6 +1563,14 @@
       'legend.event':'Event', 'legend.task':'Homework (deadline)',
       'tab.activities':'Activities', 'sub.activities':'{name}’s recurring after-school activities',
       'tab.events':'Events', 'sub.events':'{name}’s one-off events',
+      'tab.tasks':'Tasks', 'sub.tasks':'{name}’s tasks and deadlines', 'tasks.title':'Upcoming deadlines',
+      'tasks.empty':'No tasks yet. They’ll come from Classroom and from events and activities that create a task.', 'task.editTitle':'Task', 'f.taskDescPh':'Details, materials, instructions…',
+      'hint.prio':'By default, the category’s. Changing it here only affects this item, not the category.', 'task.fromClassroom':'Classroom · {name}', 'task.fromEvent':'Event · {name}',
+      'task.fromAct':'Activity · {name}', 'task.dueAt':'due {t}', 'task.noEst':'estimated time missing',
+      'task.dueNextAt':'The next session: {t}', 'hint.taskPrioEvt':'By default, the event’s ({p}). Changing it here only affects this task.', 'hint.taskPrioAct':'By default, the activity’s ({p}). Changing it here only affects this task.',
+      'hint.taskPrioCat':'By default, the Homework category’s ({p}). Changing it here only affects this task.', 'task.delete':'Delete task', 'task.deleteConfirm':'Confirm deletion',
+      'task.deleteConfirmLinked':'Confirm: the task is removed from “{name}”', 'toast.taskSaved':'Task “{name}” saved', 'toast.taskDeleted':'Task “{name}” deleted',
+      'task.ownPrio':'{p} · set for this task',
       'tab.calendar':'Calendar', 'sub.calendar':'Activities by day or week',
       'tab.config':'Settings', 'title.config':'Settings', 'sub.config':'Language, appearance, schedules, connections and categories',
       'today.soon':'Coming up · in {t}', 'today.later':'Later', 'today.leaves':'{place} · leave {leave} {how}',
@@ -1583,6 +1680,14 @@
       'legend.event':'Evento', 'legend.task':'Compito (scadenza)',
       'tab.activities':'Attività', 'sub.activities':'Attività extrascolastiche ricorrenti di {name}',
       'tab.events':'Eventi', 'sub.events':'Eventi singoli di {name}',
+      'tab.tasks':'Compiti', 'sub.tasks':'Compiti e consegne di {name}', 'tasks.title':'Prossime consegne',
+      'tasks.empty':'Ancora nessun compito. Arriveranno da Classroom e dagli eventi e attività che generano un compito.', 'task.editTitle':'Compito', 'f.taskDescPh':'Dettagli, materiale, istruzioni…',
+      'hint.prio':'Per impostazione predefinita, quella della categoria. Cambiarla qui vale solo per questo elemento, non per la categoria.', 'task.fromClassroom':'Classroom · {name}', 'task.fromEvent':'Evento · {name}',
+      'task.fromAct':'Attività · {name}', 'task.dueAt':'consegna {t}', 'task.noEst':'manca il tempo stimato',
+      'task.dueNextAt':'La sessione successiva: {t}', 'hint.taskPrioEvt':'Per impostazione predefinita, quella dell’evento ({p}). Cambiarla qui vale solo per questo compito.', 'hint.taskPrioAct':'Per impostazione predefinita, quella dell’attività ({p}). Cambiarla qui vale solo per questo compito.',
+      'hint.taskPrioCat':'Per impostazione predefinita, quella della categoria Compito ({p}). Cambiarla qui vale solo per questo compito.', 'task.delete':'Elimina compito', 'task.deleteConfirm':'Conferma eliminazione',
+      'task.deleteConfirmLinked':'Conferma: il compito viene tolto da «{name}»', 'toast.taskSaved':'Compito «{name}» salvato', 'toast.taskDeleted':'Compito «{name}» eliminato',
+      'task.ownPrio':'{p} · propria del compito',
       'tab.calendar':'Calendario', 'sub.calendar':'Attività in vista giorno o settimana',
       'tab.config':'Opzioni', 'title.config':'Impostazioni', 'sub.config':'Lingua, aspetto, orari, collegamenti e categorie',
       'today.soon':'Sta arrivando · mancano {t}', 'today.later':'Più tardi', 'today.leaves':'{place} · partenza {leave} {how}',
@@ -1692,6 +1797,14 @@
       'legend.event':'Événement', 'legend.task':'Devoir (échéance)',
       'tab.activities':'Activités', 'sub.activities':'Activités extrascolaires récurrentes de {name}',
       'tab.events':'Événements', 'sub.events':'Événements ponctuels de {name}',
+      'tab.tasks':'Tâches', 'sub.tasks':'Tâches et échéances de {name}', 'tasks.title':'Prochaines échéances',
+      'tasks.empty':'Pas encore de tâches. Elles viendront de Classroom et des événements et activités qui créent une tâche.', 'task.editTitle':'Tâche', 'f.taskDescPh':'Détails, matériel, consignes…',
+      'hint.prio':'Par défaut, celle de la catégorie. La modifier ici ne concerne que cet élément, pas la catégorie.', 'task.fromClassroom':'Classroom · {name}', 'task.fromEvent':'Événement · {name}',
+      'task.fromAct':'Activité · {name}', 'task.dueAt':'échéance {t}', 'task.noEst':'temps estimé manquant',
+      'task.dueNextAt':'La séance suivante : {t}', 'hint.taskPrioEvt':'Par défaut, celle de l’événement ({p}). La modifier ici ne concerne que cette tâche.', 'hint.taskPrioAct':'Par défaut, celle de l’activité ({p}). La modifier ici ne concerne que cette tâche.',
+      'hint.taskPrioCat':'Par défaut, celle de la catégorie Devoir ({p}). La modifier ici ne concerne que cette tâche.', 'task.delete':'Supprimer la tâche', 'task.deleteConfirm':'Confirmer la suppression',
+      'task.deleteConfirmLinked':'Confirmer : la tâche est retirée de « {name} »', 'toast.taskSaved':'Tâche « {name} » enregistrée', 'toast.taskDeleted':'Tâche « {name} » supprimée',
+      'task.ownPrio':'{p} · propre à la tâche',
       'tab.calendar':'Calendrier', 'sub.calendar':'Activités en vue jour ou semaine',
       'tab.config':'Réglages', 'title.config':'Réglages', 'sub.config':'Langue, apparence, horaires, liens et catégories',
       'today.soon':'Bientôt · dans {t}', 'today.later':'Plus tard', 'today.leaves':'{place} · départ {leave} {how}',
@@ -1801,6 +1914,14 @@
       'legend.event':'Veranstaltung', 'legend.task':'Hausaufgabe (Abgabe)',
       'tab.activities':'Aktivitäten', 'sub.activities':'{name}s wiederkehrende Freizeitaktivitäten',
       'tab.events':'Termine', 'sub.events':'Einzeltermine von {name}',
+      'tab.tasks':'Aufgaben', 'sub.tasks':'Aufgaben und Abgaben von {name}', 'tasks.title':'Nächste Abgaben',
+      'tasks.empty':'Noch keine Aufgaben. Sie kommen aus Classroom und von Terminen und Aktivitäten, die eine Aufgabe erstellen.', 'task.editTitle':'Aufgabe', 'f.taskDescPh':'Details, Material, Anleitung …',
+      'hint.prio':'Standardmäßig die der Kategorie. Eine Änderung hier gilt nur für diesen Eintrag, nicht für die Kategorie.', 'task.fromClassroom':'Classroom · {name}', 'task.fromEvent':'Termin · {name}',
+      'task.fromAct':'Aktivität · {name}', 'task.dueAt':'fällig {t}', 'task.noEst':'geschätzte Zeit fehlt',
+      'task.dueNextAt':'Die nächste Stunde: {t}', 'hint.taskPrioEvt':'Standardmäßig die des Termins ({p}). Eine Änderung hier gilt nur für diese Aufgabe.', 'hint.taskPrioAct':'Standardmäßig die der Aktivität ({p}). Eine Änderung hier gilt nur für diese Aufgabe.',
+      'hint.taskPrioCat':'Standardmäßig die der Kategorie Hausaufgabe ({p}). Eine Änderung hier gilt nur für diese Aufgabe.', 'task.delete':'Aufgabe löschen', 'task.deleteConfirm':'Löschen bestätigen',
+      'task.deleteConfirmLinked':'Bestätigen: Die Aufgabe wird aus „{name}“ entfernt', 'toast.taskSaved':'Aufgabe „{name}“ gespeichert', 'toast.taskDeleted':'Aufgabe „{name}“ gelöscht',
+      'task.ownPrio':'{p} · eigene der Aufgabe',
       'tab.calendar':'Kalender', 'sub.calendar':'Aktivitäten in Tages- oder Wochenansicht',
       'tab.config':'Optionen', 'title.config':'Einstellungen', 'sub.config':'Sprache, Darstellung, Zeiten, Verknüpfungen und Kategorien',
       'today.soon':'Gleich · in {t}', 'today.later':'Später', 'today.leaves':'{place} · Abfahrt {leave} {how}',
@@ -1890,6 +2011,7 @@
     refreshEventForm();
     renderActivities();
     refreshActivityForm();
+    renderTasks();
     onScheduleChanged();
     applyAppearance();
   }
@@ -2422,6 +2544,7 @@
     USER_ACTS = USER_ACTS.filter(function(a){ return ids.indexOf(a.id) < 0; });
     storeActivities();
     renderActivities();
+    renderTasks();
     // Los eventos pasados conservan su copia de la categoría; no se vuelve a crear al recargar
     DELETED_CATS.push(id);
     storeEvents();
@@ -2619,6 +2742,8 @@
     // Nombre, color o prioridad de una categoría cambian también eventos y Calendario
     renderEvents();
     renderActivities();
+    renderTasks();
+    renderTasks();
     renderCalendar(calView);
   }
   document.getElementById('category-list').addEventListener('input', renderExportCats);
@@ -2755,14 +2880,14 @@
         '<span>' + fmtDay(e.date) + ' · ' + e.time + '–' + endTime(e) + (e.place ? ' · </span>' + PIN_SVG + '<span>' + esc(e.place) : '') + '</span>';
       var task = e.task ? '<div class="evt-task">' + TASK_SVG + '<span>' + esc(t('evt.taskRow', {
         task: e.task.name, due: fmtDay(e.task.date) + ' ' + e.task.time, est: fmtEst(e.task.est) })) + '</span></div>' : '';
-      return '<div class="row evt-row">' +
+      return '<div class="row evt-row row-open" ' + openAttrs('openEventForm', e.id) + '>' +
         '<div class="row-body">' +
           '<span class="evt-title-line"><span class="row-title">' + esc(e.name) + '</span>' +
             '<span class="prio-chip prio-' + e.prio + '">' + t('prio.' + e.prio) + '</span></span>' +
           '<span class="row-sub">' + sub + '</span>' +
           (e.desc ? '<span class="evt-desc">' + esc(e.desc) + '</span>' : '') + task +
         '</div>' +
-        '<button class="row-action" onclick="openEventForm(\'' + e.id + '\')">' + t('edit') + '</button>' +
+        ROW_CHEV +
       '</div>';
     }).join('');
   }
@@ -2819,8 +2944,9 @@
     if(!el('evt-form')){ return; }
     el('evt-form-title').textContent = t(editingEvent ? 'evt.editTitle' : 'evt.new');
     renderPick('evt', editingEvent && eventCategory(editingEvent));
-    var p = PICK.evt.prio;
-    el('task-prio').textContent = p ? t('task.samePrio', { p: t('prio.' + p) }) : '—';
+    var p = PICK.evt.prio, own = editingEvent && editingEvent.task && editingEvent.task.prio;
+    if(own){ p = own; }
+    el('task-prio').textContent = own ? t('task.ownPrio', { p: t('prio.' + p) }) : p ? t('task.samePrio', { p: t('prio.' + p) }) : '—';
     el('task-prio').className = 'prio-copy' + (p ? ' prio-' + p : '');
     resetCancelButton();
   }
@@ -2879,13 +3005,17 @@
       name: el('evt-name').value.trim(), date: el('evt-date').value, time: el('evt-time').value, dur: getDur('evt-dur'),
       cat: c.id, catName: c.name, catColor: c.color, prio: PICK.evt.prio,
       place: el('evt-place').value.trim(), desc: el('evt-desc').value.trim(),
-      // La tarea no tiene prioridad propia: siempre la del evento
-      task: withTask ? { name: el('task-name').value.trim(), date: el('task-date').value, time: el('task-time').value, est: getDur('task-est') } : null
+      // La tarea toma la prioridad del evento salvo que en Tareas se le haya puesto una propia
+      task: withTask ? { name: el('task-name').value.trim(), date: el('task-date').value, time: el('task-time').value, est: getDur('task-est'),
+        // prioridad propia y descripción se editan en Tareas: se conservan
+        prio: editingEvent && editingEvent.task ? editingEvent.task.prio || null : null,
+        desc: editingEvent && editingEvent.task ? editingEvent.task.desc || '' : '' } : null
     };
     if(editingEvent){ USER_EVENTS[USER_EVENTS.indexOf(editingEvent)] = data; } else { USER_EVENTS.push(data); }
     storeEvents();
     closeEventForm();
     renderEvents();
+    renderTasks();
     renderCalendar(calView);
     toast(t('toast.evtSaved', { name: data.name }));
   }
@@ -2908,6 +3038,7 @@
     storeEvents();
     closeEventForm();
     renderEvents();
+    renderTasks();
     renderCalendar(calView);
     toast(t(e.task ? 'toast.evtTaskCancelled' : 'toast.evtCancelled', { name: e.name }));
   }
@@ -2925,8 +3056,8 @@
     }).filter(function(e){ return e.day >= 0; });
   }
   function weekUserTasks(){
-    return USER_EVENTS.filter(function(e){ return e.task; }).map(function(e){
-      return { day: weekDayIndex(e.task.date), title: e.task.name, time: toHours(e.task.time), cat: 'tarea' };
+    return USER_EVENTS.filter(function(e){ return e.task; }).map(function(e){ return e.task; }).concat(OWN_TASKS).map(function(tk){
+      return { day: weekDayIndex(tk.date), title: tk.name, time: toHours(tk.time), cat: 'tarea' };
     }).filter(function(e){ return e.day >= 0; });
   }
 
@@ -2974,7 +3105,7 @@
       var sub = '<span>' + sessionsText(a) + ' · </span>' + PIN_SVG + '<span>' + esc(a.place) + '</span>';
       var task = a.task ? '<div class="evt-task">' + TASK_SVG + '<span>' + esc(t('act.taskRow', {
         task: a.task.name, est: fmtEst(a.task.est), next: next ? fmtDay(isoOf(next)) + ' ' + fmtHour(next.getHours() + next.getMinutes() / 60) : '—' })) + '</span></div>' : '';
-      return '<div class="row evt-row">' +
+      return '<div class="row evt-row row-open" ' + openAttrs('openActivityForm', a.id) + '>' +
         '<div class="row-body">' +
           '<span class="evt-title-line"><span class="row-title">' + esc(a.name) + '</span>' +
             '<span class="prio-chip prio-' + a.prio + '">' + t('prio.' + a.prio) + '</span></span>' +
@@ -2982,7 +3113,7 @@
           '<span class="row-sub">' + sub + '</span>' +
           (a.desc ? '<span class="evt-desc">' + esc(a.desc) + '</span>' : '') + task +
         '</div>' +
-        '<button class="row-action" onclick="openActivityForm(\'' + a.id + '\')">' + t('edit') + '</button>' +
+        ROW_CHEV +
       '</div>';
     }).join('');
   }
@@ -3022,8 +3153,9 @@
     }).join('');
     renderSessions();
     renderPick('act', editingAct && eventCategory(editingAct));
-    var p = PICK.act.prio;
-    el('atask-prio').textContent = p ? t('task.samePrioAct', { p: t('prio.' + p) }) : '—';
+    var p = PICK.act.prio, own = editingAct && editingAct.task && editingAct.task.prio;
+    if(own){ p = own; }
+    el('atask-prio').textContent = own ? t('task.ownPrio', { p: t('prio.' + p) }) : p ? t('task.samePrioAct', { p: t('prio.' + p) }) : '—';
     el('atask-prio').className = 'prio-copy' + (p ? ' prio-' + p : '');
     var b = el('act-delete'); b.classList.remove('is-confirm'); b.textContent = t('act.cancel');
   }
@@ -3103,13 +3235,16 @@
       sessions: days.map(function(i){ return { day: i, start: actSessions[i].start, end: actSessions[i].end }; }),
       cat: c.id, catName: c.name, catColor: c.color, prio: PICK.act.prio,
       place: el('act-place').value.trim(), desc: el('act-desc').value.trim(),
-      // Tarea de práctica: sin deadline propia (siempre la siguiente sesión) ni prioridad propia
-      task: withTask ? { name: el('atask-name').value.trim(), est: getDur('atask-est') } : null
+      // Tarea de práctica: deadline siempre la siguiente sesión; prioridad la de la actividad salvo la propia puesta en Tareas
+      task: withTask ? { name: el('atask-name').value.trim(), est: getDur('atask-est'),
+        prio: editingAct && editingAct.task ? editingAct.task.prio || null : null,
+        desc: editingAct && editingAct.task ? editingAct.task.desc || '' : '' } : null
     };
     if(editingAct){ USER_ACTS[USER_ACTS.indexOf(editingAct)] = data; } else { USER_ACTS.push(data); }
     storeActivities();
     closeActivityForm();
     renderActivities();
+    renderTasks();
     renderCalendar(calView);
     toast(t('toast.actSaved', { name: data.name }));
   }
@@ -3127,6 +3262,7 @@
     storeActivities();
     closeActivityForm();
     renderActivities();
+    renderTasks();
     renderCalendar(calView);
     toast(t(a.task ? 'toast.actTaskCancelled' : 'toast.actCancelled', { name: a.name }));
   }
@@ -3158,6 +3294,157 @@
     if(pair){ pair.querySelectorAll('.is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); }); }
   });
 
+  /* ================= TAREAS ================= */
+  // Todas las tareas en una lista: las de Classroom (en la maqueta, una de ejemplo) y las
+  // generadas por eventos y actividades. Se abren pulsando encima y se editan aquí: nombre,
+  // entrega (la de las actividades es siempre la siguiente sesión), tiempo estimado,
+  // prioridad y descripción. Prioridad por defecto: la del evento o actividad del que salen,
+  // o la de la categoría Tarea; cambiarla aquí solo afecta a esa tarea.
+  var OWN_TASKS = null, editingTask = null, taskPrio = null;
+  try{ OWN_TASKS = JSON.parse(localStorage.getItem('app-tasks') || 'null'); }catch(e){}
+  if(!OWN_TASKS){
+    OWN_TASKS = [{ id:'t-lengua', source:'classroom', course:'Lengua', name:'Entrega Lengua: redacción', date:'2026-09-11', time:'22:00', est:0, prio:null,
+                   desc:'Redacción de 200 palabras sobre las vacaciones. Entregar en Classroom.' }];
+  }
+  function storeTasks(){ try{ localStorage.setItem('app-tasks', JSON.stringify(OWN_TASKS)); }catch(e){} }
+
+  function atTime(iso, hhmm){ var d = isoDate(iso); d.setMinutes(Math.round(toHours(hhmm) * 60)); return d; }
+  function fmtWhen(d){ return fmtDay(isoOf(d)) + ' ' + fmtHour(d.getHours() + d.getMinutes() / 60); }
+
+  // Lista unificada: {key, kind, name, due, est, prio (efectiva), own, basePrio, desc, origin, ref}
+  function allTasks(){
+    var now = demoNow(), catPrio = (findCategory('tarea') || {}).prio || 'Alta', out = [];
+    OWN_TASKS.forEach(function(tk){
+      out.push({ key:'s:' + tk.id, kind:'classroom', name:tk.name, due:atTime(tk.date, tk.time), est:tk.est, own:tk.prio, basePrio:catPrio,
+                 desc:tk.desc, origin:t('task.fromClassroom', { name: tk.course }), ref:tk });
+    });
+    USER_EVENTS.forEach(function(e){
+      if(!e.task){ return; }
+      out.push({ key:'e:' + e.id, kind:'event', name:e.task.name, due:atTime(e.task.date, e.task.time), est:e.task.est, own:e.task.prio, basePrio:e.prio,
+                 desc:e.task.desc, origin:t('task.fromEvent', { name: e.name }), ref:e.task, parent:e });
+    });
+    USER_ACTS.forEach(function(a){
+      if(!a.task){ return; }
+      out.push({ key:'a:' + a.id, kind:'activity', name:a.task.name, due:nextSession(a, now), est:a.task.est, own:a.task.prio, basePrio:a.prio,
+                 desc:a.task.desc, origin:t('task.fromAct', { name: a.name }), ref:a.task, parent:a });
+    });
+    out.forEach(function(x){ x.prio = x.own || x.basePrio; });
+    return out.sort(function(p, q){ return (p.due || Infinity) - (q.due || Infinity); });
+  }
+
+  function openAttrs(fn, id){
+    return 'role="button" tabindex="0" onclick="' + fn + '(\'' + id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){ event.preventDefault(); ' + fn + '(\'' + id + '\'); }"';
+  }
+  var ROW_CHEV = '<svg class="row-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+
+  function renderTasks(){
+    var list = el('task-list');
+    if(!list){ return; }
+    var items = allTasks();
+    el('task-list-wrap').hidden = !items.length;
+    el('task-empty').hidden = !!items.length;
+    list.innerHTML = items.map(function(x){
+      var when = x.due ? t('task.dueAt', { t: fmtWhen(x.due) }) : '—';
+      var est = x.est ? fmtEst(x.est) : '<span class="est-missing">' + t('task.noEst') + '</span>';
+      return '<div class="row evt-row row-open" ' + openAttrs('openTaskForm', x.key) + '>' +
+        '<div class="row-body">' +
+          '<span class="evt-title-line"><span class="row-title">' + esc(x.name) + '</span>' +
+            '<span class="prio-chip prio-' + x.prio + '">' + t('prio.' + x.prio) + '</span></span>' +
+          '<span class="row-sub"><span>' + when + ' · ' + est + '</span></span>' +
+          '<span class="row-sub">' + TASK_SVG + '<span>' + esc(x.origin) + '</span></span>' +
+          (x.desc ? '<span class="evt-desc">' + esc(x.desc) + '</span>' : '') +
+        '</div>' + ROW_CHEV +
+      '</div>';
+    }).join('');
+  }
+
+  function openTaskForm(key){
+    var x = allTasks().filter(function(it){ return it.key === key; })[0];
+    if(!x){ return; }
+    editingTask = x;
+    taskPrio = x.prio;
+    el('tk-origin').innerHTML = TASK_SVG + '<span>' + esc(x.origin) + '</span>';
+    el('tk-name').value = x.name;
+    var auto = x.kind === 'activity';
+    el('tk-due-row').hidden = auto;
+    el('tk-due-auto').hidden = !auto;
+    if(auto){ el('tk-due-auto-text').textContent = t('task.dueNextAt', { t: x.due ? fmtWhen(x.due) : '—' }); }
+    else { el('tk-date').value = x.ref.date; el('tk-time').value = x.ref.time; }
+    setDur('tk-est', x.est);
+    el('tk-desc').value = x.desc || '';
+    // Las de Classroom se pueden descartar; las de eventos y actividades se quitan de su origen
+    var del = el('tk-delete'); del.classList.remove('is-confirm'); del.textContent = t('task.delete');
+    document.querySelectorAll('#task-form .is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); });
+    refreshTaskPrio();
+    el('task-list-view').hidden = true;
+    el('task-form').hidden = false;
+    el('screen-tasks').parentElement.scrollTop = 0;
+  }
+  function closeTaskForm(){ editingTask = null; el('task-form').hidden = true; el('task-list-view').hidden = false; }
+  function setTaskPrio(btn){ taskPrio = btn.dataset.prio; refreshTaskPrio(); }
+  function refreshTaskPrio(){
+    var x = editingTask;
+    if(!x){ return; }
+    document.querySelectorAll('#tk-prio .toggle-btn').forEach(function(b){
+      var on = b.dataset.prio === taskPrio;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-checked', on);
+    });
+    var key = x.kind === 'event' ? 'hint.taskPrioEvt' : x.kind === 'activity' ? 'hint.taskPrioAct' : 'hint.taskPrioCat';
+    el('tk-prio-hint').textContent = t(key, { p: t('prio.' + x.basePrio) });
+  }
+
+  function saveTask(ev){
+    ev.preventDefault();
+    var x = editingTask, auto = x.kind === 'activity', missing = [];
+    document.querySelectorAll('#task-form .is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); });
+    function need(ok, fields, key){ if(ok){ return; } fields.forEach(function(f){ el(f).classList.add('is-invalid'); }); missing.push(t(key)); }
+    need(el('tk-name').value.trim(), ['tk-name'], 'task.name');
+    if(!auto){
+      need(el('tk-date').value, ['tk-date'], 'task.dueDate');
+      need(el('tk-time').value, ['tk-time'], 'task.dueTime');
+    }
+    need(getDur('tk-est') > 0, ['tk-est-h', 'tk-est-m'], 'task.est');
+    if(missing.length){ toast(t('err.missing', { fields: missing.join(', ') })); return; }
+    if(x.kind === 'event' && el('tk-date').value + el('tk-time').value > x.parent.date + x.parent.time){
+      el('tk-date').classList.add('is-invalid'); el('tk-time').classList.add('is-invalid');
+      toast(t('err.taskAfter')); return;
+    }
+    var r = x.ref;
+    r.name = el('tk-name').value.trim();
+    if(!auto){ r.date = el('tk-date').value; r.time = el('tk-time').value; }
+    r.est = getDur('tk-est');
+    r.desc = el('tk-desc').value.trim();
+    // Prioridad propia solo si es distinta de la que le corresponde por defecto
+    r.prio = taskPrio !== x.basePrio ? taskPrio : null;
+    storeTasks(); storeEvents(); storeActivities();
+    closeTaskForm();
+    renderTasks(); renderEvents(); renderActivities(); renderCalendar(calView);
+    toast(t('toast.taskSaved', { name: r.name }));
+  }
+
+  // Eliminar pide una segunda pulsación; en eventos y actividades la tarea se quita de su origen
+  function deleteTask(btn){
+    var x = editingTask;
+    if(!x){ return; }
+    if(!btn.classList.contains('is-confirm')){
+      btn.classList.add('is-confirm');
+      btn.textContent = t(x.kind === 'classroom' ? 'task.deleteConfirm' : 'task.deleteConfirmLinked', { name: x.parent ? x.parent.name : '' });
+      return;
+    }
+    if(x.kind === 'classroom'){ OWN_TASKS.splice(OWN_TASKS.indexOf(x.ref), 1); } else { x.parent.task = null; }
+    storeTasks(); storeEvents(); storeActivities();
+    closeTaskForm();
+    renderTasks(); renderEvents(); renderActivities(); renderCalendar(calView);
+    toast(t('toast.taskDeleted', { name: x.name }));
+  }
+
+  el('task-form').addEventListener('input', function(ev){
+    ev.target.classList.remove('is-invalid');
+    var pair = ev.target.closest('.dur-input');
+    if(pair){ pair.querySelectorAll('.is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); }); }
+  });
+
   /* ---- Calendario (vista día / semana) ---- */
   // Alto de la cuadrícula: en el móvil, el que quede libre en la pantalla (ver fitCalendar);
   // en la maqueta de escritorio, fijo. El horario escolar se comprime en CAL_SCHOOL_PX y el
@@ -3171,9 +3458,7 @@
       : cap(fmtDate(TODAY_DATE, { weekday:'short', day:'numeric', month:'short' }));
   }
   var CAL_EVENTS = [];   // las actividades y los eventos los inserta el usuario
-  var CAL_DEADLINES = [
-    {day:4, title:'Entrega Lengua', time:22, cat:'tarea'}
-  ];
+  var CAL_DEADLINES = [];   // las tareas salen de Tareas (Classroom), eventos y actividades
   var calView = 'week';
 
   // Escala vertical (en px) de la franja horaria con el tramo escolar comprimido.

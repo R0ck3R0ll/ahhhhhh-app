@@ -59,7 +59,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Opción de aviso a la **hora de salida** calculada cuando el evento implica traslado.
 
 ### 2.2 Actividades extraescolares
-- Actividades recurrentes semanales: **todo lo inserta el usuario**. Misma lógica que Eventos: con la App nueva solo aparece el botón **Añadir actividad**; después, la lista con su botón Editar.
+- Actividades recurrentes semanales: **todo lo inserta el usuario**. Misma lógica que Eventos: con la App nueva solo aparece el botón **Añadir actividad**; después, la lista; **cada actividad se abre pulsando encima** y desde ahí se edita.
 - Campos **obligatorios**: nombre, **día o días de la semana**, hora de inicio y de fin **de cada día**, categoría, prioridad y **ubicación** (para el cálculo de traslados).
   - Si hay más de un día, cada uno puede tener su horario; al añadir un día se propone el mismo horario del primero.
 - Campos **opcionales**: descripción.
@@ -67,20 +67,30 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - **Tarea de práctica** (opcional), para actividades en las que hay que practicar entre sesiones (p. ej. música):
   - Nombre propio (propuesta: «Practicar: <actividad>») y tiempo estimado en horas y minutos, sin tope.
   - **Deadline automática: la siguiente sesión de la misma actividad** (cada sesión genera la tarea para la siguiente). La lista muestra la próxima entrega.
-  - Copia la prioridad de la actividad, solo se edita desde la actividad y se elimina con ella; para el resto de la App es una tarea más (Today, Calendario, avisos).
+  - Por defecto toma la prioridad de la actividad (se le puede poner una propia desde Tareas). Se edita desde la actividad o desde **Tareas**, y se elimina con la actividad; para el resto de la App es una tarea más (Today, Calendario, avisos).
 - Eliminar una actividad pide una segunda pulsación (y avisa si se elimina también su tarea).
 - Las actividades recurrentes cuentan siempre como **activas** a efectos de borrar su categoría (ver Configuración).
 
 ### 2.3 Eventos
-- Eventos puntuales (no recurrentes): **todo lo inserta el usuario**. Con la App nueva la pantalla solo muestra el botón **Añadir evento**; después, la lista de próximos eventos ordenada por fecha y hora, cada uno con su botón Editar.
+- Eventos puntuales (no recurrentes): **todo lo inserta el usuario**. Con la App nueva la pantalla solo muestra el botón **Añadir evento**; después, la lista de próximos eventos ordenada por fecha y hora; **cada evento se abre pulsando encima** y desde ahí se edita.
 - Campos **obligatorios**: nombre, fecha, hora de inicio, **duración** (horas y minutos), **categoría** y prioridad (Alta / Media / Baja).
 - Campos **opcionales**: descripción y ubicación.
 - **Categoría**: las mismas de Configuración. Al elegirla se propone su prioridad (se puede cambiar; si ya se eligió una prioridad a mano, no se toca). Desde el propio formulario se puede crear una **categoría nueva** (nombre y color): es una categoría de usuario como cualquier otra (aparece en Configuración, donde se puede renombrar, cambiar de color y prioridad o borrar).
 - **Tarea de preparación** (opcional): si el evento requiere preparar algo antes, se puede generar una tarea asociada.
   - Tiene nombre propio (propuesta: «Preparar: <evento>»), deadline independiente (fecha y hora; propuesta: la víspera a las 20:00; tiene que ser antes del evento) y tiempo estimado de ejecución en horas y minutos, **sin tope**.
-  - **Copia la prioridad del evento** (no tiene prioridad propia; si cambia la del evento, cambia la de la tarea).
-  - No aparece en Configuración: **solo se edita desde el evento**. Si se cancela el evento, se cancela también la tarea (la cancelación pide confirmación y lo avisa).
+  - Por defecto **toma la prioridad del evento** (si cambia la del evento, cambia la de la tarea), salvo que en Tareas se le ponga una propia.
+  - Se edita desde el evento o desde **Tareas**. Si se cancela el evento, se cancela también la tarea (la cancelación pide confirmación y lo avisa).
   - Para el resto de la App es **una tarea cualquiera**: se ve en Today y en el Calendario y cuenta para los avisos (p. ej. la alerta de tareas de más de 1,5 h en los próximos 5 días).
+
+### 2.3 bis Tareas
+- Pestaña propia, **después de Eventos** (barra: Today · Actividades · Eventos · Tareas · Calendario · Config).
+- Lista única de **todas las tareas**, ordenada por entrega: las de Classroom (extraídas y aprobadas) y las generadas por eventos y actividades. Cada una muestra prioridad, entrega, tiempo estimado (o «falta tiempo estimado»), de dónde viene y la descripción.
+- **Se abre pulsando encima** y desde ahí se edita: nombre, entrega (fecha y hora; en las de actividades es siempre la siguiente sesión y no se edita), tiempo estimado (obligatorio, horas y minutos), prioridad y descripción (opcional).
+- Eliminar pide segunda pulsación; en una tarea de evento o actividad la quita de su evento o actividad.
+
+### Prioridades y edición (común a Actividades, Eventos y Tareas)
+- Los elementos listados **se abren pulsando encima** y desde ahí se editan.
+- Cada elemento toma **por defecto la prioridad de su categoría** (las tareas de eventos y actividades, la de su evento o actividad; las de Classroom, la de la categoría Tarea). Se puede cambiar **solo para ese elemento** al insertarlo o al editarlo en su pantalla, **sin cambiar la prioridad de la categoría**.
 
 ### Deadlines, avisos y visualización en el Calendario
 - El sistema de avisos trabaja sobre **deadlines**: para las tareas, el límite de entrega; para actividades y eventos, la hora de inicio. La barra de tiempo de Today también usa la deadline.
