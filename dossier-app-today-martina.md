@@ -136,6 +136,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Resto de distancias: calcular en coche.
 - Tarjeta **«Próximos días»** (sustituye a «Carga de trabajo»): recoge **todas las tareas de los siguientes 5 días con tiempo estimado de 1,5 h o más**, ordenadas por entrega.
   - Cada tarea: **nombre**; debajo, **tiempo estimado** (sin la palabra «estimado») y **«antes de» fecha y hora** de entrega. Puede tener varias líneas.
+  - **Pulsar una tarea** abre su ficha en Tareas (con Editar, Eliminar y Marcar como hecha) y el botón **«‹ Volver a Hoy»**.
   - Va **abajo del todo, fija justo encima de la barra de pestañas** (se ve aunque el resto se desplace).
   - Marco naranja pastel, fondo amarillo pastel y el texto de cada tarea del color de su categoría.
   - Si no hay ninguna tarea que cumpla la condición, la tarjeta no aparece.

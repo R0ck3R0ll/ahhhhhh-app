@@ -194,7 +194,8 @@
   .load-card.is-collapsed .load-chev{ transform:rotate(180deg); }
   .load-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px; }
   /* Cada tarea: nombre (se recorta si no cabe) y debajo tiempo · antes de fecha y hora */
-  .load-list li{ display:flex; flex-direction:column; line-height:1.25; }
+  .load-list li{ display:flex; flex-direction:column; line-height:1.25; cursor:pointer; border-radius:6px; }
+  .load-list li:focus-visible{ outline:2px solid var(--load-border); outline-offset:2px; }
   .load-list .load-name{ font-size:13px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .load-list .load-meta{ font-size:12px; font-weight:500; font-variant-numeric:tabular-nums; }
   .load-list .load-est{ font-weight:700; }
@@ -2408,7 +2409,8 @@
     card.hidden = !items.length;
     el('load-count').textContent = '· ' + items.length;
     el('load-list').innerHTML = items.map(function(it){
-      return '<li style="color:' + inkOf(it.x.cat) + '" title="' + esc(it.x.name) + '"><span class="load-name">' + esc(it.x.name) + '</span>' +
+      // Pulsar una tarea abre su ficha (con «‹ Volver a Hoy»)
+      return '<li style="color:' + inkOf(it.x.cat) + '" title="' + esc(it.x.name) + '" ' + openAttrs('openLoadTask', it.x.key) + '><span class="load-name">' + esc(it.x.name) + '</span>' +
         '<span class="load-meta"><span class="load-est">' + fmtEst(it.x.est) + '</span> · ' +
         t('load.before', { t: fmtWhen(it.due) }) + '</span></li>';
     }).join('');
@@ -2443,6 +2445,11 @@
     document.querySelector('.tab[data-screen="' + sc[0] + '"]').click();
     DETAIL_BACK = { label: t('btn.backToday'), fn: "backToToday('" + sc[1] + "')", go: function(){ backToToday(sc[1]); } };
     if(item.kind === 'activity'){ openActivity(item.ref); } else if(item.kind === 'event'){ openEvent(item.ref); } else { openTask(item.ref); }
+  }
+  function openLoadTask(key){
+    document.querySelector('.tab[data-screen="tasks"]').click();
+    DETAIL_BACK = { label: t('btn.backToday'), fn: "backToToday('task')", go: function(){ backToToday('task'); } };
+    openTask(key);
   }
   function openFromCalendar(kind, id){
     var sc = KIND_SCREEN[kind];
