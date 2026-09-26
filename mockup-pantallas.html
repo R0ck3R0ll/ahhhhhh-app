@@ -494,10 +494,6 @@
   .cfg-sub{ display:flex; flex-direction:column; gap:10px; }
   .cfg-sub + .cfg-sub{ border-top:1px solid var(--border); padding-top:14px; }
   .cfg-sub-title{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--accent-strong); }
-  .builtin-chip{
-    flex:none; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
-    color:var(--text-muted); border:1px solid var(--border); border-radius:999px; padding:2px 7px;
-  }
   @media (prefers-reduced-motion: reduce){ .cfg-group .chev{ transition:none; } }
   .lang-select{
     font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--text);
@@ -517,6 +513,12 @@
     padding:2px 0; width:100%; min-width:0;
   }
   .cat-name-input:hover{ border-bottom-color:var(--border); }
+  .cat-name-input[readonly]{ cursor:default; }
+  .cat-name-input[readonly]:hover, .cat-name-input[readonly]:focus{ border-bottom-color:transparent; }
+  .cat-name{ font-weight:600; font-size:14.5px; padding:2px 0; }
+  /* El color solo se cambia mientras se edita la categoría */
+  .cat-row:not(.is-editing) .swatch{ pointer-events:none; }
+  .cat-row.is-editing .swatch{ box-shadow:0 0 0 2px var(--surface-alt), 0 0 0 3px var(--accent); }
   .cat-name-input:focus{ outline:none; border-bottom-color:var(--accent); }
   .priority-select{
     flex:none;
@@ -535,6 +537,15 @@
     color:var(--text-muted); font-size:15px; line-height:1; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
   }
+  .row-edit{
+    flex:none; width:24px; height:24px; border-radius:50%;
+    border:1px solid var(--border); background:var(--surface);
+    color:var(--text-muted); cursor:pointer; padding:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .row-edit:hover{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent-strong); }
+  .row-edit:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .cat-row.is-editing .row-edit{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
   .row-delete:hover{ background:var(--alert-bg); border-color:var(--alert-border); color:var(--alert-text); }
   .row-delete:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 
@@ -898,43 +909,43 @@
         <p class="card-hint" data-i18n="hint.cats"></p>
         <div class="row-list" id="category-list">
           <div class="row cat-row" data-default="1" data-cat="tarea">
-            <button class="row-bar swatch" style="background:var(--cat-tarea)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
-            <div class="row-body"><input class="cat-name-input" value="Tarea" data-i18n-aria="aria.catName"></div>
+            <span class="row-bar" style="background:var(--cat-tarea)"></span>
+            <div class="row-body"><span class="cat-name" data-i18n="cat.tarea"></span></div>
             <select class="priority-select" style="background:var(--cat-tarea)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
               <option value="Alta" selected>Alta</option>
               <option value="Media">Media</option>
               <option value="Baja">Baja</option>
             </select>
-            <span class="builtin-chip" data-i18n="cat.builtin"></span>
           </div>
           <div class="row cat-row" data-default="1" data-cat="actividad">
-            <button class="row-bar swatch" style="background:var(--cat-actividad)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
-            <div class="row-body"><input class="cat-name-input" value="Actividad" data-i18n-aria="aria.catName"></div>
+            <span class="row-bar" style="background:var(--cat-actividad)"></span>
+            <div class="row-body"><span class="cat-name" data-i18n="cat.actividad"></span></div>
             <select class="priority-select" style="background:var(--cat-actividad)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
               <option value="Alta">Alta</option>
               <option value="Media" selected>Media</option>
               <option value="Baja">Baja</option>
             </select>
-            <span class="builtin-chip" data-i18n="cat.builtin"></span>
           </div>
           <div class="row cat-row" data-cat="cita">
             <button class="row-bar swatch" style="background:var(--cat-cita)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
-            <div class="row-body"><input class="cat-name-input" value="Cita" data-i18n-aria="aria.catName"></div>
+            <div class="row-body"><input class="cat-name-input" value="Cita" readonly data-i18n-aria="aria.catName" onkeydown="if(event.key==='Enter'){ editCategory(this); }"></div>
             <select class="priority-select" style="background:var(--cat-cita)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
               <option value="Alta" selected>Alta</option>
               <option value="Media">Media</option>
               <option value="Baja">Baja</option>
             </select>
+            <button class="row-edit" onclick="editCategory(this)" data-i18n-aria="aria.catEdit" data-i18n-title="aria.catEdit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
             <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
           </div>
           <div class="row cat-row" data-cat="libre">
             <button class="row-bar swatch" style="background:var(--cat-libre)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
-            <div class="row-body"><input class="cat-name-input" value="Tiempo libre" data-i18n-aria="aria.catName"></div>
+            <div class="row-body"><input class="cat-name-input" value="Tiempo libre" readonly data-i18n-aria="aria.catName" onkeydown="if(event.key==='Enter'){ editCategory(this); }"></div>
             <select class="priority-select" style="background:var(--cat-libre)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
               <option value="Alta">Alta</option>
               <option value="Media">Media</option>
               <option value="Baja" selected>Baja</option>
             </select>
+            <button class="row-edit" onclick="editCategory(this)" data-i18n-aria="aria.catEdit" data-i18n-title="aria.catEdit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
             <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
           </div>
         </div>
@@ -1118,14 +1129,15 @@
       'grp.cats':'Categorías',
       'grp.gcal':'Google Calendar',
       'cfg.accountsLabel':'Cuenta de Google',
-      'cat.builtin':'De serie',
+      
       'legend.deadline':'(entrega)',
-      'hint.cats':'Tarea y Actividad vienen de serie. Las demás las creas tú (en el ejemplo, Cita y Tiempo libre).',
+      'hint.cats':'Tarea y Actividad vienen de serie: solo se puede cambiar su prioridad. Las demás las creas tú y puedes editarlas o borrarlas (en el ejemplo, Cita y Tiempo libre).',
       'sum.school':'cole',
       'sum.links':'{n} de 2 enlazados',
       'sum.cats':'{n} categorías',
       'sum.gcalOn':'Exportando',
       'sum.gcalOff':'Sin exportar',
+      'aria.catEdit':'Editar categoría', 'aria.catDone':'Hecho',
       'aria.school':'Colegio', 'aria.nav':'Navegación principal'
     },
     en:{
@@ -1207,14 +1219,15 @@
       'grp.cats':'Categories',
       'grp.gcal':'Google Calendar',
       'cfg.accountsLabel':'Google account',
-      'cat.builtin':'Built-in',
+      
       'legend.deadline':'(due)',
-      'hint.cats':'Homework and Activity are built in. You create the rest (in the example, Cita and Tiempo libre).',
+      'hint.cats':'Homework and Activity are built in: only their priority can be changed. You create the rest and can edit or delete them (in the example, Cita and Tiempo libre).',
       'sum.school':'school',
       'sum.links':'{n} of 2 linked',
       'sum.cats':'{n} categories',
       'sum.gcalOn':'Exporting',
       'sum.gcalOff':'Off',
+      'aria.catEdit':'Edit category', 'aria.catDone':'Done',
       'aria.school':'School', 'aria.nav':'Main navigation'
     },
     it:{
@@ -1296,14 +1309,15 @@
       'grp.cats':'Categorie',
       'grp.gcal':'Google Calendar',
       'cfg.accountsLabel':'Account Google',
-      'cat.builtin':'Predefinita',
+      
       'legend.deadline':'(consegna)',
-      'hint.cats':'Compito e Attività sono predefinite. Le altre le crei tu (nell’esempio, Cita e Tiempo libre).',
+      'hint.cats':'Compito e Attività sono predefinite: si può cambiare solo la loro priorità. Le altre le crei tu e puoi modificarle o eliminarle (nell’esempio, Cita e Tiempo libre).',
       'sum.school':'scuola',
       'sum.links':'{n} di 2 collegati',
       'sum.cats':'{n} categorie',
       'sum.gcalOn':'Attiva',
       'sum.gcalOff':'Disattivata',
+      'aria.catEdit':'Modifica categoria', 'aria.catDone':'Fatto',
       'aria.school':'Scuola', 'aria.nav':'Navigazione principale'
     },
     fr:{
@@ -1385,14 +1399,15 @@
       'grp.cats':'Catégories',
       'grp.gcal':'Google Calendar',
       'cfg.accountsLabel':'Compte Google',
-      'cat.builtin':'Par défaut',
+      
       'legend.deadline':'(à rendre)',
-      'hint.cats':'Devoir et Activité sont fournies par défaut. Les autres, c’est vous qui les créez (dans l’exemple, Cita et Tiempo libre).',
+      'hint.cats':'Devoir et Activité sont fournies par défaut : seule leur priorité peut être modifiée. Les autres, c’est vous qui les créez et pouvez les modifier ou les supprimer (dans l’exemple, Cita et Tiempo libre).',
       'sum.school':'école',
       'sum.links':'{n} sur 2 liés',
       'sum.cats':'{n} catégories',
       'sum.gcalOn':'Active',
       'sum.gcalOff':'Désactivée',
+      'aria.catEdit':'Modifier la catégorie', 'aria.catDone':'Terminé',
       'aria.school':'École', 'aria.nav':'Navigation principale'
     },
     de:{
@@ -1474,14 +1489,15 @@
       'grp.cats':'Kategorien',
       'grp.gcal':'Google Calendar',
       'cfg.accountsLabel':'Google-Konto',
-      'cat.builtin':'Standard',
+      
       'legend.deadline':'(Abgabe)',
-      'hint.cats':'Hausaufgabe und Aktivität sind vorgegeben. Die übrigen legst du selbst an (im Beispiel Cita und Tiempo libre).',
+      'hint.cats':'Hausaufgabe und Aktivität sind vorgegeben: Nur ihre Priorität lässt sich ändern. Die übrigen legst du selbst an und kannst sie bearbeiten oder löschen (im Beispiel Cita und Tiempo libre).',
       'sum.school':'Schule',
       'sum.links':'{n} von 2 verknüpft',
       'sum.cats':'{n} Kategorien',
       'sum.gcalOn':'Aktiv',
       'sum.gcalOff':'Aus',
+      'aria.catEdit':'Kategorie bearbeiten', 'aria.catDone':'Fertig',
       'aria.school':'Schule', 'aria.nav':'Hauptnavigation'
     }
   };
@@ -1526,12 +1542,6 @@
     document.querySelectorAll('[data-i18n-aria]').forEach(function(el){ el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
     document.querySelectorAll('[data-i18n-title]').forEach(function(el){ el.setAttribute('title', t(el.dataset.i18nTitle)); });
     document.querySelectorAll('.priority-select option').forEach(function(o){ o.textContent = t('prio.' + o.value); });
-    // Categorías de fábrica: si el nombre no se ha cambiado, se traduce
-    document.querySelectorAll('#category-list .cat-row[data-default]').forEach(function(row){
-      var input = row.querySelector('.cat-name-input'), key = 'cat.' + row.dataset.cat;
-      var isDefault = Object.keys(I18N).some(function(l){ return I18N[l][key] === input.value; });
-      if(isDefault){ input.value = t(key); }
-    });
     // Días de la semana y fechas de los datos de ejemplo
     document.querySelectorAll('[data-days]').forEach(function(el){
       el.textContent = cap(el.dataset.days.split(',').map(function(d){ return weekdayName(+d); }).join(t('and')));
@@ -1572,8 +1582,12 @@
   var NOW = 17.25;
   // Nombre de una categoría tal como está en Configuración (o el de fábrica traducido)
   function catName(cat){
-    var row = document.querySelector('#category-list .cat-row[data-cat="' + cat + '"] .cat-name-input');
-    return row && row.value ? row.value : t('cat.' + cat);
+    var row = document.querySelector('#category-list .cat-row[data-cat="' + cat + '"]');
+    return row ? rowName(row) : t('cat.' + cat);
+  }
+  function rowName(row){
+    var input = row.querySelector('.cat-name-input');
+    return input ? (input.value || t('category')) : t('cat.' + row.dataset.cat);
   }
   var TODAY_NEXT = { t:18, cat:'actividad', title:'Natación',
     place:'Piscina Municipal Las Rozas', dist:'3,5 km', leave:'17:35', how:'car' };
@@ -2000,6 +2014,7 @@
       if(hexToRgb(CAT_PALETTE[i]) === current){ idx = i; break; }
     }
     var next = CAT_PALETTE[(idx+1) % CAT_PALETTE.length];
+    if(!btn.closest('.cat-row').classList.contains('is-editing')){ return; }
     btn.style.background = next;
     var select = btn.closest('.cat-row').querySelector('.priority-select');
     if(select){ select.style.background = next; }
@@ -2012,13 +2027,13 @@
   }
 
   function onPriorityChange(select){
-    var name = select.closest('.cat-row').querySelector('.cat-name-input').value || t('category');
+    var name = rowName(select.closest('.cat-row'));
     toast(t('toast.prio', { name: name, p: select.options[select.selectedIndex].text }));
   }
 
   function removeCategory(btn){
     var row = btn.closest('.cat-row');
-    var name = row.querySelector('.cat-name-input').value || t('category');
+    var name = rowName(row);
     row.remove();
     renderExportCats();
     toast(t('toast.catDeleted', { name: name }));
@@ -2031,15 +2046,33 @@
     row.className = 'row cat-row';
     row.innerHTML =
       '<button class="row-bar swatch" style="background:' + color + '" onclick="cycleColor(this)" aria-label="' + t('aria.catColor') + '" title="' + t('aria.catColor') + '"></button>' +
-      '<div class="row-body"><input class="cat-name-input" value="' + t('cat.new') + '" aria-label="' + t('aria.catName') + '"></div>' +
+      '<div class="row-body"><input class="cat-name-input" value="' + t('cat.new') + '" readonly aria-label="' + t('aria.catName') + '" onkeydown="if(event.key===\'Enter\'){ editCategory(this); }"></div>' +
       '<select class="priority-select" style="background:' + color + '" onchange="onPriorityChange(this)" aria-label="' + t('aria.catPrio') + '">' +
         '<option value="Alta">' + t('prio.Alta') + '</option><option value="Media" selected>' + t('prio.Media') + '</option><option value="Baja">' + t('prio.Baja') + '</option>' +
       '</select>' +
-      '<button class="row-delete" onclick="removeCategory(this)" aria-label="' + t('aria.catDelete') + '">×</button>';
+      '<button class="row-edit" onclick="editCategory(this)" aria-label="' + t('aria.catEdit') + '" title="' + t('aria.catEdit') + '"></button>' +
+      '<button class="row-delete" onclick="removeCategory(this)" aria-label="' + t('aria.catDelete') + '" title="' + t('aria.catDelete') + '">×</button>';
+    row.querySelector('.row-edit').innerHTML = PENCIL_SVG;
     list.appendChild(row);
     renderExportCats();
-    row.querySelector('.cat-name-input').focus();
-    row.querySelector('.cat-name-input').select();
+    editCategory(row.querySelector('.row-edit'));   // la nueva categoría empieza en modo edición
+  }
+
+  // Lápiz: activa la edición del nombre y del color; el mismo botón (✓) o Intro la terminan
+  var PENCIL_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+  var CHECK_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  function editCategory(el){
+    var row = el.closest('.cat-row'), input = row.querySelector('.cat-name-input'), btn = row.querySelector('.row-edit');
+    var editing = !row.classList.contains('is-editing');
+    // Solo una categoría en edición a la vez
+    if(editing){ document.querySelectorAll('.cat-row.is-editing').forEach(function(r){ editCategory(r.querySelector('.row-edit')); }); }
+    row.classList.toggle('is-editing', editing);
+    input.readOnly = !editing;
+    btn.innerHTML = editing ? CHECK_SVG : PENCIL_SVG;
+    btn.setAttribute('aria-label', t(editing ? 'aria.catDone' : 'aria.catEdit'));
+    btn.setAttribute('title', t(editing ? 'aria.catDone' : 'aria.catEdit'));
+    if(editing){ input.focus(); input.select(); }
+    else { if(!input.value.trim()){ input.value = t('cat.new'); } renderExportCats(); }
   }
 
   /* ---- Franja horaria y horario escolar ---- */
@@ -2168,9 +2201,9 @@
       input.checked = idx < prev.length ? prev[idx] : true;
       var dot = document.createElement('span');
       dot.className = 'dot';
-      dot.style.background = row.querySelector('.swatch').style.background;
+      dot.style.background = row.querySelector('.row-bar').style.background;
       var name = document.createElement('span');
-      name.textContent = row.querySelector('.cat-name-input').value || t('category');
+      name.textContent = rowName(row);
       label.appendChild(input); label.appendChild(dot); label.appendChild(name);
       box.appendChild(label);
     });
@@ -2178,6 +2211,14 @@
     updateConfigSummaries();
   }
   document.getElementById('category-list').addEventListener('input', renderExportCats);
+
+  // Acordeón: abrir un bloque de Configuración cierra el que estuviera abierto
+  document.querySelectorAll('.cfg-group').forEach(function(g){
+    g.addEventListener('toggle', function(){
+      if(!g.open){ return; }
+      document.querySelectorAll('.cfg-group[open]').forEach(function(o){ if(o !== g){ o.open = false; } });
+    });
+  });
 
   // Resumen del valor actual en la cabecera de cada bloque plegado
   function updateConfigSummaries(){

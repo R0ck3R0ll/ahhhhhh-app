@@ -20,12 +20,12 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
 ## 2. Pantallas y contenido
 
 ### 2.1 Configuración
-Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar), cada uno con un resumen de su valor actual en la cabecera. Orden:
+Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, al abrir uno, se cierra el que estuviera abierto, para no tener que hacer scroll), cada uno con un resumen de su valor actual en la cabecera. Orden:
 1. **Idioma**
 2. **Aspecto** (tema de Today, fondo claro/oscuro, barra de tiempo)
 3. **Horarios** (franja horaria de planificación y horario escolar)
 4. **Enlaces** (cuenta de Google para Classroom/Gmail y archivo del calendario escolar)
-5. **Categorías**: solo dos de serie, **Tarea** y **Actividad** (no se pueden borrar, sí renombrar y cambiar color/prioridad); las demás las crea el usuario.
+5. **Categorías**: solo dos de serie, **Tarea** (prioridad alta por defecto) y **Actividad** (media): no se pueden borrar ni renombrar, solo cambiar su prioridad. Las demás las crea el usuario; cada una lleva a la derecha un botón de lápiz (editar nombre y color) y una X (borrar).
 6. **Google Calendar** (exportación)
 
 - Inserción de credenciales / conexión de cuentas externas (Google, y las que se necesiten).
