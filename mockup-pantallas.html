@@ -256,13 +256,13 @@
     background:var(--warn-bg); color:var(--warn-text); border-radius:26px; padding:14px 18px; text-align:center;
     animation:glowPulse 3.2s ease-in-out infinite, breathe 3.2s ease-in-out infinite;
   }
-  .hero-time{ font-family:var(--font-display); font-weight:700; font-size:40px; line-height:1; }
-  .hero-title{ font-family:var(--font-display); font-weight:600; font-size:21px; margin-top:4px; }
+  .hero-head{ display:flex; align-items:baseline; justify-content:center; gap:12px; flex-wrap:wrap; }
+  .hero-time{ font-family:var(--font-display); font-weight:700; font-size:32px; line-height:1; }
+  .hero-title{ font-family:var(--font-display); font-weight:600; font-size:21px; }
   .hero-place{ font-size:13px; font-weight:600; margin-top:6px; opacity:.85; }
-  .hero-leave{
-    display:inline-flex; align-items:center; gap:6px; margin-top:8px;
-    background:rgba(0,0,0,.14); font-weight:700; font-size:12.5px; padding:7px 14px; border-radius:999px;
-  }
+  .hero-leave{ display:flex; justify-content:center; gap:8px; margin-top:8px; }
+  /* Hora de salida: solo icono (andando / coche) y hora */
+  .leave-chip{ display:inline-flex; align-items:center; gap:5px; background:rgba(0,0,0,.12); font-weight:700; font-size:12.5px; padding:4px 10px; border-radius:999px; font-variant-numeric:tabular-nums; }
   .fan{ display:flex; align-items:center; justify-content:center; padding:8px 0 10px; }
   .fan-card{
     position:relative; flex:none; width:112px; min-height:134px; margin-right:-16px;
@@ -313,10 +313,16 @@
   }
   @keyframes sheen{ 0%,70%{ left:-60%; } 100%{ left:130%; } }
   .pi-next-time{ font-family:var(--font-display); font-weight:700; font-size:24px; line-height:1; font-variant-numeric:tabular-nums; }
-  .pi-next-title{ flex:1; min-width:0; font-family:var(--font-display); font-weight:600; font-size:18px; line-height:1.1; }
+  .pi-next-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .pi-next-title{ font-family:var(--font-display); font-weight:600; font-size:18px; line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pi-next-place{ font-size:11.5px; font-weight:600; opacity:.85; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .pi-next-side{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; text-align:right; }
   .pi-next-when{ font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
-  .pi-next-leave{ display:flex; align-items:center; gap:4px; font-size:12px; font-weight:600; }
+  .pi-next-leave{ display:flex; flex-direction:column; align-items:flex-end; gap:3px; }   /* andando y coche, uno encima del otro */
+  .pi-next .leave-chip{ padding:2px 7px; font-size:12px; background:rgba(0,0,0,.1); }
+  /* Las tarjetas de «Hoy» se abren en su pantalla */
+  #screen-today [data-open]{ cursor:pointer; }
+  #screen-today [data-open]:focus-visible{ outline:3px solid var(--accent); outline-offset:3px; }
 
   .board{ position:relative; flex:none; height:392px; }
   .note{
@@ -1536,6 +1542,7 @@
       'task.ownPrio':'{p} · propia de la tarea',
       'btn.back':'Volver', 'tasks.add':'Añadir tarea', 'task.newTitle':'Nueva tarea', 'task.fromManual':'Añadida a mano', 'd.when':'Cuándo', 'd.task':'Tarea asociada', 'd.origin':'Origen', 'd.prioOwn':'(propia)', 'd.prioDefault':'(la de la categoría)',
       'tab.today':'Hoy', 'today.more1':'Y 1 más hoy: la ves en la barra de tiempo.', 'today.more':'Y {n} más hoy: los ves en la barra de tiempo.',
+      'btn.backToday':'Volver a Hoy', 'd.leave':'Salida', 'toast.demoItem':'Es un dato de ejemplo: se podrá editar cuando «Hoy» use los datos reales',
       'tab.calendar':'Calendario', 'sub.calendar':'Actividades en vista día o semana',
       'tab.config':'Config', 'title.config':'Configuración', 'sub.config':'Idioma, aspecto, horarios, enlaces y categorías',
       'today.soon':'Se acerca · faltan {t}', 'today.later':'Más tarde', 'today.leaves':'{place} · sale {leave} {how}',
@@ -1655,6 +1662,7 @@
       'task.ownPrio':'{p} · set for this task',
       'btn.back':'Back', 'tasks.add':'Add task', 'task.newTitle':'New task', 'task.fromManual':'Added by hand', 'd.when':'When', 'd.task':'Linked task', 'd.origin':'Source', 'd.prioOwn':'(own)', 'd.prioDefault':'(the category’s)',
       'tab.today':'Today', 'today.more1':'And 1 more today: see it on the time bar.', 'today.more':'And {n} more today: see them on the time bar.',
+      'btn.backToday':'Back to Today', 'd.leave':'Departure', 'toast.demoItem':'This is sample data: it can be edited once Today uses real data',
       'tab.calendar':'Calendar', 'sub.calendar':'Activities by day or week',
       'tab.config':'Settings', 'title.config':'Settings', 'sub.config':'Language, appearance, schedules, connections and categories',
       'today.soon':'Coming up · in {t}', 'today.later':'Later', 'today.leaves':'{place} · leave {leave} {how}',
@@ -1774,6 +1782,7 @@
       'task.ownPrio':'{p} · propria del compito',
       'btn.back':'Indietro', 'tasks.add':'Aggiungi compito', 'task.newTitle':'Nuovo compito', 'task.fromManual':'Aggiunto a mano', 'd.when':'Quando', 'd.task':'Compito associato', 'd.origin':'Origine', 'd.prioOwn':'(propria)', 'd.prioDefault':'(quella della categoria)',
       'tab.today':'Oggi', 'today.more1':'E 1 altro oggi: lo vedi nella barra del tempo.', 'today.more':'E altri {n} oggi: li vedi nella barra del tempo.',
+      'btn.backToday':'Torna a Oggi', 'd.leave':'Partenza', 'toast.demoItem':'È un dato di esempio: si potrà modificare quando «Oggi» userà i dati reali',
       'tab.calendar':'Calendario', 'sub.calendar':'Attività in vista giorno o settimana',
       'tab.config':'Opzioni', 'title.config':'Impostazioni', 'sub.config':'Lingua, aspetto, orari, collegamenti e categorie',
       'today.soon':'Sta arrivando · mancano {t}', 'today.later':'Più tardi', 'today.leaves':'{place} · partenza {leave} {how}',
@@ -1893,6 +1902,7 @@
       'task.ownPrio':'{p} · propre à la tâche',
       'btn.back':'Retour', 'tasks.add':'Ajouter une tâche', 'task.newTitle':'Nouvelle tâche', 'task.fromManual':'Ajoutée à la main', 'd.when':'Quand', 'd.task':'Tâche associée', 'd.origin':'Origine', 'd.prioOwn':'(propre)', 'd.prioDefault':'(celle de la catégorie)',
       'tab.today':'Aujourd’hui', 'today.more1':'Et 1 de plus aujourd’hui : voyez-le sur la barre de temps.', 'today.more':'Et {n} de plus aujourd’hui : voyez-les sur la barre de temps.',
+      'btn.backToday':'Retour à Aujourd’hui', 'd.leave':'Départ', 'toast.demoItem':'C’est une donnée d’exemple : elle pourra être modifiée quand « Aujourd’hui » utilisera les données réelles',
       'tab.calendar':'Calendrier', 'sub.calendar':'Activités en vue jour ou semaine',
       'tab.config':'Réglages', 'title.config':'Réglages', 'sub.config':'Langue, apparence, horaires, liens et catégories',
       'today.soon':'Bientôt · dans {t}', 'today.later':'Plus tard', 'today.leaves':'{place} · départ {leave} {how}',
@@ -2012,6 +2022,7 @@
       'task.ownPrio':'{p} · eigene der Aufgabe',
       'btn.back':'Zurück', 'tasks.add':'Aufgabe hinzufügen', 'task.newTitle':'Neue Aufgabe', 'task.fromManual':'Von Hand hinzugefügt', 'd.when':'Wann', 'd.task':'Zugehörige Aufgabe', 'd.origin':'Herkunft', 'd.prioOwn':'(eigene)', 'd.prioDefault':'(die der Kategorie)',
       'tab.today':'Heute', 'today.more1':'Und 1 weiterer heute: siehe Zeitleiste.', 'today.more':'Und {n} weitere heute: siehe Zeitleiste.',
+      'btn.backToday':'Zurück zu Heute', 'd.leave':'Abfahrt', 'toast.demoItem':'Das sind Beispieldaten: Bearbeiten geht, sobald „Heute“ echte Daten nutzt',
       'tab.calendar':'Kalender', 'sub.calendar':'Aktivitäten in Tages- oder Wochenansicht',
       'tab.config':'Optionen', 'title.config':'Einstellungen', 'sub.config':'Sprache, Darstellung, Zeiten, Verknüpfungen und Kategorien',
       'today.soon':'Gleich · in {t}', 'today.later':'Später', 'today.leaves':'{place} · Abfahrt {leave} {how}',
@@ -2137,17 +2148,19 @@
     var input = row.querySelector('.cat-name-input');
     return input ? (input.value || t('category')) : t('cat.' + row.dataset.cat);
   }
-  var TODAY_NEXT = { t:18, cat:'actividad', title:'Natación',
-    place:'Piscina Municipal Las Rozas', dist:'3,5 km', leave:'17:35', how:'car' };
+  // kind: pantalla en la que se abre al pulsarlo (activity / event / task); end: fin si tiene duración.
+  // leaves: hora de salida por modo; andando solo si el destino está a menos de 1 km.
+  var TODAY_NEXT = { id:'natacion', kind:'activity', t:18, end:19, cat:'actividad', title:'Natación',
+    place:'Piscina Municipal Las Rozas', dist:'3,5 km', leave:'17:35', how:'car', leaves:{ car:'17:35' } };
   var TODAY_LATER = [
-    { id:'clara', t:19.5, cat:'libre', title:'Merienda con Clara', place:'Casa de Clara', dist:'600 m',
+    { id:'clara', kind:'event', t:19.5, end:20.5, cat:'libre', title:'Merienda con Clara', place:'Casa de Clara', dist:'600 m',
       travel:{ mode:'walk',
         walk:{ min:10, leave:'19:20' },
         car: { min:5,  leave:'19:25' } } },
-    { id:'abuela', t:20.5, cat:'cita', title:'Videollamada con la abuela', place:'En casa', dist:'20 min' },
-    { id:'piano', t:21, cat:'tarea', title:'Practicar: Piano', place:'En casa', dist:'30 min' },
-    { id:'lengua', t:22, cat:'tarea', title:'Entrega de Lengua', place:'Classroom', dist:'redacción' },
-    { id:'mates', t:22.5, cat:'tarea', title:'Ejercicios de Mates', place:'Classroom', dist:'pág. 24' }
+    { id:'abuela', kind:'event', t:20.5, end:21, cat:'cita', title:'Videollamada con la abuela', place:'En casa', dist:'20 min' },
+    { id:'piano', kind:'task', est:30, t:21, cat:'tarea', title:'Practicar: Piano', place:'En casa', dist:'30 min' },
+    { id:'lengua', kind:'task', est:60, t:22, cat:'tarea', title:'Entrega de Lengua', place:'Classroom', dist:'redacción' },
+    { id:'mates', kind:'task', est:45, t:22.5, cat:'tarea', title:'Ejercicios de Mates', place:'Classroom', dist:'pág. 24' }
   ];
   // El cuerpo de la pantalla muestra como máximo TODAY_MAX deadlines (el próximo y los
   // siguientes por orden); la barra de tiempo dibuja todos los del día.
@@ -2236,8 +2249,46 @@
   function toggleLoad(){ setLoadOpen(document.querySelector('.load-card').classList.contains('is-collapsed')); }
   window.addEventListener('resize', fitLoad);
   window.addEventListener('load', fitLoad);
+  /* ---- Pulsar una tarjeta de «Hoy»: se abre su ficha en la pantalla que le corresponde,
+     con un botón para volver a «Hoy». (Datos de ejemplo: la ficha se arma con ellos y
+     Editar/Eliminar avisan; con los datos reales se abrirá el elemento real.) ---- */
+  var KIND_SCREEN = { activity:['activities', 'act'], event:['events', 'evt'], task:['tasks', 'task'] };
+  function todayOpen(item){
+    return 'data-open="' + item.id + '" role="button" tabindex="0" aria-label="' + fmtHour(item.t) + ' ' + item.title + '" ' +
+      'onclick="openFromToday(\'' + item.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){ event.preventDefault(); openFromToday(\'' + item.id + '\'); }"';
+  }
+  function openFromToday(id){
+    var item = [TODAY_NEXT].concat(TODAY_LATER_ALL).filter(function(x){ return x.id === id; })[0];
+    if(!item){ return; }
+    var sc = KIND_SCREEN[item.kind];
+    document.querySelector('.tab[data-screen="' + sc[0] + '"]').click();
+    var when = fmtDay(isoOf(TODAY_DATE)) + ' · ' + fmtHour(item.t) + (item.end ? '–' + fmtHour(item.end) : '');
+    var rows = item.kind === 'task'
+      ? [[t('task.dueDate'), when], [t('task.est'), fmtEst(item.est)], [t('f.cat'), catHtml({ name: catName(item.cat), color: catColor(item.cat) })]]
+      : [[t('f.cat'), catHtml({ name: catName(item.cat), color: catColor(item.cat) })], [t('d.when'), when],
+         [t('f.place'), esc(item.place) + (item.dist ? ' <span class="muted">· ' + esc(item.dist) + '</span>' : '')],
+         [t('d.leave'), item.leaves ? leaveChips(item) : '']];
+    renderDetail(sc[1], {
+      title: item.title, prio: 'Media', rows: rows,
+      edit: "toast(t('toast.demoItem'))", del: "toast(t('toast.demoItem'))",
+      delLabel: t(item.kind === 'activity' ? 'act.cancel' : item.kind === 'event' ? 'evt.cancel' : 'task.delete'),
+      back: { label: t('btn.backToday'), fn: "backToToday('" + sc[1] + "')" }
+    });
+  }
+  function backToToday(f){
+    showView(f, 'list');
+    document.querySelector('.tab[data-screen="today"]').click();
+  }
   function travelOf(item){ return item.travel ? item.travel[item.travel.mode] : null; }
   var CLOCK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
+  var WALK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="4" r="2"/><path d="m9 20 3-6 3 3v4"/><path d="M6 12l3-4 4 1 3 3"/><path d="m12 14-1-5"/></svg>';
+  // Horas de salida solo con icono (andando si aplica, y coche)
+  function leaveChips(n){
+    var l = n.leaves || {};
+    return ['walk', 'car'].filter(function(m){ return l[m]; }).map(function(m){
+      return '<span class="leave-chip" title="' + cap(t('how.' + m)) + '">' + (m === 'walk' ? WALK_SVG : CAR_SVG) + '<span>' + l[m] + '</span></span>';
+    }).join('');
+  }
   var CAR_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14l-1.5-5.5A2 2 0 0 0 15.6 10H8.4a2 2 0 0 0-1.9 1.5Z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>';
 
   // Escala de la barra: toda la franja horaria de hoy. En días de cole, el horario
@@ -2479,13 +2530,13 @@
     var n = TODAY_NEXT;
     // Solo el primer deadline lleva detalles; los siguientes, hora y nombre
     var chips = TODAY_LATER.map(function(e){
-      return '<div class="later-chip" style="' + catVars(e.cat) + '">' +
+      return '<div class="later-chip" ' + todayOpen(e) + ' style="' + catVars(e.cat) + '">' +
         '<div class="later-time">' + fmtHour(e.t) + '</div>' +
         '<div class="later-title">' + e.title + '</div></div>';
     }).join('');
     host.innerHTML =
       '<div><div class="section-eyebrow" style="color:var(--warn-ink)">' + t('today.soon', { t: untilText(n.t) }) + '</div>' +
-      '<div class="up-next-card' + nextCardAttrs(n) + '"><div style="display:flex; align-items:baseline; gap:10px;">' +
+      '<div class="up-next-card' + nextCardAttrs(n) + '" ' + todayOpen(n) + '><div style="display:flex; align-items:baseline; gap:10px;">' +
         '<span class="up-next-time">' + fmtHour(n.t) + '</span><span class="up-next-title">' + n.title + '</span></div>' +
         '<div class="up-next-sub">' + t('today.leaves', { place: n.place, leave: n.leave, how: t('how.' + n.how) }) + '</div></div></div>' +
       '<div><div class="section-eyebrow" style="color:var(--text-muted)">' + t('today.later') + '</div><div class="later-row">' + chips + '</div></div>';
@@ -2495,16 +2546,16 @@
   function renderPostit1(host){
     var n = TODAY_NEXT;
     var cards = TODAY_LATER.map(function(e, i){   // siguientes: solo hora y nombre
-      return '<div class="fan-card" style="' + catVars(e.cat) + ';z-index:' + (i + 1) + '">' +
+      return '<div class="fan-card" ' + todayOpen(e) + ' style="' + catVars(e.cat) + ';z-index:' + (i + 1) + '">' +
         '<div class="fan-time">' + fmtHour(e.t) + '</div>' +
         '<div class="fan-title">' + e.title + '</div></div>';
     }).join('');
     host.innerHTML =
       '<div><div class="hero-eyebrow">' + t('today.nowSoon', { t: untilText(n.t) }) + '</div>' +
-      '<div class="hero-card' + nextCardAttrs(n) + '"><div class="hero-time">' + fmtHour(n.t) + '</div>' +
-        '<div class="hero-title">' + n.title + '</div>' +
+      '<div class="hero-card' + nextCardAttrs(n) + '" ' + todayOpen(n) + '>' +
+        '<div class="hero-head"><span class="hero-time">' + fmtHour(n.t) + '</span><span class="hero-title">' + n.title + '</span></div>' +
         '<div class="hero-place">' + n.place + ' · ' + n.dist + '</div>' +
-        '<span class="hero-leave">' + t('today.departure', { t: n.leave }) + ' · ' + t('how.' + n.how) + '</span></div></div>' +
+        '<div class="hero-leave">' + leaveChips(n) + '</div></div></div>' +
       '<div><div class="section-eyebrow" style="color:var(--text-muted)">' + t('today.afterToday') + '</div><div class="fan">' + cards + '</div></div>';
   }
 
@@ -2521,11 +2572,12 @@
   function renderPostit2(host){
     var n = TODAY_NEXT;
     host.innerHTML =
-      '<div class="pi-next' + nextCardAttrs(n) + '" role="group" aria-label="' + t('aria.next') + '">' +
+      '<div class="pi-next' + nextCardAttrs(n) + '" ' + todayOpen(n) + '>' +
         '<span class="pi-next-time">' + fmtHour(n.t) + '</span>' +
-        '<span class="pi-next-title">' + n.title + '</span>' +
+        '<span class="pi-next-main"><span class="pi-next-title">' + n.title + '</span>' +
+          '<span class="pi-next-place">' + n.place + ' · ' + n.dist + '</span></span>' +
         '<span class="pi-next-side"><span class="pi-next-when">' + t('today.in', { t: untilText(n.t) }) + '</span>' +
-        '<span class="pi-next-leave">' + CAR_SVG + ' ' + t('today.leaveAt', { t: n.leave }) + '</span></span></div>' +
+        '<span class="pi-next-leave">' + leaveChips(n) + '</span></span></div>' +
       '<div class="board" aria-label="' + t('aria.later') + '"></div>';
     var board = host.querySelector('.board'), els = {};
     TODAY_LATER.forEach(function(item, i){
@@ -2540,9 +2592,11 @@
       note.innerHTML = '<div class="note-shadow"></div><div class="note-card">' +
         '<div class="n-head"><span class="n-time">' + fmtHour(item.t) + '</span></div>' +
         '<div class="n-title">' + item.title + '</div></div>';
+      // Un post-it de detrás viene al frente; el de delante se abre en su pantalla
       function front(){
         var k = noteOrder.indexOf(item.id);
         if(k > 0){ noteOrder.splice(k, 1); noteOrder.unshift(item.id); placeNotes(els); }
+        else { openFromToday(item.id); }
       }
       note.addEventListener('click', front);
       note.addEventListener('keydown', function(e){
@@ -2906,7 +2960,7 @@
   // d: {title, prio, rows:[[etiqueta, html]], edit:'fn()', del:'fn(this)', delLabel}
   function renderDetail(f, d){
     el(f + '-detail').innerHTML =
-      '<button type="button" class="detail-back" onclick="showView(\'' + f + '\', \'list\')">' + BACK_SVG + t('btn.back') + '</button>' +
+      '<button type="button" class="detail-back" onclick="' + (d.back ? d.back.fn : 'showView(\'' + f + '\', \'list\')') + '">' + BACK_SVG + (d.back ? d.back.label : t('btn.back')) + '</button>' +
       '<div class="detail-card">' +
         '<div class="detail-head"><h3>' + esc(d.title) + '</h3><span class="prio-chip prio-' + d.prio + '">' + t('prio.' + d.prio) + '</span></div>' +
         '<dl class="detail-list">' + d.rows.filter(function(r){ return r[1]; }).map(function(r){
