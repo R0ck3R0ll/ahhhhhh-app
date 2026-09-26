@@ -168,7 +168,18 @@
   .day-strip .now-label{ position:absolute; transform:translateX(-50%); font-size:10px; font-weight:700; color:var(--text); white-space:nowrap; }
   .day-strip .now-label.at-start{ transform:translateX(-6px); }
   .day-strip .now-label.at-end{ transform:translateX(calc(-100% + 6px)); }
-  .day-strip-scale{ display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; }
+  .day-strip-scale{ position:relative; display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; }
+  .day-strip-scale .scale-school{ position:absolute; top:0; white-space:nowrap; }
+  /* Tramo del cole: hueco rayado sobre la barra */
+  .day-strip .school-gap{
+    position:absolute; top:28px; height:20px; border-radius:6px;
+    border:1px solid var(--border);
+    background:repeating-linear-gradient(135deg, var(--surface-alt), var(--surface-alt) 4px, var(--border) 4px, var(--border) 5px);
+  }
+  .day-strip .school-gap span{
+    position:absolute; left:50%; top:-15px; transform:translateX(-50%);
+    font-size:9.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted);
+  }
 
   /* ---- Barra de tiempo «Niña soldado»: el camino del día ---- */
   .timeline svg{ display:block; width:100%; height:auto; overflow:visible; }
@@ -1027,21 +1038,48 @@
   /* ---- Utilidades ---- */
   function catColor(cat){ return 'var(--cat-' + cat + ')'; }
   function catVars(cat){ return '--c:var(--cat-' + cat + ');--c-ink:var(--cat-' + cat + '-ink);--deep:var(--cat-' + cat + '-deep)'; }
-  function minsTo(t){ return Math.round((t - NOW) * 60); }
+  // «45 min», «2 h», «10 h 30 min»
+  function untilText(t){
+    var m = Math.max(0, Math.round((t - NOW) * 60)), h = Math.floor(m / 60), r = m % 60;
+    return h ? h + ' h' + (r ? ' ' + r + ' min' : '') : r + ' min';
+  }
   function travelOf(item){ return item.travel ? item.travel[item.travel.mode] : null; }
   var CLOCK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
   var CAR_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14l-1.5-5.5A2 2 0 0 0 15.6 10H8.4a2 2 0 0 0-1.9 1.5Z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>';
 
-  // Franja que cubre la barra: el tiempo fuera del cole de hoy
-  // (por la mañana, de inicio de franja a la entrada; después, de la salida al final).
-  function todayRange(){
+  // Escala de la barra: toda la franja horaria de hoy. En días de cole, el horario
+  // escolar se dibuja como un tramo comprimido (SCHOOL_SHARE del ancho) y el resto
+  // del ancho se reparte en proporción al tiempo fuera del cole.
+  var SCHOOL_SHARE = 0.12;
+  function todayScale(){
     var b = dayBounds(), sc = schoolFor(TODAY_DAY);
-    var r = { start:toHours(b.start), end:toHours(b.end) };
+    var start = toHours(b.start), end = toHours(b.end), school = null;
+    var segs = [{ from:start, to:end }];
     if(sc.on){
-      if(NOW < toHours(sc.entry)){ r.end = Math.min(toHours(sc.entry), r.end); }
-      else { r.start = Math.max(toHours(sc.exit), r.start); }
+      var a = Math.max(toHours(sc.entry), start), z = Math.min(toHours(sc.exit), end);
+      if(a < z){
+        school = { from:a, to:z };
+        segs = [{ from:start, to:a }, { from:a, to:z, school:true }, { from:z, to:end }]
+          .filter(function(g){ return g.to > g.from; });
+      }
     }
-    return r;
+    var outside = segs.reduce(function(sum, g){ return sum + (g.school ? 0 : g.to - g.from); }, 0);
+    var x = 0;
+    segs.forEach(function(g){
+      g.w = g.school ? (outside ? SCHOOL_SHARE : 1) : (1 - (school ? SCHOOL_SHARE : 0)) * (g.to - g.from) / outside;
+      g.x = x; x += g.w;
+    });
+    function pos(t){
+      if(t <= start){ return 0; }
+      if(t >= end){ return 1; }
+      for(var i = 0; i < segs.length; i++){
+        var g = segs[i];
+        if(t <= g.to){ return g.x + g.w * (t - g.from) / (g.to - g.from); }
+      }
+      return 1;
+    }
+    if(school){ school.x0 = pos(school.from); school.x1 = pos(school.to); }
+    return { start:start, end:end, school:school, pos:pos };
   }
 
   function todayEvents(){
@@ -1052,7 +1090,7 @@
   function renderToday(){
     var screen = document.getElementById('screen-today');
     screen.setAttribute('data-layout', APPEARANCE.layout);
-    var r = todayRange();
+    var r = todayScale();
     var bar = document.getElementById('today-bar');
     if(APPEARANCE.bar === 'nina'){ renderNinaBar(bar, r); } else { renderDotsBar(bar, r); }
     var layout = document.getElementById('today-layout');
@@ -1060,13 +1098,19 @@
     else if(APPEARANCE.layout === 'postit2'){ renderPostit2(layout); }
     else { renderList(layout); }
     var hint = document.getElementById('bar-hint');
-    if(hint){ hint.textContent = BAR_HINTS[APPEARANCE.bar] + ' Hoy cubre el tiempo fuera del cole: ' + fmtHour(r.start) + '–' + fmtHour(r.end) + '.'; }
+    if(hint){
+      hint.textContent = BAR_HINTS[APPEARANCE.bar] + ' Cubre la franja horaria (' + fmtHour(r.start) + '–' + fmtHour(r.end) + ')' +
+        (r.school ? ', con el horario escolar (' + fmtHour(r.school.from) + '–' + fmtHour(r.school.to) + ') comprimido en un tramo rayado.' : '.');
+    }
   }
 
   /* ---- Barra «Puntos» ---- */
   function renderDotsBar(host, r){
-    function pct(t){ return Math.max(0, Math.min(100, (t - r.start) / (r.end - r.start) * 100)); }
+    function pct(t){ return r.pos(t) * 100; }
     var html = '<div class="day-strip"><div class="bar"></div>';
+    if(r.school){
+      html += '<div class="school-gap" style="left:' + (r.school.x0 * 100) + '%; width:' + ((r.school.x1 - r.school.x0) * 100) + '%;"><span>cole</span></div>';
+    }
     todayEvents().forEach(function(e){
       var p = pct(e.t), end = p > 97 ? ' at-end' : '';
       if(e.next){
@@ -1081,7 +1125,9 @@
     html += '<div class="now-line" style="left:' + n + '%; height:56px;"></div>' +
             '<div class="now-dot" style="left:' + n + '%; top:52px; width:12px; height:12px;"></div>' +
             '<div class="now-label' + edge + '" style="left:' + n + '%; top:66px;">AHORA · ' + fmtHour(NOW) + '</div>' +
-            '</div><div class="day-strip-scale"><span>' + fmtHour(r.start) + '</span><span>' + fmtHour(r.end) + '</span></div>';
+            '</div><div class="day-strip-scale"><span>' + fmtHour(r.start) + '</span>' +
+            (r.school ? '<span class="scale-school" style="left:max(calc(' + ((r.school.x0 + r.school.x1) * 50) + '% - 29px), 36px)">' + fmtHour(r.school.from) + '–' + fmtHour(r.school.to) + '</span>' : '') +
+            '<span>' + fmtHour(r.end) + '</span></div>';
     host.innerHTML = html;
   }
 
@@ -1156,15 +1202,18 @@
   }
 
   function renderNinaBar(host, r){
-    function xAt(t){ return TL_X0 + Math.max(0, Math.min(1, (t - r.start) / (r.end - r.start))) * (TL_X1 - TL_X0); }
+    function xAt(t){ return TL_X0 + r.pos(t) * (TL_X1 - TL_X0); }
     var nowX = xAt(NOW), events = todayEvents();
+    var inSchool = r.school && NOW > r.school.from && NOW < r.school.to;
     var track = 'M20 52 H316 V44 L338 58 L316 72 V64 H20 A6 6 0 0 1 20 52 Z';
     // Etiqueta de «ahora» a la izquierda de la niña; si no cabe, encima de ella.
-    var nowLabel = nowX - 18 > 48
+    var nowLabel = inSchool
+      ? '<text class="tl-label is-now" x="' + nowX.toFixed(1) + '" y="18" text-anchor="middle">' + fmtHour(NOW) + ' · en clase</text>'
+      : nowX - 18 > 48 && !(r.school && NOW >= r.school.to && nowX - 50 < xAt(r.school.to))
       ? '<text class="tl-label is-now" x="' + (nowX - 18).toFixed(1) + '" y="42" text-anchor="end">' + fmtHour(NOW) + '</text>'
       : '<text class="tl-label is-now" x="' + nowX.toFixed(1) + '" y="-10" text-anchor="middle">' + fmtHour(NOW) + '</text>';
     var svg =
-      '<svg viewBox="0 -22 350 116" role="img" aria-label="Ahora ' + fmtHour(NOW) + '; próximos: ' + events.map(function(e){ return fmtHour(e.t); }).join(', ') + '">' +
+      '<svg viewBox="0 -22 350 126" role="img" aria-label="Ahora ' + fmtHour(NOW) + '; próximos: ' + events.map(function(e){ return fmtHour(e.t); }).join(', ') + '">' +
       '<defs>' +
         '<clipPath id="trackClip"><path d="' + track + '"/></clipPath>' +
         '<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
@@ -1175,15 +1224,27 @@
       '<path d="' + track + '" fill="var(--surface)"/>' +
       '<rect x="0" y="40" width="' + nowX + '" height="40" fill="url(#hatch)" clip-path="url(#trackClip)"/>' +
       '<path d="' + track + '" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/>';
+    // El cole es un túnel sobre el camino: la niña entra al empezar y sale al terminar
+    if(r.school){
+      var tx0 = xAt(r.school.from), tx1 = xAt(r.school.to), tw = tx1 - tx0;
+      svg += '<path d="M' + tx0.toFixed(1) + ' 72 V38 Q' + tx0.toFixed(1) + ' 26 ' + (tx0 + 12).toFixed(1) + ' 26 H' + (tx1 - 12).toFixed(1) +
+          ' Q' + tx1.toFixed(1) + ' 26 ' + tx1.toFixed(1) + ' 38 V72 Z" fill="var(--surface-alt)" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/>' +
+        '<path d="M' + (tx0 + 7).toFixed(1) + ' 72 V50 Q' + (tx0 + 7).toFixed(1) + ' 42 ' + (tx0 + tw / 2).toFixed(1) + ' 42 Q' + (tx1 - 7).toFixed(1) + ' 42 ' + (tx1 - 7).toFixed(1) + ' 50 V72 Z" fill="var(--ink)" opacity=".75"/>' +
+        '<text class="tl-label is-muted" x="' + (tx0 + tw / 2).toFixed(1) + '" y="36" text-anchor="middle" style="font-size:8px;font-weight:700;letter-spacing:.06em">COLE</text>' +
+        '<text class="tl-label is-muted" x="' + Math.max(tx0 + tw / 2 - 30, 56).toFixed(1) + '" y="88" text-anchor="start">' + fmtHour(r.school.from) + '–' + fmtHour(r.school.to) + '</text>';
+    }
+    var lastX = -99, low = false;
     events.forEach(function(e, i){
       var x = xAt(e.t);
-      svg += explosion(e, i, x) + '<text class="tl-label" x="' + x.toFixed(1) + '" y="88" text-anchor="middle">' + fmtHour(e.t) + '</text>';
+      low = x - lastX < 34 ? !low : false;   // etiquetas muy juntas: una arriba y otra abajo
+      lastX = x;
+      svg += explosion(e, i, x) + '<text class="tl-label" x="' + x.toFixed(1) + '" y="' + (low ? 100 : 88) + '" text-anchor="middle">' + fmtHour(e.t) + '</text>';
     });
     if(xAt(events[0].t) - TL_X0 > 40){
       svg += '<text class="tl-label is-muted" x="20" y="88" text-anchor="start">' + fmtHour(r.start) + '</text>';
     }
     svg += '<polygon points="' + (nowX - 4) + ',72 ' + (nowX + 4) + ',72 ' + nowX + ',66" fill="var(--ink)"/>' + nowLabel +
-      '<g transform="translate(' + nowX.toFixed(1) + ' 52) scale(1.5)">' + soldierGirl() + '</g></svg>';
+      (inSchool ? '' : '<g transform="translate(' + nowX.toFixed(1) + ' 52) scale(1.5)">' + soldierGirl() + '</g>') + '</svg>';
     host.innerHTML = '<div class="timeline">' + svg + '</div>';
     if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){ host.querySelector('svg').pauseAnimations(); }
   }
@@ -1206,7 +1267,7 @@
       return html + '</div>';
     }).join('');
     host.innerHTML =
-      '<div><div class="section-eyebrow" style="color:var(--warn-ink)">Se acerca · faltan ' + minsTo(n.t) + ' min</div>' +
+      '<div><div class="section-eyebrow" style="color:var(--warn-ink)">Se acerca · faltan ' + untilText(n.t) + '</div>' +
       '<div class="up-next-card"><div style="display:flex; align-items:baseline; gap:10px;">' +
         '<span class="up-next-time">' + fmtHour(n.t) + '</span><span class="up-next-title">' + n.title + '</span></div>' +
         '<div class="up-next-sub">' + n.place + ' · sale ' + n.leave + ' ' + n.how + '</div></div></div>' +
@@ -1227,7 +1288,7 @@
         '<div class="fan-sub">' + (tr ? e.dist + ' · ' + tr.how + ' · sal ' + tr.leave : e.place + ' · ' + e.dist) + '</div></div>';
     }).join('');
     host.innerHTML =
-      '<div><div class="hero-eyebrow">Ahora mismo · faltan ' + minsTo(n.t) + ' min</div>' +
+      '<div><div class="hero-eyebrow">Ahora mismo · faltan ' + untilText(n.t) + '</div>' +
       '<div class="hero-card"><div class="hero-time">' + fmtHour(n.t) + '</div>' +
         '<div class="hero-title">' + n.title + '</div>' +
         '<div class="hero-place">' + n.place + ' · ' + n.dist + '</div>' +
@@ -1250,7 +1311,7 @@
       '<div class="pi-next" role="group" aria-label="Próximo evento">' +
         '<span class="pi-next-time">' + fmtHour(n.t) + '</span>' +
         '<span class="pi-next-title">' + n.title + '</span>' +
-        '<span class="pi-next-side"><span class="pi-next-when">en ' + minsTo(n.t) + ' min</span>' +
+        '<span class="pi-next-side"><span class="pi-next-when">en ' + untilText(n.t) + '</span>' +
         '<span class="pi-next-leave">' + CAR_SVG + ' sal ' + n.leave + '</span></span></div>' +
       '<div class="board" aria-label="Eventos siguientes"></div>';
     var board = host.querySelector('.board'), els = {};
