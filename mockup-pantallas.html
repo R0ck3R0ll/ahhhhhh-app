@@ -692,6 +692,12 @@
   @media (prefers-reduced-motion: reduce){ .risk-flag{ animation:none; } }
   .risk-dialog .risk-head{ display:flex; align-items:center; gap:8px; }
   #risk-icon{ display:inline-flex; line-height:0; }
+  /* Aviso ámbar: también los botones en ámbar */
+  .risk-dialog.is-amber .btn-primary{ background:var(--amber-line); color:#2b1d00; }
+  .risk-dialog.is-amber .btn-primary:hover{ background:color-mix(in srgb, var(--amber-line) 85%, #000); }
+  .risk-dialog.is-amber .btn-ghost{ color:var(--amber-text); border-color:var(--amber-line); }
+  [data-theme="dark"] .risk-dialog.is-amber .btn-ghost{ color:#f2c14e; }
+  .risk-dialog.is-amber .btn-primary:focus-visible, .risk-dialog.is-amber .btn-ghost:focus-visible{ outline-color:var(--amber-line); }
   #risk-ok[hidden], #risk-open[hidden], #risk-close[hidden], #risk-body:empty{ display:none; }
   .risk-dialog .press-tasks small{ white-space:normal; }
 
@@ -4561,11 +4567,11 @@
   // Tiempo libre: la franja horaria menos cole, actividades y eventos (los bloques de trabajo
   // cuentan como libres: son tiempo para las tareas). Sin tiempo estimado no se puede calcular.
   // Dos niveles: rojo, si no cabe; ámbar («cuidado, el tiempo se agota»), si cabe pero con menos
-  // de un 20 % de margen (el tiempo libre no llega a 1,2 veces lo que hace falta).
+  // de 1 h de margen (el tiempo libre no llega a lo que hace falta + 1 h).
   // Aviso emergente la primera vez para cada nivel; aceptado, no vuelve (si una tarea pasa de ámbar
   // a rojo, sí avisa de nuevo). Mientras quede alguna tarea avisada sin hacer ni eliminar, un único
   // triángulo junto a la barra de tiempo: rojo si alguna llegó a rojo; si no, ámbar.
-  var RISK_MARGIN = 1.2;
+  var RISK_MARGIN = 60;   // minutos
   var RISK_ACK = [], RISK_SEEN = {};   // RISK_ACK: 'clave:nivel'; RISK_SEEN: clave → peor nivel avisado
   try{
     RISK_ACK = JSON.parse(localStorage.getItem('risk-ack') || '[]') || [];
@@ -4592,7 +4598,7 @@
         cum += own;
         if(!own){ return; }
         var free = freeMinutesUntil(x.due);
-        var level = cum > free ? 'red' : cum * RISK_MARGIN > free ? 'amber' : null;
+        var level = cum > free ? 'red' : cum + RISK_MARGIN > free ? 'amber' : null;
         if(level){ out.push({ x:x, level:level, need:cum, own:own, free:free, shared: cum > own }); }
       });
     return out;
@@ -4619,6 +4625,7 @@
     if(RISK_SEEN[r.x.key] !== 'red'){ RISK_SEEN[r.x.key] = r.level; storeRisk(); }
     RISK_OPEN = r;
     el('risk-icon').innerHTML = triSvg(r.level, 24);
+    el('risk-dialog').classList.toggle('is-amber', r.level === 'amber');
     el('risk-title').textContent = t(r.level === 'red' ? 'risk.title' : 'risk.amberTitle');
     el('risk-body').innerHTML = riskText(r);
     el('risk-list').innerHTML = '';
@@ -4655,6 +4662,7 @@
     var now = riskTasks(), list = riskFlagged();
     RISK_OPEN = null;
     el('risk-icon').innerHTML = triSvg(worstLevel(list), 24);
+    el('risk-dialog').classList.toggle('is-amber', worstLevel(list) === 'amber');
     el('risk-title').textContent = t('risk.listTitle');
     el('risk-body').textContent = '';
     el('risk-list').innerHTML = list.map(function(o){
