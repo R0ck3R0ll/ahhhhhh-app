@@ -2570,7 +2570,7 @@
   // del ancho se reparte en proporción al tiempo fuera del cole.
   var SCHOOL_SHARE = 0.12;
   function todayScale(){
-    var b = dayBounds(), sc = schoolFor(TODAY_DAY);
+    var b = dayBounds(), sc = schoolForDate(TODAY_DATE);
     var start = toHours(b.start), end = toHours(b.end), school = null;
     var segs = [{ from:start, to:end }];
     if(sc.on){
@@ -3090,6 +3090,14 @@
     if(day < 5){ return {on:true, entry:SCHOOL.week.entry, exit:SCHOOL.week.exit}; }
     if(day === 5){ return SCHOOL.sat; }
     return {on:false};
+  }
+  // Festivos y días no lectivos (fechas ISO) que salen del calendario escolar de Config
+  // (en la maqueta, la importación del archivo aún no está hecha: la lista empieza vacía).
+  var NO_SCHOOL_DATES = [];
+  try{ NO_SCHOOL_DATES = JSON.parse(localStorage.getItem('no-school-dates') || '[]') || []; }catch(e){ NO_SCHOOL_DATES = []; }
+  // Horario del cole para una fecha concreta: un día no lectivo se trata como un domingo
+  function schoolForDate(d){
+    return NO_SCHOOL_DATES.indexOf(isoOf(d)) >= 0 ? {on:false} : schoolFor(weekdayOf(d));
   }
 
   // Franja horaria menos el horario escolar
@@ -4092,7 +4100,7 @@
 
   // Ocupado ese día: cole, actividades, eventos y bloques (menos los de skip); extra: bloques en borrador
   function busyOn(iso, skip, extra){
-    var d = isoDate(iso), wd = weekdayOf(d), out = [], sc = schoolFor(wd);
+    var d = isoDate(iso), wd = weekdayOf(d), out = [], sc = schoolForDate(d);
     if(sc.on){ out.push([toHours(sc.entry), toHours(sc.exit)]); }
     USER_ACTS.forEach(function(a){ a.sessions.forEach(function(x){ if(x.day === wd){ out.push([toHours(x.start), toHours(x.end)]); } }); });
     USER_EVENTS.forEach(function(e){ if(e.date === iso){ var h = toHours(e.time); out.push([h, h + (e.dur || 60) / 60]); } });
@@ -4396,7 +4404,29 @@
     var legend = {};
     var isWeek = view === 'week';
     var days = isWeek ? WEEK_DAYS : [WEEK_DAYS[TODAY_DAY]];
-    var sc = calScale(schoolFor(isWeek ? 0 : TODAY_DAY)), pos = sc.pos;
+    // Actividades, eventos, bloques y entregas de tareas. La entrega se dibuja como un bloque
+    // estándar de TASK_VIEW_H que termina en la deadline (solo visual: avisos y barra
+    // de tiempo usan la deadline).
+    var allItems = CAL_EVENTS.concat(weekUserActs(), weekUserEvents(), weekBlocks()).concat(CAL_DEADLINES.concat(weekUserTasks(), weekActTasks()).map(function(e){
+      return { day:e.day, title:e.title, start:Math.max(e.time - TASK_VIEW_H, CAL_START), end:e.time, cat:'tarea', due:true, done:e.done, ref:e.ref };
+    }));
+    // El horario del cole se comprime (en la semana, el de lunes a viernes). Si un día sin cole
+    // (sábado, domingo, festivo o no lectivo) o con menos horas de cole tiene algo en ese tramo,
+    // no se comprime: así nada queda aplastado.
+    var base = isWeek ? schoolFor(0) : schoolForDate(WEEK_DAYS[TODAY_DAY].d);
+    if(base.on && isWeek){
+      var A = toHours(base.entry), B = toHours(base.exit);
+      var clash = WEEK_DAYS.some(function(d, i){
+        var sd = schoolForDate(d.d), a = sd.on ? toHours(sd.entry) : B, z = sd.on ? toHours(sd.exit) : B;
+        return allItems.some(function(e){
+          if(e.day !== i){ return false; }
+          // partes del tramo A–B en las que ese día no hay cole: [A, a) y (z, B]
+          return (e.start < Math.min(a, B) && e.end > A) || (e.end > Math.max(z, A) && e.start < B);
+        });
+      });
+      if(clash){ base = {on:false}; }
+    }
+    var sc = calScale(base), pos = sc.pos;
 
     grid.style.gridTemplateColumns = '34px repeat(' + days.length + ', minmax(0, 1fr))';
     grid.style.columnGap = isWeek ? '2px' : '0';
@@ -4455,7 +4485,7 @@
         col.appendChild(ln);
       });
 
-      var sd = schoolFor(realDay);
+      var sd = schoolForDate(d.d);
       if(sd.on){
         var y0 = pos(Math.max(toHours(sd.entry), CAL_START)), y1 = pos(Math.min(toHours(sd.exit), CAL_END));
         var band = document.createElement('div');
@@ -4466,12 +4496,8 @@
         col.appendChild(band);
       }
 
-      // Actividades, eventos y entregas de tareas. La entrega se dibuja como un bloque
-      // estándar de TASK_VIEW_H que termina en la deadline (solo visual: avisos y barra
-      // de tiempo usan la deadline). Los bloques que se solapan se reparten el ancho.
-      var items = CAL_EVENTS.concat(weekUserActs(), weekUserEvents(), weekBlocks()).concat(CAL_DEADLINES.concat(weekUserTasks(), weekActTasks()).map(function(e){
-        return { day:e.day, title:e.title, start:Math.max(e.time - TASK_VIEW_H, CAL_START), end:e.time, cat:'tarea', due:true, done:e.done, ref:e.ref };
-      })).filter(function(e){ return e.day === realDay; });
+      // Los bloques que se solapan se reparten el ancho
+      var items = allItems.filter(function(e){ return e.day === realDay; }).map(function(e){ return Object.assign({}, e); });
       layoutLanes(items);
       items.forEach(function(e){
         var bar = document.createElement('div');
