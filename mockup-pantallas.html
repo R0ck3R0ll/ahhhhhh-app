@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>AHHHHHH!!!!!</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -117,6 +118,15 @@
     padding:18px 18px 100px;
   }
   .screen{ display:none; flex-direction:column; gap:20px; }
+
+  /* En el móvil la App ocupa toda la pantalla (sin el marco de teléfono de la maqueta):
+     cabecera y barra de pestañas fijas, y solo el contenido de cada pantalla se desplaza. */
+  @media (max-width:500px){
+    body{ margin:0; min-height:100dvh; }
+    .page-pad{ padding:0; }
+    .app-shell{ max-width:none; height:100dvh; min-height:0; border:none; border-radius:0; box-shadow:none; }
+    main.screen-container{ min-height:0; }
+  }
   .screen.active{ display:flex; }
 
   h2.section-title{
@@ -1574,6 +1584,7 @@
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById('screen-'+btn.dataset.screen).classList.add('active');
     setScreenHeading(btn);
+    if(btn.dataset.screen === 'calendar'){ fitCalendar(); }
   }
 
   function setScreenHeading(btn){
@@ -2175,6 +2186,7 @@
     CAL_START = Math.floor(toHours(b.start));
     CAL_END = Math.ceil(toHours(b.end));
     renderCalendar(calView);
+    fitCalendar();
     updateConfigSummaries();
     if(typeof renderToday === 'function' && document.getElementById('layout-hint').textContent){ renderToday(); }
   }
@@ -2242,9 +2254,10 @@
 
 
   /* ---- Calendario (vista día / semana) ---- */
-  // Alto fijo para que la página quepa sin scroll; el horario escolar se comprime en
-  // CAL_SCHOOL_PX y el resto del alto se reparte entre las horas fuera del cole.
-  var CAL_START = 7, CAL_END = 23, CAL_BODY_PX = 440, CAL_SCHOOL_PX = 44;   // sigue la franja horaria de Config
+  // Alto de la cuadrícula: en el móvil, el que quede libre en la pantalla (ver fitCalendar);
+  // en la maqueta de escritorio, fijo. El horario escolar se comprime en CAL_SCHOOL_PX y el
+  // resto del alto se reparte entre las horas fuera del cole.
+  var CAL_START = 7, CAL_END = 23, CAL_BODY_PX = 440, CAL_BODY_DEFAULT = 440, CAL_BODY_MIN = 250, CAL_SCHOOL_PX = 44;   // sigue la franja horaria de Config
   // Semana del 7 al 13 de septiembre de 2026; los nombres salen del idioma elegido
   var WEEK_DAYS = [0,1,2,3,4,5,6].map(function(i){ return { d:new Date(2026, 8, 7 + i), isToday: i === 4 }; });
   function calRangeText(view){
@@ -2323,11 +2336,12 @@
     });
 
     // Horas: cada hora fuera del cole tiene línea; etiqueta cada dos horas y en los bordes del cole
-    var lines = [], labels = [];
+    // (en pantallas altas, con sitio de sobra, etiqueta cada hora)
+    var lines = [], labels = [], step = pos(CAL_END) - pos(CAL_END - 1) >= 48 ? 1 : 2;
     for(var hr = CAL_START; hr <= CAL_END; hr++){
       if(sc.inSchool(hr)){ continue; }
       if(hr > CAL_START && hr < CAL_END){ lines.push(hr); }
-      if((hr - CAL_START) % 2 === 0 || hr === CAL_END){ labels.push(hr); }
+      if((hr - CAL_START) % step === 0 || hr === CAL_END){ labels.push(hr); }
     }
     if(sc.school){ labels.push(sc.school.from, sc.school.to); }
     labels.sort(function(x, y){ return x - y; });
@@ -2400,12 +2414,29 @@
     });
   }
 
+  // En el móvil, ajusta el alto de la cuadrícula al hueco libre para que no haga falta
+  // scroll (con un mínimo legible: en pantallas muy bajas sí se desplaza).
+  var MOBILE = window.matchMedia('(max-width:500px)');
+  function fitCalendar(){
+    var screen = document.getElementById('screen-calendar');
+    if(!screen.classList.contains('active')){ return; }
+    var target = CAL_BODY_DEFAULT;
+    if(MOBILE.matches){
+      var main = screen.parentElement, cs = getComputedStyle(main);
+      var free = main.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - screen.offsetHeight;
+      target = Math.max(CAL_BODY_MIN, Math.floor(CAL_BODY_PX + free));
+    }
+    if(target !== CAL_BODY_PX){ CAL_BODY_PX = target; renderCalendar(calView); }
+  }
+  window.addEventListener('resize', fitCalendar);
+
   function setCalView(btn){
     document.querySelectorAll('.seg-btn[data-view]').forEach(function(b){ b.classList.remove('is-active'); });
     btn.classList.add('is-active');
     var view = calView = btn.dataset.view;
     document.getElementById('cal-range').textContent = calRangeText(view);
     renderCalendar(view);
+    fitCalendar();
   }
 
   loadAppearance();
