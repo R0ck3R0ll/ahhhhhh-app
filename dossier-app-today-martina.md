@@ -122,6 +122,8 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Si no hay ninguna tarea que cumpla la condición, la tarjeta no aparece.
   - **Regla de espacio:** si con la tarjeta desplegada la pantalla no da para todo sin que nada quede tapado, la tarjeta aparece **plegada** (solo «Próximos días · n») y hay que pulsarla para ver las tareas; al pulsar de nuevo se pliega.
 - Para ganar espacio, «Hoy» usa una **cabecera compacta** (sin la marca, título y fecha en una línea), una **barra de tiempo más baja** y un **primer elemento más compacto**.
+  - **Solo en móviles pequeños** (hasta 360 px de ancho o 620 px de alto): los elementos 2 a 4 son más pequeños en las tres vistas (fichas más bajas en Lista, cartas más pequeñas en Post-it 1, post-its más pequeños y más juntos en Post-it 2).
+- En **Post-it 1**, las cartas de los elementos 2 a 4 usan el mismo código de color que los post-its de Post-it 2 (relleno del color de la categoría con brillo, borde oscuro y texto oscuro de la categoría).
 
 ---
 

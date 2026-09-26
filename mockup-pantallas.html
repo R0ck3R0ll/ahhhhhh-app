@@ -266,14 +266,16 @@
   .fan{ display:flex; align-items:center; justify-content:center; padding:8px 0 10px; }
   .fan-card{
     position:relative; flex:none; width:112px; min-height:134px; margin-right:-16px;
-    background:var(--surface); border:1px solid var(--c); border-radius:16px; padding:13px;
-    box-shadow:var(--shadow);
+    /* mismo código de color que los post-its de Post-it 2 */
+    background:linear-gradient(160deg, rgba(255,255,255,.32), rgba(255,255,255,0) 48%), var(--c);
+    border:1.5px solid rgba(43,41,37,.8); border-radius:16px; padding:13px; color:var(--deep);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.45), var(--shadow);
   }
   .fan-card:last-child{ margin-right:0; }
   .fan-card:nth-child(3n+1){ animation:bob1 3.6s ease-in-out infinite; }
   .fan-card:nth-child(3n+2){ animation:bob2 4.1s ease-in-out infinite; }
   .fan-card:nth-child(3n+3){ animation:bob3 3.8s ease-in-out infinite; }
-  .fan-time{ font-size:11px; font-weight:700; color:var(--c-ink); }
+  .fan-time{ font-size:11px; font-weight:700; color:var(--deep); }
   .fan-title{ font-size:13px; font-weight:700; margin-top:5px; line-height:1.2; hyphens:auto; overflow-wrap:break-word; }
   .fan-sub{ font-size:10.5px; color:var(--text-muted); margin-top:4px; }
 
@@ -344,6 +346,20 @@
     color:var(--deep);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.45), 0 10px 20px rgba(0,0,0,.10);
     animation:float var(--dur) ease-in-out infinite; animation-delay:var(--delay);
+  }
+  /* Móviles pequeños: los elementos 2 a 4 más pequeños en las tres vistas */
+  @media (max-width:360px), (max-height:620px){
+    .later-row{ gap:6px; }
+    .later-chip{ padding:6px 10px; min-width:120px; border-radius:12px; }
+    .later-title{ font-size:12px; margin-top:1px; }
+    .fan{ padding:4px 0 6px; }
+    .fan-card{ width:94px; min-height:88px; padding:9px 10px; margin-right:-14px; }
+    .fan-title{ font-size:12px; margin-top:3px; }
+    .note{ width:min(50%, 170px); min-height:112px; }
+    .note-card{ min-height:112px; padding:10px 12px; border-radius:18px; }
+    .note .n-head{ top:9px; right:12px; }
+    .note .n-time{ font-size:20px; }
+    .note .n-title{ min-height:50px; font-size:14px; }
   }
   @keyframes float{ 0%,100%{ transform:translateY(0) rotate(0deg); } 50%{ transform:translateY(-10px) rotate(var(--sway)); } }
   @keyframes shadowFloat{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(.76); opacity:.5; } }
@@ -2538,11 +2554,15 @@
     placeNotes(els);
   }
 
+  // Móviles pequeños: post-its más pequeños y más juntos
+  var SMALL_PHONE = window.matchMedia('(max-width:360px), (max-height:620px)');
+  function noteY(sl){ return SMALL_PHONE.matches ? Math.round(sl.y * 0.66) : sl.y; }
+  SMALL_PHONE.addEventListener('change', function(){ if(el('screen-today').classList.contains('active')){ renderToday(); } });
   function placeNotes(els){
     noteOrder.forEach(function(id, slot){
       var sl = NOTE_SLOTS[slot] || NOTE_SLOTS[NOTE_SLOTS.length - 1], el = els[id];
       el.style.setProperty('--x', sl.x);
-      el.style.setProperty('--y', sl.y + 'px');
+      el.style.setProperty('--y', noteY(sl) + 'px');
       el.style.setProperty('--rot', sl.rot + 'deg');
       el.style.setProperty('--z', String(10 - slot));
     });
@@ -2550,7 +2570,7 @@
     var board = els[noteOrder[0]].parentNode, h = 0;
     noteOrder.forEach(function(id, slot){
       var sl = NOTE_SLOTS[slot] || NOTE_SLOTS[NOTE_SLOTS.length - 1];
-      h = Math.max(h, sl.y + els[id].offsetHeight);
+      h = Math.max(h, noteY(sl) + els[id].offsetHeight);
     });
     board.style.height = (h + 40) + 'px';
   }
