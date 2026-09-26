@@ -102,8 +102,9 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 ### 2.4 Pantalla principal — "Today"
 - Nombre de la pantalla **en el idioma de la App**: Hoy (es), Today (en), Oggi (it), Aujourd’hui (fr), Heute (de); en la pestaña, en el título y en los textos que la mencionan.
-- **Barra de tiempo**: dibuja **todos** los deadlines del día.
+- **Barra de tiempo**: dibuja **todos** los deadlines del día. **Sin etiqueta con la hora actual**: el momento presente lo marcan la línea vertical (Puntos) o la niña (Niña soldado).
 - **Cuerpo** (debajo de la barra): **como máximo 4 deadlines**: el más próximo destacado y los siguientes por orden, según la vista elegida (Lista, Post-it 1, Post-it 2). Si hay más, una línea avisa de cuántos quedan («Y 2 más hoy: los ves en la barra de tiempo»).
+- **Solo el primer deadline lleva detalles** (lugar, traslado, hora de salida…); los siguientes muestran **solo hora y nombre**.
 - Muestra los deadlines del día: hora de inicio de actividades/citas programadas, y para tareas de Classroom, la hora de entrega como deadline.
 - Si un evento implica desplazamiento, se muestran **dos datos**: el deadline en sí, y la hora de salida calculada según el tiempo de traslado (Google Maps).
   - Distancias menores de 1 km: preguntar al usuario si se va andando.

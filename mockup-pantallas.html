@@ -283,9 +283,9 @@
   .pi-next-when{ font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
   .pi-next-leave{ display:flex; align-items:center; gap:4px; font-size:12px; font-weight:600; }
 
-  .board{ position:relative; flex:none; height:384px; }
+  .board{ position:relative; flex:none; height:290px; }
   .note{
-    position:absolute; width:min(56%, 188px); min-height:150px;
+    position:absolute; width:min(56%, 188px); min-height:96px;
     left:var(--x); top:var(--y); z-index:var(--z);
     transform:rotate(var(--rot));
     transition:left .8s cubic-bezier(.34,1.25,.5,1), top .8s cubic-bezier(.34,1.25,.5,1), transform .8s cubic-bezier(.34,1.25,.5,1);
@@ -303,8 +303,8 @@
     animation:shadowFloat var(--dur) ease-in-out infinite; animation-delay:var(--delay);
   }
   .note-card{
-    position:relative; min-height:150px;
-    display:flex; flex-direction:column; justify-content:flex-end;
+    position:relative; min-height:96px;
+    display:flex; flex-direction:column; justify-content:center;
     padding:13px 15px; border-radius:22px;
     border:1.5px solid rgba(43,41,37,.8);
     background:linear-gradient(160deg, rgba(255,255,255,.32), rgba(255,255,255,0) 48%), var(--c);
@@ -2247,10 +2247,9 @@
                 '<div class="stem' + end + '" style="left:' + p + '%; top:44px; height:12px; background:' + catColor(e.cat) + ';"></div>';
       }
     });
-    var n = pct(NOW), edge = n < 12 ? ' at-start' : (n > 88 ? ' at-end' : '');
+    var n = pct(NOW);   // sin etiqueta con la hora actual: solo la línea y el punto
     html += '<div class="now-line" style="left:' + n + '%; height:56px;"></div>' +
             '<div class="now-dot" style="left:' + n + '%; top:52px; width:12px; height:12px;"></div>' +
-            '<div class="now-label' + edge + '" style="left:' + n + '%; top:66px;">' + t('today.now', { t: fmtHour(NOW) }) + '</div>' +
             '</div><div class="day-strip-scale"><span>' + fmtHour(r.start) + '</span>' +
             (r.school ? '<span class="scale-school" style="left:max(calc(' + ((r.school.x0 + r.school.x1) * 50) + '% - 29px), 36px)">' + fmtHour(r.school.from) + '–' + fmtHour(r.school.to) + '</span>' : '') +
             '<span>' + fmtHour(r.end) + '</span></div>';
@@ -2332,12 +2331,7 @@
     var nowX = xAt(NOW), events = todayEvents();
     var inSchool = r.school && NOW > r.school.from && NOW < r.school.to;
     var track = 'M20 52 H316 V44 L338 58 L316 72 V64 H20 A6 6 0 0 1 20 52 Z';
-    // Etiqueta de «ahora» a la izquierda de la niña; si no cabe, encima de ella.
-    var nowLabel = inSchool
-      ? '<text class="tl-label is-now" x="' + nowX.toFixed(1) + '" y="18" text-anchor="middle">' + t('today.inClass', { t: fmtHour(NOW) }) + '</text>'
-      : nowX - 18 > 48 && !(r.school && NOW >= r.school.to && nowX - 50 < xAt(r.school.to))
-      ? '<text class="tl-label is-now" x="' + (nowX - 18).toFixed(1) + '" y="42" text-anchor="end">' + fmtHour(NOW) + '</text>'
-      : '<text class="tl-label is-now" x="' + nowX.toFixed(1) + '" y="-10" text-anchor="middle">' + fmtHour(NOW) + '</text>';
+    var nowLabel = '';   // sin etiqueta con la hora actual: la niña marca el momento
     var svg =
       '<svg viewBox="0 -22 350 116" role="img" aria-label="Ahora ' + fmtHour(NOW) + '; próximos: ' + events.map(function(e){ return fmtHour(e.t); }).join(', ') + '">' +
       '<defs>' +
@@ -2376,19 +2370,11 @@
   /* ---- Tema «Lista» ---- */
   function renderList(host){
     var n = TODAY_NEXT;
-    var chips = TODAY_LATER.map(function(e, i){
-      var html = '<div class="later-chip" style="' + catVars(e.cat) + '">' +
+    // Solo el primer deadline lleva detalles; los siguientes, hora y nombre
+    var chips = TODAY_LATER.map(function(e){
+      return '<div class="later-chip" style="' + catVars(e.cat) + '">' +
         '<div class="later-time">' + fmtHour(e.t) + '</div>' +
-        '<div class="later-title">' + e.title + '</div>' +
-        '<div class="later-sub">' + e.place + ' · ' + e.dist + '</div>';
-      if(e.travel){
-        html += '<div class="toggle-row" role="group" aria-label="' + t('aria.travelMode') + ': ' + e.title + '">' +
-          ['walk','car'].map(function(m){
-            return '<button type="button" class="toggle-btn' + (e.travel.mode === m ? ' is-active' : '') + '" data-item="' + i + '" data-mode="' + m + '">' + t('travel.' + m, { m: e.travel[m].min }) + '</button>';
-          }).join('') + '</div>' +
-          '<div class="travel-note">' + CLOCK_SVG + ' ' + t('today.departure', { t: travelOf(e).leave }) + '</div>';
-      }
-      return html + '</div>';
+        '<div class="later-title">' + e.title + '</div></div>';
     }).join('');
     host.innerHTML =
       '<div><div class="section-eyebrow" style="color:var(--warn-ink)">' + t('today.soon', { t: untilText(n.t) }) + '</div>' +
@@ -2396,20 +2382,15 @@
         '<span class="up-next-time">' + fmtHour(n.t) + '</span><span class="up-next-title">' + n.title + '</span></div>' +
         '<div class="up-next-sub">' + t('today.leaves', { place: n.place, leave: n.leave, how: t('how.' + n.how) }) + '</div></div></div>' +
       '<div><div class="section-eyebrow" style="color:var(--text-muted)">' + t('today.later') + '</div><div class="later-row">' + chips + '</div></div>';
-    host.querySelectorAll('.toggle-btn[data-mode]').forEach(function(b){
-      b.onclick = function(){ TODAY_LATER[+b.dataset.item].travel.mode = b.dataset.mode; renderToday(); };
-    });
   }
 
   /* ---- Tema «Post-it 1» (Design.html · Siguiente ahora) ---- */
   function renderPostit1(host){
     var n = TODAY_NEXT;
-    var cards = TODAY_LATER.map(function(e, i){
-      var tr = travelOf(e);
+    var cards = TODAY_LATER.map(function(e, i){   // siguientes: solo hora y nombre
       return '<div class="fan-card" style="' + catVars(e.cat) + ';z-index:' + (i + 1) + '">' +
         '<div class="fan-time">' + fmtHour(e.t) + '</div>' +
-        '<div class="fan-title">' + e.title + '</div>' +
-        '<div class="fan-sub">' + (tr ? t('today.fanSub', { dist: e.dist, how: t('how.' + e.travel.mode), leave: tr.leave }) : e.place + ' · ' + e.dist) + '</div></div>';
+        '<div class="fan-title">' + e.title + '</div></div>';
     }).join('');
     host.innerHTML =
       '<div><div class="hero-eyebrow">' + t('today.nowSoon', { t: untilText(n.t) }) + '</div>' +
@@ -2421,7 +2402,7 @@
   }
 
   /* ---- Tema «Post-it 2» (boceto-today.html) ---- */
-  var NOTE_SLOTS = [ { x:'2%', y:14, rot:-15 }, { x:'28%', y:108, rot:-6 }, { x:'45%', y:200, rot:9 } ];
+  var NOTE_SLOTS = [ { x:'2%', y:14, rot:-12 }, { x:'28%', y:92, rot:-5 }, { x:'45%', y:170, rot:8 } ];
   var NOTE_FLOAT = [
     { dur:'5.6s', delay:'-0.8s', sway:'1.4deg' },
     { dur:'6.8s', delay:'-3.1s', sway:'-1.2deg' },
@@ -2447,26 +2428,10 @@
       note.setAttribute('role', 'button');
       note.setAttribute('aria-label', fmtHour(item.t) + ' ' + item.title + '. ' + t('aria.front'));
       note.setAttribute('style', catVars(item.cat) + ';--dur:' + f.dur + ';--delay:' + f.delay + ';--sway:' + f.sway + ';--in-delay:' + (0.15 + i * 0.18) + 's');
-      var travel = '';
-      if(item.travel){
-        travel = '<div class="n-travel" role="group" aria-label="' + t('aria.travelMode') + '">' +
-          ['walk','car'].map(function(m){
-            return '<button type="button" class="n-pill' + (item.travel.mode === m ? ' is-on' : '') + '" data-mode="' + m + '">' + t('short.' + m, { m: item.travel[m].min }) + '</button>';
-          }).join('') + '</div>' +
-          '<div class="n-leave">' + CLOCK_SVG + t('today.leaveAtLong', { t: '<span class="n-leave-time">' + travelOf(item).leave + '</span>' }) + '</div>';
-      }
+      // Siguientes: solo hora y nombre
       note.innerHTML = '<div class="note-shadow"></div><div class="note-card">' +
-        '<div class="n-head"><span class="n-time">' + fmtHour(item.t) + '</span><span class="n-cat">' + catName(item.cat) + '</span></div>' +
-        '<div class="n-title">' + item.title + '</div>' +
-        '<div class="n-meta">' + item.place + ' · ' + item.dist + '</div>' + travel + '</div>';
-      note.querySelectorAll('.n-pill').forEach(function(btn){
-        btn.addEventListener('click', function(e){
-          e.stopPropagation();
-          item.travel.mode = btn.dataset.mode;
-          note.querySelectorAll('.n-pill').forEach(function(b){ b.classList.toggle('is-on', b === btn); });
-          note.querySelector('.n-leave-time').textContent = travelOf(item).leave;
-        });
-      });
+        '<div class="n-head"><span class="n-time">' + fmtHour(item.t) + '</span></div>' +
+        '<div class="n-title">' + item.title + '</div></div>';
       function front(){
         var k = noteOrder.indexOf(item.id);
         if(k > 0){ noteOrder.splice(k, 1); noteOrder.unshift(item.id); placeNotes(els); }
