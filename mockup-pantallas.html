@@ -441,6 +441,27 @@
   .txt-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
   .txt-input.is-invalid{ border-color:var(--danger-bg); box-shadow:0 0 0 1px var(--danger-bg); }
   .prio-row{ margin-top:0; }
+  .dur-input{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted); }
+  .dur-input .txt-input{ width:64px; flex:none; text-align:center; padding:9px 6px; font-variant-numeric:tabular-nums; }
+  .cat-pick{ display:flex; flex-wrap:wrap; gap:6px; }
+  .cat-chip{
+    display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+    font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--text);
+    background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:6px 11px;
+  }
+  .cat-chip i{ width:10px; height:10px; border-radius:50%; flex:none; }
+  .cat-chip.is-active{ border-color:var(--text); box-shadow:inset 0 0 0 1px var(--text); }
+  .cat-chip.is-add{ color:var(--accent-strong); border-style:dashed; border-color:var(--accent); background:var(--accent-soft); }
+  .cat-chip:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .cat-pick.is-invalid .cat-chip:not(.is-add){ border-color:var(--danger-bg); }
+  .cat-new{ display:flex; flex-direction:column; gap:10px; margin-top:4px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--surface-alt); }
+  .cat-new[hidden]{ display:none; }
+  .cat-new-colors{ display:flex; gap:8px; flex-wrap:wrap; }
+  .cat-new-colors button{ width:28px; height:28px; border-radius:50%; border:2px solid var(--surface); box-shadow:0 0 0 1px var(--border); cursor:pointer; padding:0; }
+  .cat-new-colors button[aria-checked="true"]{ box-shadow:0 0 0 2px var(--text); }
+  .cat-new-actions{ display:flex; gap:8px; justify-content:flex-end; }
+  .evt-cat{ display:inline-flex; align-items:center; gap:5px; }
+  .evt-cat i{ width:8px; height:8px; border-radius:50%; flex:none; }
   .prio-row .toggle-btn{ flex:1; padding:8px 10px; font-size:13px; }
   .task-box{ border:1px solid var(--border); border-radius:14px; background:var(--surface-alt); padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
   .task-fields{ display:flex; flex-direction:column; gap:12px; border-top:1px solid var(--border); padding-top:12px; }
@@ -676,13 +697,8 @@
   .cal-bar.cat-actividad{ background:var(--cat-actividad); }
   .cal-bar.cat-libre{ background:var(--cat-libre); }
   .cal-bar.cat-cita, .cal-bar.cat-evento{ background:var(--cat-cita); }
-
-  .cal-deadline{ position:absolute; left:2px; right:2px; display:flex; align-items:center; gap:4px; transform:translateY(-50%); z-index:2; }
-  .cal-deadline .dl-dot{ width:9px; height:9px; border-radius:50%; background:var(--cat-tarea); border:2px solid var(--surface); flex:none; }
-  .cal-deadline .dl-label{
-    font-size:9.5px; font-weight:600; color:var(--cat-tarea-ink); background:var(--surface);
-    padding:1px 4px; border-radius:4px; white-space:nowrap;
-  }
+  /* Entrega de tarea: bloque estándar de 30 min que termina en la deadline (solo visual) */
+  .cal-bar.cat-tarea{ background:var(--cat-tarea); border-bottom:2px solid var(--cat-tarea-ink); }
 
   /* ---- Tab bar ---- */
   .tabbar{
@@ -827,6 +843,25 @@
             <input class="txt-input" id="evt-time" type="time">
           </label>
         </div>
+<div class="fld">
+          <span class="field-label" id="evt-dur-label" data-i18n="f.dur"></span>
+          <div class="dur-input" role="group" aria-labelledby="evt-dur-label">
+            <input class="txt-input" id="evt-dur-h" type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-i18n-aria="aria.hours"><span>h</span>
+            <input class="txt-input" id="evt-dur-m" type="number" inputmode="numeric" min="0" max="59" step="5" placeholder="00" data-i18n-aria="aria.minutes"><span>min</span>
+          </div>
+        </div>
+        <div class="fld">
+          <span class="field-label" id="evt-cat-label" data-i18n="f.cat"></span>
+          <div class="cat-pick" id="evt-cat" role="radiogroup" aria-labelledby="evt-cat-label"></div>
+          <div class="cat-new" id="evt-cat-new" hidden>
+            <input class="txt-input" id="evt-cat-name" type="text" autocomplete="off" data-i18n-ph="aria.catName" onkeydown="if(event.key==='Enter'){ event.preventDefault(); addEventCategory(); }">
+            <div class="cat-new-colors" id="evt-cat-colors" role="radiogroup" data-i18n-aria="aria.catColor"></div>
+            <div class="cat-new-actions">
+              <button type="button" class="btn-ghost" onclick="toggleNewCategory(false)" data-i18n="btn.cancel"></button>
+              <button type="button" class="btn-primary" onclick="addEventCategory()" data-i18n="cat.add"></button>
+            </div>
+          </div>
+        </div>
         <div class="fld">
           <span class="field-label" id="evt-prio-label" data-i18n="f.prio"></span>
           <div class="toggle-row prio-row" id="evt-prio" role="radiogroup" aria-labelledby="evt-prio-label">
@@ -868,10 +903,13 @@
               </label>
             </div>
             <div class="fld-row">
-              <label class="fld">
-                <span class="field-label" data-i18n="task.est"></span>
-                <select class="txt-input" id="task-est"></select>
-              </label>
+<div class="fld">
+          <span class="field-label" id="task-est-label" data-i18n="task.est"></span>
+          <div class="dur-input" role="group" aria-labelledby="task-est-label">
+            <input class="txt-input" id="task-est-h" type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-i18n-aria="aria.hours"><span>h</span>
+            <input class="txt-input" id="task-est-m" type="number" inputmode="numeric" min="0" max="59" step="5" placeholder="00" data-i18n-aria="aria.minutes"><span>min</span>
+          </div>
+        </div>
               <div class="fld">
                 <span class="field-label" data-i18n="f.prio"></span>
                 <span class="prio-copy" id="task-prio"></span>
@@ -1116,11 +1154,7 @@
 
       <div class="cal-grid" id="cal-grid"></div>
 
-      <div class="cal-legend">
-        <span><i style="background:var(--cat-actividad)"></i><span data-cat-name="actividad"></span></span>
-        <span><i style="background:var(--cat-cita)"></i><span data-i18n="legend.event"></span></span>
-        <span><i style="background:var(--cat-tarea)"></i><span data-cat-name="tarea" data-suffix="legend.deadline"></span></span>
-      </div>
+      <div class="cal-legend" id="cal-legend"></div>
     </section>
 
   </main>
@@ -1180,6 +1214,9 @@
       'btn.save':'Guardar', 'btn.cancel':'Cancelar', 'evt.cancel':'Cancelar evento', 'evt.cancelConfirmTask':'Confirmar: se cancela también su tarea', 'evt.cancelConfirm':'Confirmar cancelación',
       'toast.evtSaved':'Evento «{name}» guardado', 'toast.evtCancelled':'Evento «{name}» cancelado', 'toast.evtTaskCancelled':'Evento «{name}» y su tarea cancelados',
       'err.missing':'Falta: {fields}', 'err.taskAfter':'La entrega de la tarea tiene que ser antes del evento',
+      'f.dur':'Duración', 'f.cat':'Categoría', 'cal.due':'entrega {t}', 'aria.hours':'Horas', 'aria.minutes':'Minutos',
+      'toast.catInUse1':'No se puede borrar «{name}»: la usa un evento. Cámbiale antes la categoría.',
+      'toast.catInUse':'No se puede borrar «{name}»: la usan {n} eventos. Cámbiales antes la categoría.', 'toast.catAdded':'Categoría «{name}» añadida',
       'evt.taskRow':'Tarea: {task} · entrega {due} · {est}',
       'cfg.language':'Idioma', 'cfg.languageLabel':'Idioma de la App',
       'cfg.languageHint':'Fechas y horas se muestran en el idioma elegido. Lo que escribes tú (nombres de actividades, lugares…) no se traduce.',
@@ -1278,6 +1315,9 @@
       'btn.save':'Save', 'btn.cancel':'Cancel', 'evt.cancel':'Cancel event', 'evt.cancelConfirmTask':'Confirm: its task is cancelled too', 'evt.cancelConfirm':'Confirm cancellation',
       'toast.evtSaved':'Event “{name}” saved', 'toast.evtCancelled':'Event “{name}” cancelled', 'toast.evtTaskCancelled':'Event “{name}” and its task cancelled',
       'err.missing':'Missing: {fields}', 'err.taskAfter':'The task must be due before the event',
+      'f.dur':'Duration', 'f.cat':'Category', 'cal.due':'due {t}', 'aria.hours':'Hours', 'aria.minutes':'Minutes',
+      'toast.catInUse1':'“{name}” can’t be deleted: an event uses it. Change its category first.',
+      'toast.catInUse':'“{name}” can’t be deleted: {n} events use it. Change their category first.', 'toast.catAdded':'Category “{name}” added',
       'evt.taskRow':'Task: {task} · due {due} · {est}',
       'cfg.language':'Language', 'cfg.languageLabel':'App language',
       'cfg.languageHint':'Dates and times follow the chosen language. What you type yourself (activity names, places…) is not translated.',
@@ -1376,6 +1416,9 @@
       'btn.save':'Salva', 'btn.cancel':'Annulla', 'evt.cancel':'Annulla evento', 'evt.cancelConfirmTask':'Conferma: si annulla anche il compito', 'evt.cancelConfirm':'Conferma annullamento',
       'toast.evtSaved':'Evento «{name}» salvato', 'toast.evtCancelled':'Evento «{name}» annullato', 'toast.evtTaskCancelled':'Evento «{name}» e il suo compito annullati',
       'err.missing':'Manca: {fields}', 'err.taskAfter':'La consegna del compito deve essere prima dell’evento',
+      'f.dur':'Durata', 'f.cat':'Categoria', 'cal.due':'consegna {t}', 'aria.hours':'Ore', 'aria.minutes':'Minuti',
+      'toast.catInUse1':'Impossibile eliminare «{name}»: la usa un evento. Cambia prima la sua categoria.',
+      'toast.catInUse':'Impossibile eliminare «{name}»: la usano {n} eventi. Cambia prima la loro categoria.', 'toast.catAdded':'Categoria «{name}» aggiunta',
       'evt.taskRow':'Compito: {task} · consegna {due} · {est}',
       'cfg.language':'Lingua', 'cfg.languageLabel':'Lingua dell’app',
       'cfg.languageHint':'Date e orari seguono la lingua scelta. Quello che scrivi tu (nomi delle attività, luoghi…) non viene tradotto.',
@@ -1474,6 +1517,9 @@
       'btn.save':'Enregistrer', 'btn.cancel':'Annuler', 'evt.cancel':'Annuler l’événement', 'evt.cancelConfirmTask':'Confirmer : sa tâche est aussi annulée', 'evt.cancelConfirm':'Confirmer l’annulation',
       'toast.evtSaved':'Événement « {name} » enregistré', 'toast.evtCancelled':'Événement « {name} » annulé', 'toast.evtTaskCancelled':'Événement « {name} » et sa tâche annulés',
       'err.missing':'Manquant : {fields}', 'err.taskAfter':'L’échéance de la tâche doit être avant l’événement',
+      'f.dur':'Durée', 'f.cat':'Catégorie', 'cal.due':'échéance {t}', 'aria.hours':'Heures', 'aria.minutes':'Minutes',
+      'toast.catInUse1':'Impossible de supprimer « {name} » : un événement l’utilise. Changez d’abord sa catégorie.',
+      'toast.catInUse':'Impossible de supprimer « {name} » : {n} événements l’utilisent. Changez d’abord leur catégorie.', 'toast.catAdded':'Catégorie « {name} » ajoutée',
       'evt.taskRow':'Tâche : {task} · échéance {due} · {est}',
       'cfg.language':'Langue', 'cfg.languageLabel':'Langue de l’app',
       'cfg.languageHint':'Les dates et les heures suivent la langue choisie. Ce que vous saisissez (noms d’activités, lieux…) n’est pas traduit.',
@@ -1572,6 +1618,9 @@
       'btn.save':'Speichern', 'btn.cancel':'Abbrechen', 'evt.cancel':'Termin absagen', 'evt.cancelConfirmTask':'Bestätigen: Die Aufgabe wird auch abgesagt', 'evt.cancelConfirm':'Absage bestätigen',
       'toast.evtSaved':'Termin „{name}“ gespeichert', 'toast.evtCancelled':'Termin „{name}“ abgesagt', 'toast.evtTaskCancelled':'Termin „{name}“ und seine Aufgabe abgesagt',
       'err.missing':'Es fehlt: {fields}', 'err.taskAfter':'Die Aufgabe muss vor dem Termin fällig sein',
+      'f.dur':'Dauer', 'f.cat':'Kategorie', 'cal.due':'fällig {t}', 'aria.hours':'Stunden', 'aria.minutes':'Minuten',
+      'toast.catInUse1':'„{name}“ kann nicht gelöscht werden: Ein Termin verwendet sie. Ändere zuerst dessen Kategorie.',
+      'toast.catInUse':'„{name}“ kann nicht gelöscht werden: {n} Termine verwenden sie. Ändere zuerst deren Kategorie.', 'toast.catAdded':'Kategorie „{name}“ hinzugefügt',
       'evt.taskRow':'Aufgabe: {task} · fällig {due} · {est}',
       'cfg.language':'Sprache', 'cfg.languageLabel':'App-Sprache',
       'cfg.languageHint':'Datum und Uhrzeit folgen der gewählten Sprache. Was du selbst eingibst (Namen von Aktivitäten, Orte …), wird nicht übersetzt.',
@@ -2184,33 +2233,51 @@
   function onPriorityChange(select){
     var name = rowName(select.closest('.cat-row'));
     toast(t('toast.prio', { name: name, p: select.options[select.selectedIndex].text }));
+    renderExportCats();
   }
 
   function removeCategory(btn){
     var row = btn.closest('.cat-row');
     var name = rowName(row);
+    // No se borra una categoría que usan eventos: primero hay que cambiársela
+    var used = USER_EVENTS.filter(function(e){ return e.cat === row.dataset.cat; }).length;
+    if(used){ toast(t(used === 1 ? 'toast.catInUse1' : 'toast.catInUse', { name: name, n: used })); return; }
     row.remove();
     renderExportCats();
     toast(t('toast.catDeleted', { name: name }));
   }
 
-  function addCategory(){
+  // Categorías tal como están en Configuración: {id, name, color, prio}
+  function getCategories(){
+    return Array.prototype.map.call(document.querySelectorAll('#category-list .cat-row'), function(row){
+      if(!row.dataset.cat){ row.dataset.cat = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+      return { id: row.dataset.cat, name: rowName(row), color: row.querySelector('.row-bar').style.background,
+               prio: row.querySelector('.priority-select').value };
+    });
+  }
+  function findCategory(id){ return getCategories().filter(function(c){ return c.id === id; })[0] || null; }
+
+  // opts (desde Eventos): {id, name, color, prio} → se crea ya terminada, sin modo edición
+  function addCategory(opts){
     var list = document.getElementById('category-list');
-    var color = CAT_PALETTE[list.children.length % CAT_PALETTE.length];
+    var color = (opts && opts.color) || CAT_PALETTE[list.children.length % CAT_PALETTE.length];
     var row = document.createElement('div');
     row.className = 'row cat-row';
     row.innerHTML =
       '<button class="row-bar swatch" style="background:' + color + '" onclick="cycleColor(this)" aria-label="' + t('aria.catColor') + '" title="' + t('aria.catColor') + '"></button>' +
-      '<div class="row-body"><input class="cat-name-input" value="' + t('cat.new') + '" readonly aria-label="' + t('aria.catName') + '" onkeydown="if(event.key===\'Enter\'){ editCategory(this); }"></div>' +
+      '<div class="row-body"><input class="cat-name-input" value="' + esc(opts ? opts.name : t('cat.new')) + '" readonly aria-label="' + t('aria.catName') + '" onkeydown="if(event.key===\'Enter\'){ editCategory(this); }"></div>' +
       '<button class="row-edit" onclick="editCategory(this)" aria-label="' + t('aria.catEdit') + '" title="' + t('aria.catEdit') + '"></button>' +
       '<button class="row-delete" onclick="removeCategory(this)" aria-label="' + t('aria.catDelete') + '" title="' + t('aria.catDelete') + '">×</button>' +
       '<select class="priority-select" style="background:' + color + '" onchange="onPriorityChange(this)" aria-label="' + t('aria.catPrio') + '">' +
         '<option value="Alta">' + t('prio.Alta') + '</option><option value="Media" selected>' + t('prio.Media') + '</option><option value="Baja">' + t('prio.Baja') + '</option>' +
       '</select>';
     row.querySelector('.row-edit').innerHTML = PENCIL_SVG;
+    row.dataset.cat = (opts && opts.id) || 'u' + Date.now().toString(36);
+    if(opts && opts.prio){ row.querySelector('.priority-select').value = opts.prio; }
     list.appendChild(row);
     renderExportCats();
-    editCategory(row.querySelector('.row-edit'));   // la nueva categoría empieza en modo edición
+    if(!opts){ editCategory(row.querySelector('.row-edit')); }   // desde Configuración empieza en modo edición
+    return row;
   }
 
   // Lápiz: activa la edición del nombre y del color; el mismo botón (✓) o Intro la terminan
@@ -2365,6 +2432,9 @@
     });
     document.querySelectorAll('[data-cat-name]').forEach(function(el){ el.textContent = catName(el.dataset.catName) + (el.dataset.suffix ? ' ' + t(el.dataset.suffix) : ''); });
     updateConfigSummaries();
+    // Nombre, color o prioridad de una categoría cambian también eventos y Calendario
+    renderEvents();
+    renderCalendar(calView);
   }
   document.getElementById('category-list').addEventListener('input', renderExportCats);
 
@@ -2392,15 +2462,22 @@
 
   /* ================= EVENTOS ================= */
   // Eventos puntuales: todo lo inserta el usuario (con la App nueva, la lista está vacía).
+  // Campos obligatorios: nombre, fecha, hora de inicio, duración, categoría y prioridad.
   // Cada evento puede llevar una tarea de preparación: copia la prioridad del evento, solo
   // se edita desde aquí y se cancela con él; para Today, el Calendario y los avisos es una
-  // tarea más. En la maqueta se guardan en el dispositivo.
-  var USER_EVENTS = [], editingEvent = null, eventPrio = 'Media';
-  var EST_STEPS = [15, 30, 45, 60, 90, 120, 150, 180, 240, 300, 360];
+  // tarea más. En la maqueta se guardan en el dispositivo (ver dossier).
+  var USER_EVENTS = [], editingEvent = null, eventPrio = null, eventCat = null, prioTouched = false, newCatColor = null;
   (function loadEvents(){
     try{ USER_EVENTS = JSON.parse(localStorage.getItem('app-events') || '[]') || []; }catch(e){ USER_EVENTS = []; }
   })();
   function storeEvents(){ try{ localStorage.setItem('app-events', JSON.stringify(USER_EVENTS)); }catch(e){} }
+  // Categorías creadas desde Eventos que no estén en Configuración (la maqueta no guarda
+  // Configuración): se recrean a partir de la copia guardada en el evento.
+  function restoreEventCategories(){
+    USER_EVENTS.forEach(function(e){
+      if(e.cat && !findCategory(e.cat)){ addCategory({ id:e.cat, name:e.catName, color:e.catColor, prio:e.prio }); }
+    });
+  }
 
   function fmtEst(min){
     var h = Math.floor(min / 60), m = min % 60;
@@ -2408,24 +2485,33 @@
   }
   function fmtDay(iso){ var d = isoDate(iso); return cap(fmtDate(d, { weekday:'short' }).replace('.', '')) + ' ' + ddmm(d); }
   function esc(v){ return String(v).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
+  function el(id){ return document.getElementById(id); }
+  // Categoría de un evento: la de Configuración o, si ya no está, la copia guardada
+  function eventCategory(e){
+    var c = e.cat && findCategory(e.cat);
+    return c || (e.cat ? { id:e.cat, name:e.catName, color:e.catColor } : null);
+  }
+  function endTime(e){ return fmtHour(toHours(e.time) + (e.dur || 60) / 60); }
 
   var PIN_SVG = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>';
   var TASK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
 
   function renderEvents(){
-    var list = document.getElementById('evt-list');
+    var list = el('evt-list');
     if(!list){ return; }
     var items = USER_EVENTS.slice().sort(function(a, b){ return (a.date + a.time).localeCompare(b.date + b.time); });
-    document.getElementById('evt-list-wrap').hidden = !items.length;
+    el('evt-list-wrap').hidden = !items.length;
     list.innerHTML = items.map(function(e){
-      var sub = fmtDay(e.date) + ' · ' + e.time + (e.place ? ' · </span>' + PIN_SVG + '<span>' + esc(e.place) : '');
+      var c = eventCategory(e);
+      var sub = (c ? '<span class="evt-cat"><i style="background:' + c.color + '"></i>' + esc(c.name) + '</span> · ' : '') +
+        '<span>' + fmtDay(e.date) + ' · ' + e.time + '–' + endTime(e) + (e.place ? ' · </span>' + PIN_SVG + '<span>' + esc(e.place) : '') + '</span>';
       var task = e.task ? '<div class="evt-task">' + TASK_SVG + '<span>' + esc(t('evt.taskRow', {
         task: e.task.name, due: fmtDay(e.task.date) + ' ' + e.task.time, est: fmtEst(e.task.est) })) + '</span></div>' : '';
       return '<div class="row evt-row">' +
         '<div class="row-body">' +
           '<span class="evt-title-line"><span class="row-title">' + esc(e.name) + '</span>' +
             '<span class="prio-chip prio-' + e.prio + '">' + t('prio.' + e.prio) + '</span></span>' +
-          '<span class="row-sub"><span>' + sub + '</span></span>' +
+          '<span class="row-sub">' + sub + '</span>' +
           (e.desc ? '<span class="evt-desc">' + esc(e.desc) + '</span>' : '') + task +
         '</div>' +
         '<button class="row-action" onclick="openEventForm(\'' + e.id + '\')">' + t('edit') + '</button>' +
@@ -2433,7 +2519,15 @@
     }).join('');
   }
 
-  function el(id){ return document.getElementById(id); }
+  // Duración en horas y minutos, sin tope
+  function setDur(prefix, min){
+    el(prefix + '-h').value = min ? Math.floor(min / 60) : '';
+    el(prefix + '-m').value = min ? ('0' + min % 60).slice(-2) : '';
+  }
+  function getDur(prefix){
+    var h = parseInt(el(prefix + '-h').value, 10) || 0, m = parseInt(el(prefix + '-m').value, 10) || 0;
+    return h < 0 || m < 0 || m > 59 ? 0 : h * 60 + m;
+  }
 
   function openEventForm(id){
     editingEvent = id ? USER_EVENTS.filter(function(e){ return e.id === id; })[0] : null;
@@ -2441,18 +2535,20 @@
     el('evt-name').value = e.name || '';
     el('evt-date').value = e.date || '';
     el('evt-time').value = e.time || '';
+    setDur('evt-dur', e.dur);
     el('evt-place').value = e.place || '';
     el('evt-desc').value = e.desc || '';
-    eventPrio = e.prio || 'Media';
+    eventCat = e.cat || null;
+    eventPrio = e.prio || null;
+    prioTouched = !!editingEvent;
     var tk = e.task;
     el('task-name').value = tk ? tk.name : '';
     el('task-date').value = tk ? tk.date : '';
     el('task-time').value = tk ? tk.time : '';
-    el('task-est').value = tk ? tk.est : 60;
+    setDur('task-est', tk ? tk.est : 0);
     setTaskOn(!!tk);
-    var del = el('evt-delete');
-    del.hidden = !editingEvent;
-    resetCancelButton();
+    toggleNewCategory(false);
+    el('evt-delete').hidden = !editingEvent;
     document.querySelectorAll('#evt-form .is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); });
     refreshEventForm();
     el('evt-list-view').hidden = true;
@@ -2460,30 +2556,73 @@
     el('screen-events').parentElement.scrollTop = 0;
     el('evt-name').focus();
   }
+  // Al corregir un campo marcado, se quita la marca
+  el('evt-form').addEventListener('input', function(ev){
+    ev.target.classList.remove('is-invalid');
+    var pair = ev.target.closest('.dur-input');
+    if(pair){ pair.querySelectorAll('.is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); }); }
+  });
   function closeEventForm(){
     editingEvent = null;
     el('evt-form').hidden = true;
     el('evt-list-view').hidden = false;
   }
 
-  // Textos del formulario que dependen del estado (título, prioridad, tiempos)
+  // Partes del formulario que dependen del estado (título, categorías, prioridad)
   function refreshEventForm(){
     if(!el('evt-form')){ return; }
     el('evt-form-title').textContent = t(editingEvent ? 'evt.editTitle' : 'evt.new');
+    var cats = getCategories();
+    if(editingEvent && eventCat && !cats.some(function(c){ return c.id === eventCat; })){ cats.push(eventCategory(editingEvent)); }
+    el('evt-cat').innerHTML = cats.map(function(c){
+      var on = c.id === eventCat;
+      return '<button type="button" class="cat-chip' + (on ? ' is-active' : '') + '" role="radio" aria-checked="' + on + '" onclick="setEventCat(\'' + c.id + '\')">' +
+        '<i style="background:' + c.color + '"></i>' + esc(c.name) + '</button>';
+    }).join('') +
+      '<button type="button" class="cat-chip is-add" onclick="toggleNewCategory(true)">+ ' + t('cat.new') + '</button>';
     document.querySelectorAll('#evt-prio .toggle-btn').forEach(function(b){
       var on = b.dataset.prio === eventPrio;
       b.classList.toggle('is-active', on);
       b.setAttribute('aria-checked', on);
     });
-    el('task-prio').textContent = t('task.samePrio', { p: t('prio.' + eventPrio) });
-    el('task-prio').className = 'prio-copy prio-' + eventPrio;
-    var est = el('task-est'), cur = +est.value || 60;
-    est.innerHTML = EST_STEPS.map(function(m){ return '<option value="' + m + '">' + fmtEst(m) + '</option>'; }).join('');
-    est.value = cur;
+    el('task-prio').textContent = eventPrio ? t('task.samePrio', { p: t('prio.' + eventPrio) }) : '—';
+    el('task-prio').className = 'prio-copy' + (eventPrio ? ' prio-' + eventPrio : '');
+    el('evt-cat-colors').innerHTML = CAT_PALETTE.map(function(c, i){
+      return '<button type="button" role="radio" aria-checked="' + (c === newCatColor) + '" aria-label="' + t('aria.catColor') + ' ' + (i + 1) + '" style="background:' + c + '" onclick="pickNewCatColor(\'' + c + '\')"></button>';
+    }).join('');
     resetCancelButton();
   }
 
-  function setEventPrio(btn){ eventPrio = btn.dataset.prio; refreshEventForm(); }
+  // Elegir categoría propone su prioridad, salvo que ya se haya elegido una a mano
+  function setEventCat(id){
+    eventCat = id;
+    var c = findCategory(id);
+    if(c && !prioTouched){ eventPrio = c.prio; }
+    el('evt-cat').classList.remove('is-invalid');
+    refreshEventForm();
+  }
+  function setEventPrio(btn){ eventPrio = btn.dataset.prio; prioTouched = true; el('evt-prio').classList.remove('is-invalid'); refreshEventForm(); }
+
+  // Nueva categoría desde el formulario: queda también en Configuración
+  function toggleNewCategory(on){
+    el('evt-cat-new').hidden = !on;
+    if(on){
+      newCatColor = CAT_PALETTE[document.querySelectorAll('#category-list .cat-row').length % CAT_PALETTE.length];
+      el('evt-cat-name').value = '';
+      refreshEventForm();
+      el('evt-cat-name').focus();
+    }
+  }
+  function pickNewCatColor(c){ newCatColor = c; refreshEventForm(); }
+  function addEventCategory(){
+    var name = el('evt-cat-name').value.trim();
+    if(!name){ el('evt-cat-name').classList.add('is-invalid'); el('evt-cat-name').focus(); return; }
+    el('evt-cat-name').classList.remove('is-invalid');
+    var row = addCategory({ name: name, color: newCatColor, prio: eventPrio || 'Media' });
+    toggleNewCategory(false);
+    setEventCat(row.dataset.cat);
+    toast(t('toast.catAdded', { name: name }));
+  }
 
   function setTaskOn(on){
     el('evt-task-switch').setAttribute('aria-checked', on);
@@ -2509,24 +2648,38 @@
   function saveEvent(ev){
     ev.preventDefault();
     var withTask = el('evt-task-switch').getAttribute('aria-checked') === 'true';
-    var req = [['evt-name', 'f.name'], ['evt-date', 'f.date'], ['evt-time', 'f.time']];
-    if(withTask){ req.push(['task-name', 'task.name'], ['task-date', 'task.dueDate'], ['task-time', 'task.dueTime']); }
     var missing = [];
     document.querySelectorAll('#evt-form .is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); });
-    req.forEach(function(r){
-      if(!el(r[0]).value.trim()){ el(r[0]).classList.add('is-invalid'); missing.push(t(r[1])); }
-    });
+    function need(ok, fields, key){
+      if(ok){ return; }
+      fields.forEach(function(f){ el(f).classList.add('is-invalid'); });
+      missing.push(t(key));
+    }
+    need(el('evt-name').value.trim(), ['evt-name'], 'f.name');
+    need(el('evt-date').value, ['evt-date'], 'f.date');
+    need(el('evt-time').value, ['evt-time'], 'f.time');
+    need(getDur('evt-dur') > 0, ['evt-dur-h', 'evt-dur-m'], 'f.dur');
+    need(eventCat, ['evt-cat'], 'f.cat');
+    need(eventPrio, ['evt-prio'], 'f.prio');
+    if(withTask){
+      need(el('task-name').value.trim(), ['task-name'], 'task.name');
+      need(el('task-date').value, ['task-date'], 'task.dueDate');
+      need(el('task-time').value, ['task-time'], 'task.dueTime');
+      need(getDur('task-est') > 0, ['task-est-h', 'task-est-m'], 'task.est');
+    }
     if(missing.length){ toast(t('err.missing', { fields: missing.join(', ') })); return; }
     if(withTask && el('task-date').value + el('task-time').value > el('evt-date').value + el('evt-time').value){
       el('task-date').classList.add('is-invalid'); el('task-time').classList.add('is-invalid');
       toast(t('err.taskAfter')); return;
     }
+    var c = eventCategory({ cat: eventCat, catName: editingEvent && editingEvent.catName, catColor: editingEvent && editingEvent.catColor });
     var data = {
       id: editingEvent ? editingEvent.id : 'e' + Date.now(),
-      name: el('evt-name').value.trim(), date: el('evt-date').value, time: el('evt-time').value, prio: eventPrio,
+      name: el('evt-name').value.trim(), date: el('evt-date').value, time: el('evt-time').value, dur: getDur('evt-dur'),
+      cat: c.id, catName: c.name, catColor: c.color, prio: eventPrio,
       place: el('evt-place').value.trim(), desc: el('evt-desc').value.trim(),
       // La tarea no tiene prioridad propia: siempre la del evento
-      task: withTask ? { name: el('task-name').value.trim(), date: el('task-date').value, time: el('task-time').value, est: +el('task-est').value } : null
+      task: withTask ? { name: el('task-name').value.trim(), date: el('task-date').value, time: el('task-time').value, est: getDur('task-est') } : null
     };
     if(editingEvent){ USER_EVENTS[USER_EVENTS.indexOf(editingEvent)] = data; } else { USER_EVENTS.push(data); }
     storeEvents();
@@ -2558,16 +2711,16 @@
     toast(t(e.task ? 'toast.evtTaskCancelled' : 'toast.evtCancelled', { name: e.name }));
   }
 
-  // Para el Calendario: eventos y tareas del usuario que caen en la semana mostrada.
-  // El evento solo tiene hora de inicio: se dibuja con una duración nominal de 1 h.
+  // Para el Calendario: eventos y tareas del usuario que caen en la semana mostrada
   function weekDayIndex(iso){
     var diff = Math.round((isoDate(iso) - WEEK_DAYS[0].d) / 86400000);
     return diff >= 0 && diff < 7 ? diff : -1;
   }
   function weekUserEvents(){
     return USER_EVENTS.map(function(e){
-      var h = toHours(e.time);
-      return { day: weekDayIndex(e.date), title: e.name, start: h, end: Math.min(h + 1, CAL_END), cat: 'evento' };
+      var h = toHours(e.time), c = eventCategory(e);
+      return { day: weekDayIndex(e.date), title: e.name, start: h, end: Math.min(h + (e.dur || 60) / 60, CAL_END),
+               color: c ? c.color : null, catLabel: c ? c.name : '' };
     }).filter(function(e){ return e.day >= 0; });
   }
   function weekUserTasks(){
@@ -2636,9 +2789,26 @@
     return (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
   }
 
+  var TASK_VIEW_H = 0.5;   // entrega de tarea: bloque de media hora antes de la deadline
+  // Reparte en carriles los bloques que se solapan dentro de un mismo día
+  function layoutLanes(items){
+    items.sort(function(a, b){ return a.start - b.start || b.end - a.end; });
+    var cluster = [], ends = [], clusterEnd = -1;
+    function close(){ cluster.forEach(function(it){ it.lanes = ends.length; }); cluster = []; ends = []; }
+    items.forEach(function(it){
+      if(it.start >= clusterEnd){ close(); }
+      var lane = ends.findIndex(function(e){ return e <= it.start; });
+      if(lane < 0){ lane = ends.length; ends.push(it.end); } else { ends[lane] = it.end; }
+      it.lane = lane; cluster.push(it);
+      clusterEnd = Math.max(clusterEnd, it.end);
+    });
+    close();
+  }
+
   function renderCalendar(view){
     var grid = document.getElementById('cal-grid');
     grid.innerHTML = '';
+    var legend = { actividad:true };
     var isWeek = view === 'week';
     var days = isWeek ? WEEK_DAYS : [WEEK_DAYS[TODAY_DAY]];
     var sc = calScale(schoolFor(isWeek ? 0 : TODAY_DAY)), pos = sc.pos;
@@ -2711,28 +2881,43 @@
         col.appendChild(band);
       }
 
-      CAL_EVENTS.concat(weekUserEvents()).filter(function(e){ return e.day === realDay; }).forEach(function(e){
+      // Actividades, eventos y entregas de tareas. La entrega se dibuja como un bloque
+      // estándar de TASK_VIEW_H que termina en la deadline (solo visual: avisos y barra
+      // de tiempo usan la deadline). Los bloques que se solapan se reparten el ancho.
+      var items = CAL_EVENTS.concat(weekUserEvents()).concat(CAL_DEADLINES.concat(weekUserTasks()).map(function(e){
+        return { day:e.day, title:e.title, start:Math.max(e.time - TASK_VIEW_H, CAL_START), end:e.time, cat:'tarea', due:true };
+      })).filter(function(e){ return e.day === realDay; });
+      layoutLanes(items);
+      items.forEach(function(e){
         var bar = document.createElement('div');
-        bar.className = 'cal-bar cat-' + e.cat;
+        bar.className = 'cal-bar' + (e.cat ? ' cat-' + e.cat : '');
+        if(e.color){ bar.style.background = e.color; }
         bar.style.top = pos(e.start) + 'px';
         bar.style.height = (pos(e.end) - pos(e.start)) + 'px';
-        bar.title = e.title + ' · ' + fmtHour(e.start) + '–' + fmtHour(e.end);
-        bar.innerHTML = '<span class="bar-title">' + e.title + '</span>' +
-          (!isWeek ? '<span class="bar-time">' + fmtHour(e.start) + '–' + fmtHour(e.end) + '</span>' : '');
+        bar.style.left = 'calc(' + (e.lane / e.lanes * 100) + '% + 2px)';
+        bar.style.right = 'calc(' + ((e.lanes - e.lane - 1) / e.lanes * 100) + '% + 2px)';
+        var when = e.due ? t('cal.due', { t: fmtHour(e.end) }) : fmtHour(e.start) + '–' + fmtHour(e.end);
+        bar.title = e.title + ' · ' + when;
+        // Bloques bajos (p. ej. la media hora de una entrega): título y hora en una sola línea
+        var h = pos(e.end) - pos(e.start);
+        bar.innerHTML = isWeek ? '<span class="bar-title">' + esc(e.title) + '</span>'
+          : h < 30 ? '<span class="bar-title">' + esc(e.title) + ' <span class="bar-time">· ' + when + '</span></span>'
+          : '<span class="bar-title">' + esc(e.title) + '</span><span class="bar-time">' + when + '</span>';
         col.appendChild(bar);
-      });
-
-      CAL_DEADLINES.concat(weekUserTasks()).filter(function(e){ return e.day === realDay; }).forEach(function(e){
-        var mk = document.createElement('div');
-        mk.className = 'cal-deadline';
-        mk.style.top = pos(e.time) + 'px';
-        mk.title = e.title + ' · ' + fmtHour(e.time);
-        mk.innerHTML = '<span class="dl-dot"></span>' + (!isWeek ? '<span class="dl-label">' + e.title + ' · ' + fmtHour(e.time) + '</span>' : '');
-        col.appendChild(mk);
+        if(e.color || e.cat){ legend[e.due ? 'tarea' : (e.catLabel ? 'u:' + e.catLabel + '|' + e.color : e.cat)] = true; }
       });
 
       grid.appendChild(col);
     });
+
+    // Leyenda: las categorías que aparecen en la vista, y la entrega de tareas al final
+    var keys = Object.keys(legend).sort(function(a, b){ return (a === 'tarea') - (b === 'tarea'); });
+    document.getElementById('cal-legend').innerHTML = keys.map(function(k){
+      var name, color;
+      if(k.indexOf('u:') === 0){ var p = k.slice(2).split('|'); name = esc(p[0]); color = p[1]; }
+      else { name = esc(catName(k)) + (k === 'tarea' ? ' ' + t('legend.deadline') : ''); color = 'var(--cat-' + k + ')'; }
+      return '<span><i style="background:' + color + '"></i>' + name + '</span>';
+    }).join('');
   }
 
   // En el móvil, ajusta el alto de la cuadrícula al hueco libre para que no haga falta
@@ -2762,6 +2947,7 @@
 
   loadAppearance();
   loadLanguage();
+  restoreEventCategories();
   applyI18n();
 </script>
 </body>

@@ -64,14 +64,22 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 ### 2.3 Eventos
 - Eventos puntuales (no recurrentes): **todo lo inserta el usuario**. Con la App nueva la pantalla solo muestra el botón **Añadir evento**; después, la lista de próximos eventos ordenada por fecha y hora, cada uno con su botón Editar.
-- Campos **obligatorios**: nombre, fecha, hora y prioridad (Alta / Media / Baja).
+- Campos **obligatorios**: nombre, fecha, hora de inicio, **duración** (horas y minutos), **categoría** y prioridad (Alta / Media / Baja).
 - Campos **opcionales**: descripción y ubicación.
+- **Categoría**: las mismas de Configuración. Al elegirla se propone su prioridad (se puede cambiar; si ya se eligió una prioridad a mano, no se toca). Desde el propio formulario se puede crear una **categoría nueva** (nombre y color); queda también en Configuración con la prioridad del evento. Una categoría que usan eventos no se puede borrar hasta cambiarles la categoría.
 - **Tarea de preparación** (opcional): si el evento requiere preparar algo antes, se puede generar una tarea asociada.
-  - Tiene nombre propio (propuesta: «Preparar: <evento>»), deadline independiente (fecha y hora; propuesta: la víspera a las 20:00; tiene que ser antes del evento) y tiempo estimado de ejecución.
+  - Tiene nombre propio (propuesta: «Preparar: <evento>»), deadline independiente (fecha y hora; propuesta: la víspera a las 20:00; tiene que ser antes del evento) y tiempo estimado de ejecución en horas y minutos, **sin tope**.
   - **Copia la prioridad del evento** (no tiene prioridad propia; si cambia la del evento, cambia la de la tarea).
   - No aparece en Configuración: **solo se edita desde el evento**. Si se cancela el evento, se cancela también la tarea (la cancelación pide confirmación y lo avisa).
-  - Para el resto de la App es **una tarea cualquiera**: se ve en Today y en el Calendario (punto de entrega) y cuenta para los avisos (p. ej. la alerta de tareas de más de 1,5 h en los próximos 5 días).
-- En el Calendario los eventos se dibujan con su propio color («Evento»). Como solo tienen hora de inicio, se muestran con una duración nominal de 1 h.
+  - Para el resto de la App es **una tarea cualquiera**: se ve en Today y en el Calendario y cuenta para los avisos (p. ej. la alerta de tareas de más de 1,5 h en los próximos 5 días).
+
+### Deadlines, avisos y visualización en el Calendario
+- El sistema de avisos trabaja sobre **deadlines**: para las tareas, el límite de entrega; para actividades y eventos, la hora de inicio. La barra de tiempo de Today también usa la deadline.
+- Solo para dibujarlas en el Calendario:
+  - **Actividades**: su duración.
+  - **Eventos**: su duración (campo obligatorio), con el color de su categoría.
+  - **Entregas de tareas**: un bloque estándar de **media hora que termina en la deadline** (entrega a las 18:00 → se ve de 17:30 a 18:00), con un borde inferior que marca el momento de la entrega.
+- Si varios bloques se solapan, se reparten el ancho de la columna. La leyenda muestra las categorías que aparecen en la vista.
 
 ### 2.4 Pantalla principal — "Today"
 - Nombre de la pantalla en inglés: **Today**.
@@ -112,6 +120,8 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 ---
 
 ## 6. Consideraciones de arquitectura
+
+- **Dónde se guardan los datos**: en la maqueta, en el propio dispositivo (almacenamiento del navegador): no pide permisos ni interrumpe. Pero el navegador puede borrarlo (Safari en iPhone borra los datos de una web que no se abre en 7 días si no está añadida a la pantalla de inicio) y no se comparte entre dispositivos. En la App real los datos se guardarán en la base de datos de la App (en el servidor, necesaria de todos modos para Google y la sincronización), con una copia local para abrir al instante y funcionar sin conexión; así tampoco hay peticiones de permisos.
 
 - El proyecto no puede vivir como un simple artifact de conversación: necesita alojamiento propio (ej. Vercel o Netlify, capa gratuita) para sostener el login OAuth de forma persistente entre sesiones.
 - Se construye en **Claude Code**, no en este chat — Carlo ya tiene experiencia previa usando Claude Code (entorno de Python en VS Code).
