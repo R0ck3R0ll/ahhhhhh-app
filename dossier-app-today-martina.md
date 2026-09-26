@@ -94,6 +94,14 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Tareas de **práctica de actividades**: se completa solo la de la sesión en curso; tras esa sesión vuelve a estar pendiente para la siguiente.
   - Tareas de **Classroom**: si se marcan como hechas, la App las da por cerradas (no hay dos registros separados de «tarea» y «entrega»).
   - Una tarea cuya entrega ya pasó sin completarse aparece arriba, en **«Atrasadas»**, hasta que se marque como hecha o se elimine. «Atrasadas» y «Hechas» aparecen **plegadas** (con el número de tareas) y **sólo si tienen algo dentro**.
+- **Bloques de trabajo** (fase 3 de «ejecución de tareas»): tiempo reservado para trabajar en una tarea.
+  - Se crean con el botón **«Planificar»** de la ficha de la tarea (no aparece si la tarea ya está hecha). La primera vez se muestra un **tutorial** breve.
+  - **Propuesta de la App:** si la tarea no tiene bloques, la App propone los suyos para cubrir el tiempo estimado: **un bloque por día** (de hasta 1 h 30 min) desde ahora hasta la entrega, en el primer hueco libre donde quepa entero (si no, en el más grande), con **15 min de margen** con lo de antes y después y sin bloques de menos de 30 min. Si con uno por día no se llega, añade más.
+  - **Huecos libres:** la franja horaria del día (Config) menos el cole, las actividades, los eventos y los demás bloques; hoy, desde la hora actual; el día de la entrega, hasta la entrega.
+  - **Edición:** cada bloque se ve sobre su hueco libre: **arrastrándolo se mueve**; arrastrando sus **extremos se alarga o se acorta** (mínimo 15 min, de 5 en 5 min); **nunca sale del hueco libre**. Con **‹ ›** pasa al hueco anterior o siguiente; con la **papelera** se quita; **«Añadir bloque»** añade otro en el siguiente hueco. Arriba se ve «Estimado · planificado · falta». Se guarda con «Guardar» (o se anula con «Cancelar»).
+  - Sin tiempo estimado: no hay propuesta; cada bloque nuevo es de 30 min.
+  - **Estilo:** rayas diagonales en **dos tonos cercanos al color de la tarea**, en el Calendario (con su entrada en la leyenda), en las tarjetas de «Hoy» y como tramo rayado en la barra de tiempo.
+  - Pulsar un bloque (Calendario u «Hoy») abre la ficha de la tarea, que lista sus bloques. Los bloques de una tarea hecha no salen en «Hoy» y en el Calendario se ven atenuados; si se elimina la tarea, se eliminan sus bloques.
 
 ### Prioridades y edición (común a Actividades, Eventos y Tareas)
 - Todo formulario tiene **«✕ Cancelar»** arriba (y «Cancelar» abajo), que vuelve al punto de partida (ficha, lista, Calendario u «Hoy»). Si se sale de un formulario abierto pulsando otra pestaña, la App pregunta **«¿Anular?»** («Seguir editando» / «Anular»).
