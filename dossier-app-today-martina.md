@@ -105,6 +105,11 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - **Barra de tiempo**: dibuja **todos** los deadlines del día. **Sin etiqueta con la hora actual**: el momento presente lo marcan la línea vertical (Puntos) o la niña (Niña soldado).
 - **Cuerpo** (debajo de la barra): **como máximo 4 deadlines**: el más próximo destacado y los siguientes por orden, según la vista elegida (Lista, Post-it 1, Post-it 2). Si hay más, una línea avisa de cuántos quedan («Y 2 más hoy: los ves en la barra de tiempo»).
 - **Solo el primer deadline lleva detalles** (lugar, traslado, hora de salida…); los siguientes muestran **solo hora y nombre**.
+  - En Post-it 2 los post-its son casi cuadrados: hora en la esquina superior derecha y nombre centrado en la mitad inferior; se solapan escalonados de modo que la hora de cada uno quede a la vista.
+- **Color del primer deadline según lo que falta:**
+  - Más de 1 h: borde y texto del color de la categoría; relleno algo más oscuro que el fondo.
+  - Entre 1 h y 30 min: borde y texto en **ámbar**, todo en negrita; relleno del color de la categoría.
+  - 30 min o menos: borde y texto en **rojo oscuro**, todo en negrita; relleno del color de la categoría.
 - Muestra los deadlines del día: hora de inicio de actividades/citas programadas, y para tareas de Classroom, la hora de entrega como deadline.
 - Si un evento implica desplazamiento, se muestran **dos datos**: el deadline en sí, y la hora de salida calculada según el tiempo de traslado (Google Maps).
   - Distancias menores de 1 km: preguntar al usuario si se va andando.

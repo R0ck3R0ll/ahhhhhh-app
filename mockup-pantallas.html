@@ -262,6 +262,20 @@
   .fan-title{ font-size:13px; font-weight:700; margin-top:5px; line-height:1.2; hyphens:auto; overflow-wrap:break-word; }
   .fan-sub{ font-size:10.5px; color:var(--text-muted); margin-top:4px; }
 
+  /* ---- Primer elemento: color según lo que falta ----
+     más de 1 h: borde y texto del color de la categoría, relleno poco más oscuro que el fondo
+     entre 1 h y 30 min: borde y texto ámbar (todo en negrita), relleno del color de la categoría
+     30 min o menos: borde y texto rojo oscuro (todo en negrita), relleno del color de la categoría */
+  :root{ --calm-fill:color-mix(in srgb, var(--bg) 88%, #000); --amber-line:#e0a100; --amber-text:#7a5000; --red-line:#a31515; --red-text:#8b1111; }
+  :root[data-theme="dark"]{ --calm-fill:color-mix(in srgb, var(--bg) 72%, #000); }
+  .next-card.st-calm{ --st-line:var(--c-ink); --st-text:var(--c-ink); --st-fill:var(--calm-fill); }
+  .next-card.st-soon{ --st-line:var(--amber-line); --st-text:var(--amber-text); --st-fill:var(--c); }
+  .next-card.st-urgent{ --st-line:var(--red-line); --st-text:var(--red-text); --st-fill:var(--c); }
+  .up-next-card.next-card, .hero-card.next-card, .pi-next.next-card{ background:var(--st-fill); color:var(--st-text); border:3px solid var(--st-line); }
+  .pi-next.next-card{ box-shadow:0 3px 0 var(--st-line); }
+  .hero-card.next-card{ animation:breathe 3.2s ease-in-out infinite; }
+  .next-card.st-soon, .next-card.st-soon *, .next-card.st-urgent, .next-card.st-urgent *{ font-weight:700; }
+
   /* ---- Tema «Post-it 2» (boceto-today.html): barra del próximo + post-its flotantes ---- */
   .pi-next{
     position:relative; overflow:hidden; flex:none;
@@ -283,9 +297,9 @@
   .pi-next-when{ font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
   .pi-next-leave{ display:flex; align-items:center; gap:4px; font-size:12px; font-weight:600; }
 
-  .board{ position:relative; flex:none; height:290px; }
+  .board{ position:relative; flex:none; height:392px; }
   .note{
-    position:absolute; width:min(56%, 188px); min-height:96px;
+    position:absolute; width:min(52%, 180px); min-height:165px;
     left:var(--x); top:var(--y); z-index:var(--z);
     transform:rotate(var(--rot));
     transition:left .8s cubic-bezier(.34,1.25,.5,1), top .8s cubic-bezier(.34,1.25,.5,1), transform .8s cubic-bezier(.34,1.25,.5,1);
@@ -303,8 +317,8 @@
     animation:shadowFloat var(--dur) ease-in-out infinite; animation-delay:var(--delay);
   }
   .note-card{
-    position:relative; min-height:96px;
-    display:flex; flex-direction:column; justify-content:center;
+    position:relative; min-height:165px;
+    display:flex; flex-direction:column; justify-content:flex-end;
     padding:13px 15px; border-radius:22px;
     border:1.5px solid rgba(43,41,37,.8);
     background:linear-gradient(160deg, rgba(255,255,255,.32), rgba(255,255,255,0) 48%), var(--c);
@@ -318,6 +332,10 @@
   .n-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
   .n-cat{ font-size:9px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; opacity:.75; }
   .n-time{ font-family:var(--font-display); font-weight:700; font-size:26px; line-height:1; font-variant-numeric:tabular-nums; }
+  /* Post-it: hora en la esquina superior derecha, nombre centrado en la mitad inferior */
+  .note .n-head{ position:absolute; top:13px; right:15px; }
+  @media (max-width:360px){ .note .n-time{ font-size:22px; } .note .n-title{ font-size:15px; } }
+  .note .n-title{ min-height:76px; display:flex; align-items:center; justify-content:center; text-align:center; margin-top:0; font-size:16.5px; }
   .n-title{ font-family:var(--font-display); font-weight:600; font-size:15.5px; line-height:1.15; margin-top:3px; }
   .n-meta{ font-size:11px; font-weight:500; opacity:.82; margin-top:3px; }
   .n-travel{ display:flex; gap:5px; margin-top:8px; }
@@ -2135,6 +2153,8 @@
     var m = Math.max(0, Math.round((t - NOW) * 60)), h = Math.floor(m / 60), r = m % 60;
     return h ? h + ' h' + (r ? ' ' + r + ' min' : '') : r + ' min';
   }
+  function nextState(t){ var m = (t - NOW) * 60; return m > 60 ? 'st-calm' : m > 30 ? 'st-soon' : 'st-urgent'; }
+  function nextCardAttrs(n){ return ' next-card ' + nextState(n.t) + '" style="' + catVars(n.cat); }
   function travelOf(item){ return item.travel ? item.travel[item.travel.mode] : null; }
   var CLOCK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
   var CAR_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14l-1.5-5.5A2 2 0 0 0 15.6 10H8.4a2 2 0 0 0-1.9 1.5Z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>';
@@ -2378,7 +2398,7 @@
     }).join('');
     host.innerHTML =
       '<div><div class="section-eyebrow" style="color:var(--warn-ink)">' + t('today.soon', { t: untilText(n.t) }) + '</div>' +
-      '<div class="up-next-card"><div style="display:flex; align-items:baseline; gap:10px;">' +
+      '<div class="up-next-card' + nextCardAttrs(n) + '"><div style="display:flex; align-items:baseline; gap:10px;">' +
         '<span class="up-next-time">' + fmtHour(n.t) + '</span><span class="up-next-title">' + n.title + '</span></div>' +
         '<div class="up-next-sub">' + t('today.leaves', { place: n.place, leave: n.leave, how: t('how.' + n.how) }) + '</div></div></div>' +
       '<div><div class="section-eyebrow" style="color:var(--text-muted)">' + t('today.later') + '</div><div class="later-row">' + chips + '</div></div>';
@@ -2394,7 +2414,7 @@
     }).join('');
     host.innerHTML =
       '<div><div class="hero-eyebrow">' + t('today.nowSoon', { t: untilText(n.t) }) + '</div>' +
-      '<div class="hero-card"><div class="hero-time">' + fmtHour(n.t) + '</div>' +
+      '<div class="hero-card' + nextCardAttrs(n) + '"><div class="hero-time">' + fmtHour(n.t) + '</div>' +
         '<div class="hero-title">' + n.title + '</div>' +
         '<div class="hero-place">' + n.place + ' · ' + n.dist + '</div>' +
         '<span class="hero-leave">' + t('today.departure', { t: n.leave }) + ' · ' + t('how.' + n.how) + '</span></div></div>' +
@@ -2402,7 +2422,8 @@
   }
 
   /* ---- Tema «Post-it 2» (boceto-today.html) ---- */
-  var NOTE_SLOTS = [ { x:'2%', y:14, rot:-12 }, { x:'28%', y:92, rot:-5 }, { x:'45%', y:170, rot:8 } ];
+  // Escalonadas hacia la derecha para que la hora (esquina superior derecha) de cada una quede a la vista
+  var NOTE_SLOTS = [ { x:'0%', y:12, rot:-7 }, { x:'26%', y:98, rot:-2 }, { x:'47%', y:184, rot:5 } ];
   var NOTE_FLOAT = [
     { dur:'5.6s', delay:'-0.8s', sway:'1.4deg' },
     { dur:'6.8s', delay:'-3.1s', sway:'-1.2deg' },
@@ -2413,7 +2434,7 @@
   function renderPostit2(host){
     var n = TODAY_NEXT;
     host.innerHTML =
-      '<div class="pi-next" role="group" aria-label="' + t('aria.next') + '">' +
+      '<div class="pi-next' + nextCardAttrs(n) + '" role="group" aria-label="' + t('aria.next') + '">' +
         '<span class="pi-next-time">' + fmtHour(n.t) + '</span>' +
         '<span class="pi-next-title">' + n.title + '</span>' +
         '<span class="pi-next-side"><span class="pi-next-when">' + t('today.in', { t: untilText(n.t) }) + '</span>' +
