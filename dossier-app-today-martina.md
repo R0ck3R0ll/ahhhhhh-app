@@ -59,7 +59,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Opción de aviso a la **hora de salida** calculada cuando el evento implica traslado.
 
 ### 2.2 Actividades extraescolares
-- Actividades recurrentes semanales: **todo lo inserta el usuario**. Misma lógica que Eventos: con la App nueva solo aparece el botón **Añadir actividad**; después, la lista; **cada actividad se abre pulsando encima** y desde ahí se edita.
+- Actividades recurrentes semanales: **todo lo inserta el usuario**. Misma lógica que Eventos: con la App nueva solo aparece el botón **Añadir actividad**; después, la lista; **cada actividad se abre pulsando encima** (ficha de consulta con Editar y Eliminar).
 - Campos **obligatorios**: nombre, **día o días de la semana**, hora de inicio y de fin **de cada día**, categoría, prioridad y **ubicación** (para el cálculo de traslados).
   - Si hay más de un día, cada uno puede tener su horario; al añadir un día se propone el mismo horario del primero.
 - Campos **opcionales**: descripción.
@@ -72,7 +72,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - Las actividades recurrentes cuentan siempre como **activas** a efectos de borrar su categoría (ver Configuración).
 
 ### 2.3 Eventos
-- Eventos puntuales (no recurrentes): **todo lo inserta el usuario**. Con la App nueva la pantalla solo muestra el botón **Añadir evento**; después, la lista de próximos eventos ordenada por fecha y hora; **cada evento se abre pulsando encima** y desde ahí se edita.
+- Eventos puntuales (no recurrentes): **todo lo inserta el usuario**. Con la App nueva la pantalla solo muestra el botón **Añadir evento**; después, la lista de próximos eventos ordenada por fecha y hora; **cada evento se abre pulsando encima** (ficha de consulta con Editar y Eliminar).
 - Campos **obligatorios**: nombre, fecha, hora de inicio, **duración** (horas y minutos), **categoría** y prioridad (Alta / Media / Baja).
 - Campos **opcionales**: descripción y ubicación.
 - **Categoría**: las mismas de Configuración. Al elegirla se propone su prioridad (se puede cambiar; si ya se eligió una prioridad a mano, no se toca). Desde el propio formulario se puede crear una **categoría nueva** (nombre y color): es una categoría de usuario como cualquier otra (aparece en Configuración, donde se puede renombrar, cambiar de color y prioridad o borrar).
@@ -84,12 +84,12 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 ### 2.3 bis Tareas
 - Pestaña propia, **después de Eventos** (barra: Today · Actividades · Eventos · Tareas · Calendario · Config).
-- Lista única de **todas las tareas**, ordenada por entrega: las de Classroom (extraídas y aprobadas) y las generadas por eventos y actividades. Cada una muestra prioridad, entrega, tiempo estimado (o «falta tiempo estimado»), de dónde viene y la descripción.
-- **Se abre pulsando encima** y desde ahí se edita: nombre, entrega (fecha y hora; en las de actividades es siempre la siguiente sesión y no se edita), tiempo estimado (obligatorio, horas y minutos), prioridad y descripción (opcional).
-- Eliminar pide segunda pulsación; en una tarea de evento o actividad la quita de su evento o actividad.
+- Lista única de **todas las tareas**, ordenada por entrega: las de Classroom (extraídas y aprobadas), las generadas por eventos y actividades y las **tareas sueltas** añadidas a mano con el botón **Añadir tarea** (nombre, entrega, tiempo estimado y descripción; prioridad por defecto la de la categoría Tarea). Cada una muestra prioridad, entrega, tiempo estimado (o «falta tiempo estimado»), de dónde viene y la descripción.
+- **Se abre pulsando encima** (ficha de consulta) y con **Editar** se cambia: nombre, entrega (fecha y hora; en las de actividades es siempre la siguiente sesión y no se edita), tiempo estimado (obligatorio, horas y minutos), prioridad y descripción (opcional).
+- **Eliminar** (desde la ficha) pide segunda pulsación; en una tarea de evento o actividad la quita de su evento o actividad.
 
 ### Prioridades y edición (común a Actividades, Eventos y Tareas)
-- Los elementos listados **se abren pulsando encima** y desde ahí se editan.
+- Pulsar un elemento de la lista abre su **ficha de consulta** (todos los detalles, solo lectura, con «‹ Volver»). En la ficha están los botones **Editar** (abre el formulario) y **Eliminar** (pide una segunda pulsación de confirmación). Al guardar se vuelve a la ficha; al cancelar la edición, también.
 - Cada elemento toma **por defecto la prioridad de su categoría** (las tareas de eventos y actividades, la de su evento o actividad; las de Classroom, la de la categoría Tarea). Se puede cambiar **solo para ese elemento** al insertarlo o al editarlo en su pantalla, **sin cambiar la prioridad de la categoría**.
 
 ### Deadlines, avisos y visualización en el Calendario

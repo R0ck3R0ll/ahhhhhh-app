@@ -494,6 +494,25 @@
   .est-missing{ color:var(--warn-ink); font-weight:700; }
   #task-list-wrap[hidden], #task-form[hidden], #task-list-view[hidden], #tk-due-row[hidden], #tk-due-auto[hidden], .context-note[hidden]{ display:none; }
 
+  /* ---- Ficha de consulta (Actividades, Eventos, Tareas) ---- */
+  .detail{ display:flex; flex-direction:column; gap:14px; }
+  .detail[hidden]{ display:none; }
+  .detail-back{
+    align-self:flex-start; display:inline-flex; align-items:center; gap:4px; cursor:pointer;
+    background:none; border:none; padding:4px 0; font-family:var(--font-body); font-size:13.5px; font-weight:600; color:var(--accent-strong);
+  }
+  .detail-card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px; }
+  .detail-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .detail-head h3{ margin:0; font-family:var(--font-display); font-size:22px; line-height:1.15; overflow-wrap:anywhere; }
+  .detail-head .prio-chip{ margin-top:4px; }
+  .detail-list{ margin:0; display:flex; flex-direction:column; gap:10px; }
+  .detail-list div{ display:flex; flex-direction:column; gap:2px; }
+  .detail-list dt{ font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+  .detail-list dd{ margin:0; font-size:14px; line-height:1.4; display:flex; align-items:center; gap:6px; flex-wrap:wrap; white-space:pre-line; }
+  .detail-list dd i{ width:10px; height:10px; border-radius:50%; flex:none; }
+  .detail-list .muted{ color:var(--text-muted); font-size:12.5px; }
+  .detail .form-actions .btn-danger{ flex:1; }
+
   .confirm-dialog{
     width:min(420px, calc(100vw - 32px)); border:1px solid var(--border); border-radius:16px; padding:18px;
     background:var(--surface); color:var(--text); box-shadow:var(--shadow); font-family:var(--font-body);
@@ -814,6 +833,8 @@
         </button>
       </div>
 
+      <div class="detail" id="act-detail" hidden></div>
+
       <form id="act-form" class="evt-form" hidden novalidate onsubmit="saveActivity(event)">
         <h2 class="section-title" id="act-form-title"></h2>
 
@@ -897,7 +918,6 @@
           <button type="button" class="btn-ghost" onclick="closeActivityForm()" data-i18n="btn.cancel"></button>
           <button type="submit" class="btn-primary" data-i18n="btn.save"></button>
         </div>
-        <button type="button" class="btn-danger" id="act-delete" hidden onclick="cancelActivity(this)"></button>
       </form>
     </section>
 
@@ -915,6 +935,8 @@
           <span data-i18n="evt.add"></span>
         </button>
       </div>
+
+      <div class="detail" id="evt-detail" hidden></div>
 
       <form id="evt-form" class="evt-form" hidden novalidate onsubmit="saveEvent(event)">
         <h2 class="section-title" id="evt-form-title"></h2>
@@ -1013,7 +1035,6 @@
           <button type="button" class="btn-ghost" onclick="closeEventForm()" data-i18n="btn.cancel"></button>
           <button type="submit" class="btn-primary" data-i18n="btn.save"></button>
         </div>
-        <button type="button" class="btn-danger" id="evt-delete" hidden onclick="cancelEvent(this)"></button>
       </form>
     </section>
 
@@ -1237,11 +1258,16 @@
           <h2 class="section-title" data-i18n="tasks.title"></h2>
           <div class="row-list" id="task-list"></div>
         </div>
-        <p class="context-note" id="task-empty" data-i18n="tasks.empty"></p>
+        <button class="add-btn" onclick="openTaskForm()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span data-i18n="tasks.add"></span>
+        </button>
       </div>
 
+      <div class="detail" id="task-detail" hidden></div>
+
       <form id="task-form" class="evt-form" hidden novalidate onsubmit="saveTask(event)">
-        <h2 class="section-title" data-i18n="task.editTitle"></h2>
+        <h2 class="section-title" id="tk-form-title"></h2>
         <p class="task-origin" id="tk-origin"></p>
 
         <label class="fld">
@@ -1287,7 +1313,6 @@
           <button type="button" class="btn-ghost" onclick="closeTaskForm()" data-i18n="btn.cancel"></button>
           <button type="submit" class="btn-primary" data-i18n="btn.save"></button>
         </div>
-        <button type="button" class="btn-danger" id="tk-delete" onclick="deleteTask(this)"></button>
       </form>
     </section>
 
@@ -1454,6 +1479,7 @@
       'hint.taskPrioCat':'Por defecto, la de la categoría Tarea ({p}). Cambiarla aquí solo afecta a esta tarea.', 'task.delete':'Eliminar tarea', 'task.deleteConfirm':'Confirmar eliminación',
       'task.deleteConfirmLinked':'Confirmar: se quita la tarea de «{name}»', 'toast.taskSaved':'Tarea «{name}» guardada', 'toast.taskDeleted':'Tarea «{name}» eliminada',
       'task.ownPrio':'{p} · propia de la tarea',
+      'btn.back':'Volver', 'tasks.add':'Añadir tarea', 'task.newTitle':'Nueva tarea', 'task.fromManual':'Añadida a mano', 'd.when':'Cuándo', 'd.task':'Tarea asociada', 'd.origin':'Origen', 'd.prioOwn':'(propia)', 'd.prioDefault':'(la de la categoría)',
       'tab.calendar':'Calendario', 'sub.calendar':'Actividades en vista día o semana',
       'tab.config':'Config', 'title.config':'Configuración', 'sub.config':'Idioma, aspecto, horarios, enlaces y categorías',
       'today.soon':'Se acerca · faltan {t}', 'today.later':'Más tarde', 'today.leaves':'{place} · sale {leave} {how}',
@@ -1571,6 +1597,7 @@
       'hint.taskPrioCat':'By default, the Homework category’s ({p}). Changing it here only affects this task.', 'task.delete':'Delete task', 'task.deleteConfirm':'Confirm deletion',
       'task.deleteConfirmLinked':'Confirm: the task is removed from “{name}”', 'toast.taskSaved':'Task “{name}” saved', 'toast.taskDeleted':'Task “{name}” deleted',
       'task.ownPrio':'{p} · set for this task',
+      'btn.back':'Back', 'tasks.add':'Add task', 'task.newTitle':'New task', 'task.fromManual':'Added by hand', 'd.when':'When', 'd.task':'Linked task', 'd.origin':'Source', 'd.prioOwn':'(own)', 'd.prioDefault':'(the category’s)',
       'tab.calendar':'Calendar', 'sub.calendar':'Activities by day or week',
       'tab.config':'Settings', 'title.config':'Settings', 'sub.config':'Language, appearance, schedules, connections and categories',
       'today.soon':'Coming up · in {t}', 'today.later':'Later', 'today.leaves':'{place} · leave {leave} {how}',
@@ -1688,6 +1715,7 @@
       'hint.taskPrioCat':'Per impostazione predefinita, quella della categoria Compito ({p}). Cambiarla qui vale solo per questo compito.', 'task.delete':'Elimina compito', 'task.deleteConfirm':'Conferma eliminazione',
       'task.deleteConfirmLinked':'Conferma: il compito viene tolto da «{name}»', 'toast.taskSaved':'Compito «{name}» salvato', 'toast.taskDeleted':'Compito «{name}» eliminato',
       'task.ownPrio':'{p} · propria del compito',
+      'btn.back':'Indietro', 'tasks.add':'Aggiungi compito', 'task.newTitle':'Nuovo compito', 'task.fromManual':'Aggiunto a mano', 'd.when':'Quando', 'd.task':'Compito associato', 'd.origin':'Origine', 'd.prioOwn':'(propria)', 'd.prioDefault':'(quella della categoria)',
       'tab.calendar':'Calendario', 'sub.calendar':'Attività in vista giorno o settimana',
       'tab.config':'Opzioni', 'title.config':'Impostazioni', 'sub.config':'Lingua, aspetto, orari, collegamenti e categorie',
       'today.soon':'Sta arrivando · mancano {t}', 'today.later':'Più tardi', 'today.leaves':'{place} · partenza {leave} {how}',
@@ -1805,6 +1833,7 @@
       'hint.taskPrioCat':'Par défaut, celle de la catégorie Devoir ({p}). La modifier ici ne concerne que cette tâche.', 'task.delete':'Supprimer la tâche', 'task.deleteConfirm':'Confirmer la suppression',
       'task.deleteConfirmLinked':'Confirmer : la tâche est retirée de « {name} »', 'toast.taskSaved':'Tâche « {name} » enregistrée', 'toast.taskDeleted':'Tâche « {name} » supprimée',
       'task.ownPrio':'{p} · propre à la tâche',
+      'btn.back':'Retour', 'tasks.add':'Ajouter une tâche', 'task.newTitle':'Nouvelle tâche', 'task.fromManual':'Ajoutée à la main', 'd.when':'Quand', 'd.task':'Tâche associée', 'd.origin':'Origine', 'd.prioOwn':'(propre)', 'd.prioDefault':'(celle de la catégorie)',
       'tab.calendar':'Calendrier', 'sub.calendar':'Activités en vue jour ou semaine',
       'tab.config':'Réglages', 'title.config':'Réglages', 'sub.config':'Langue, apparence, horaires, liens et catégories',
       'today.soon':'Bientôt · dans {t}', 'today.later':'Plus tard', 'today.leaves':'{place} · départ {leave} {how}',
@@ -1922,6 +1951,7 @@
       'hint.taskPrioCat':'Standardmäßig die der Kategorie Hausaufgabe ({p}). Eine Änderung hier gilt nur für diese Aufgabe.', 'task.delete':'Aufgabe löschen', 'task.deleteConfirm':'Löschen bestätigen',
       'task.deleteConfirmLinked':'Bestätigen: Die Aufgabe wird aus „{name}“ entfernt', 'toast.taskSaved':'Aufgabe „{name}“ gespeichert', 'toast.taskDeleted':'Aufgabe „{name}“ gelöscht',
       'task.ownPrio':'{p} · eigene der Aufgabe',
+      'btn.back':'Zurück', 'tasks.add':'Aufgabe hinzufügen', 'task.newTitle':'Neue Aufgabe', 'task.fromManual':'Von Hand hinzugefügt', 'd.when':'Wann', 'd.task':'Zugehörige Aufgabe', 'd.origin':'Herkunft', 'd.prioOwn':'(eigene)', 'd.prioDefault':'(die der Kategorie)',
       'tab.calendar':'Kalender', 'sub.calendar':'Aktivitäten in Tages- oder Wochenansicht',
       'tab.config':'Optionen', 'title.config':'Einstellungen', 'sub.config':'Sprache, Darstellung, Zeiten, Verknüpfungen und Kategorien',
       'today.soon':'Gleich · in {t}', 'today.later':'Später', 'today.leaves':'{place} · Abfahrt {leave} {how}',
@@ -2012,6 +2042,7 @@
     renderActivities();
     refreshActivityForm();
     renderTasks();
+    refreshOpenDetails();
     onScheduleChanged();
     applyAppearance();
   }
@@ -2770,6 +2801,41 @@
   }
 
 
+  /* ---- Lista → ficha de consulta → formulario (Actividades, Eventos, Tareas) ---- */
+  // Pulsar un elemento abre su ficha solo para consultar; desde la ficha se edita o se elimina.
+  function showView(f, view){
+    el(f + '-list-view').hidden = view !== 'list';
+    el(f + '-detail').hidden = view !== 'detail';
+    el(f + '-form').hidden = view !== 'form';
+    el(f + '-detail').closest('.screen').parentElement.scrollTop = 0;
+  }
+  var BACK_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>';
+  // d: {title, prio, rows:[[etiqueta, html]], edit:'fn()', del:'fn(this)', delLabel}
+  function renderDetail(f, d){
+    el(f + '-detail').innerHTML =
+      '<button type="button" class="detail-back" onclick="showView(\'' + f + '\', \'list\')">' + BACK_SVG + t('btn.back') + '</button>' +
+      '<div class="detail-card">' +
+        '<div class="detail-head"><h3>' + esc(d.title) + '</h3><span class="prio-chip prio-' + d.prio + '">' + t('prio.' + d.prio) + '</span></div>' +
+        '<dl class="detail-list">' + d.rows.filter(function(r){ return r[1]; }).map(function(r){
+          return '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>';
+        }).join('') + '</dl>' +
+      '</div>' +
+      '<div class="form-actions">' +
+        '<button type="button" class="btn-danger" onclick="' + d.del + '">' + d.delLabel + '</button>' +
+        '<button type="button" class="btn-primary" onclick="' + d.edit + '">' + t('edit') + '</button>' +
+      '</div>';
+    showView(f, 'detail');
+  }
+  function catHtml(c){ return c ? '<i style="background:' + c.color + '"></i>' + esc(c.name) : ''; }
+  function prioHtml(p, own){ return t('prio.' + p) + ' <span class="muted">' + t(own ? 'd.prioOwn' : 'd.prioDefault') + '</span>'; }
+
+  // Al cambiar de idioma (o una categoría), la ficha abierta se vuelve a dibujar
+  function refreshOpenDetails(){
+    if(el('evt-detail') && !el('evt-detail').hidden && editingEvent){ openEvent(editingEvent.id); }
+    if(el('act-detail') && !el('act-detail').hidden && editingAct){ openActivity(editingAct.id); }
+    if(el('task-detail') && !el('task-detail').hidden && editingTask){ openTask(editingTask.key); }
+  }
+
   /* ---- Categoría y prioridad en los formularios (Eventos y Actividades) ---- */
   // Elegir categoría propone su prioridad, salvo que ya se haya elegido una a mano.
   // Desde el formulario se puede crear una categoría nueva: es una categoría de usuario más.
@@ -2880,7 +2946,7 @@
         '<span>' + fmtDay(e.date) + ' · ' + e.time + '–' + endTime(e) + (e.place ? ' · </span>' + PIN_SVG + '<span>' + esc(e.place) : '') + '</span>';
       var task = e.task ? '<div class="evt-task">' + TASK_SVG + '<span>' + esc(t('evt.taskRow', {
         task: e.task.name, due: fmtDay(e.task.date) + ' ' + e.task.time, est: fmtEst(e.task.est) })) + '</span></div>' : '';
-      return '<div class="row evt-row row-open" ' + openAttrs('openEventForm', e.id) + '>' +
+      return '<div class="row evt-row row-open" ' + openAttrs('openEvent', e.id) + '>' +
         '<div class="row-body">' +
           '<span class="evt-title-line"><span class="row-title">' + esc(e.name) + '</span>' +
             '<span class="prio-chip prio-' + e.prio + '">' + t('prio.' + e.prio) + '</span></span>' +
@@ -2919,12 +2985,9 @@
     setDur('task-est', tk ? tk.est : 0);
     setTaskOn(!!tk);
     toggleNewCategory('evt', false);
-    el('evt-delete').hidden = !editingEvent;
     document.querySelectorAll('#evt-form .is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); });
     refreshEventForm();
-    el('evt-list-view').hidden = true;
-    el('evt-form').hidden = false;
-    el('screen-events').parentElement.scrollTop = 0;
+    showView('evt', 'form');
     el('evt-name').focus();
   }
   // Al corregir un campo marcado, se quita la marca
@@ -2933,10 +2996,26 @@
     var pair = ev.target.closest('.dur-input');
     if(pair){ pair.querySelectorAll('.is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); }); }
   });
+  // Cancelar el formulario vuelve a la ficha (al editar) o a la lista (al añadir)
   function closeEventForm(){
-    editingEvent = null;
-    el('evt-form').hidden = true;
-    el('evt-list-view').hidden = false;
+    if(editingEvent){ openEvent(editingEvent.id); } else { showView('evt', 'list'); }
+  }
+  function openEvent(id){
+    var e = USER_EVENTS.filter(function(x){ return x.id === id; })[0];
+    if(!e){ showView('evt', 'list'); return; }
+    editingEvent = e;
+    renderDetail('evt', {
+      title: e.name, prio: e.prio,
+      rows: [
+        [t('f.cat'), catHtml(eventCategory(e))],
+        [t('d.when'), fmtDay(e.date) + ' · ' + e.time + '–' + endTime(e) + ' <span class="muted">(' + fmtEst(e.dur || 60) + ')</span>'],
+        [t('f.prio'), eventCategory(e) && findCategory(e.cat) && findCategory(e.cat).prio === e.prio ? prioHtml(e.prio, false) : prioHtml(e.prio, true)],
+        [t('f.place'), e.place ? esc(e.place) : ''],
+        [t('f.desc'), e.desc ? esc(e.desc) : ''],
+        [t('d.task'), e.task ? esc(e.task.name) + '<br><span class="muted">' + t('task.dueAt', { t: fmtDay(e.task.date) + ' ' + e.task.time }) + ' · ' + fmtEst(e.task.est) + '</span>' : '']
+      ],
+      edit: "openEventForm('" + e.id + "')", del: 'cancelEvent(this)', delLabel: t('evt.cancel')
+    });
   }
 
   // Partes del formulario que dependen del estado (título, categorías, prioridad)
@@ -3013,19 +3092,15 @@
     };
     if(editingEvent){ USER_EVENTS[USER_EVENTS.indexOf(editingEvent)] = data; } else { USER_EVENTS.push(data); }
     storeEvents();
-    closeEventForm();
     renderEvents();
     renderTasks();
     renderCalendar(calView);
+    openEvent(data.id);
     toast(t('toast.evtSaved', { name: data.name }));
   }
 
   // Cancelar un evento pide una segunda pulsación y se lleva su tarea
-  function resetCancelButton(){
-    var b = el('evt-delete');
-    b.classList.remove('is-confirm');
-    b.textContent = t('evt.cancel');
-  }
+  function resetCancelButton(){}
   function cancelEvent(btn){
     var e = editingEvent;
     if(!e){ return; }
@@ -3036,7 +3111,8 @@
     }
     USER_EVENTS.splice(USER_EVENTS.indexOf(e), 1);
     storeEvents();
-    closeEventForm();
+    editingEvent = null;
+    showView('evt', 'list');
     renderEvents();
     renderTasks();
     renderCalendar(calView);
@@ -3105,7 +3181,7 @@
       var sub = '<span>' + sessionsText(a) + ' · </span>' + PIN_SVG + '<span>' + esc(a.place) + '</span>';
       var task = a.task ? '<div class="evt-task">' + TASK_SVG + '<span>' + esc(t('act.taskRow', {
         task: a.task.name, est: fmtEst(a.task.est), next: next ? fmtDay(isoOf(next)) + ' ' + fmtHour(next.getHours() + next.getMinutes() / 60) : '—' })) + '</span></div>' : '';
-      return '<div class="row evt-row row-open" ' + openAttrs('openActivityForm', a.id) + '>' +
+      return '<div class="row evt-row row-open" ' + openAttrs('openActivity', a.id) + '>' +
         '<div class="row-body">' +
           '<span class="evt-title-line"><span class="row-title">' + esc(a.name) + '</span>' +
             '<span class="prio-chip prio-' + a.prio + '">' + t('prio.' + a.prio) + '</span></span>' +
@@ -3132,15 +3208,33 @@
     setDur('atask-est', a.task ? a.task.est : 0);
     setActTaskOn(!!a.task);
     toggleNewCategory('act', false);
-    el('act-delete').hidden = !editingAct;
     document.querySelectorAll('#act-form .is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); });
     refreshActivityForm();
-    el('act-list-view').hidden = true;
-    el('act-form').hidden = false;
-    el('screen-activities').parentElement.scrollTop = 0;
+    showView('act', 'form');
     el('act-name').focus();
   }
-  function closeActivityForm(){ editingAct = null; el('act-form').hidden = true; el('act-list-view').hidden = false; }
+  function closeActivityForm(){
+    if(editingAct){ openActivity(editingAct.id); } else { showView('act', 'list'); }
+  }
+  function openActivity(id){
+    var a = USER_ACTS.filter(function(x){ return x.id === id; })[0];
+    if(!a){ showView('act', 'list'); return; }
+    editingAct = a;
+    var next = a.task && nextSession(a, demoNow()), c = eventCategory(a);
+    renderDetail('act', {
+      title: a.name, prio: a.prio,
+      rows: [
+        [t('f.cat'), catHtml(c)],
+        [t('f.days'), a.sessions.slice().sort(function(p, q){ return p.day - q.day; }).map(function(x){
+          return cap(weekdayName(x.day)) + ' · ' + x.start + '–' + x.end; }).join('<br>')],
+        [t('f.prio'), prioHtml(a.prio, !(c && findCategory(a.cat) && findCategory(a.cat).prio === a.prio))],
+        [t('f.place'), esc(a.place)],
+        [t('f.desc'), a.desc ? esc(a.desc) : ''],
+        [t('d.task'), a.task ? esc(a.task.name) + '<br><span class="muted">' + fmtEst(a.task.est) + ' · ' + t('task.dueNextAt', { t: next ? fmtWhen(next) : '—' }) + '</span>' : '']
+      ],
+      edit: "openActivityForm('" + a.id + "')", del: 'cancelActivity(this)', delLabel: t('act.cancel')
+    });
+  }
 
   function refreshActivityForm(){
     if(!el('act-form')){ return; }
@@ -3157,7 +3251,6 @@
     if(own){ p = own; }
     el('atask-prio').textContent = own ? t('task.ownPrio', { p: t('prio.' + p) }) : p ? t('task.samePrioAct', { p: t('prio.' + p) }) : '—';
     el('atask-prio').className = 'prio-copy' + (p ? ' prio-' + p : '');
-    var b = el('act-delete'); b.classList.remove('is-confirm'); b.textContent = t('act.cancel');
   }
   function renderSessions(){
     var days = Object.keys(actSessions).map(Number).sort();
@@ -3242,10 +3335,10 @@
     };
     if(editingAct){ USER_ACTS[USER_ACTS.indexOf(editingAct)] = data; } else { USER_ACTS.push(data); }
     storeActivities();
-    closeActivityForm();
     renderActivities();
     renderTasks();
     renderCalendar(calView);
+    openActivity(data.id);
     toast(t('toast.actSaved', { name: data.name }));
   }
 
@@ -3260,7 +3353,8 @@
     }
     USER_ACTS.splice(USER_ACTS.indexOf(a), 1);
     storeActivities();
-    closeActivityForm();
+    editingAct = null;
+    showView('act', 'list');
     renderActivities();
     renderTasks();
     renderCalendar(calView);
@@ -3315,8 +3409,9 @@
   function allTasks(){
     var now = demoNow(), catPrio = (findCategory('tarea') || {}).prio || 'Alta', out = [];
     OWN_TASKS.forEach(function(tk){
-      out.push({ key:'s:' + tk.id, kind:'classroom', name:tk.name, due:atTime(tk.date, tk.time), est:tk.est, own:tk.prio, basePrio:catPrio,
-                 desc:tk.desc, origin:t('task.fromClassroom', { name: tk.course }), ref:tk });
+      var manual = tk.source === 'manual';
+      out.push({ key:'s:' + tk.id, kind: manual ? 'manual' : 'classroom', name:tk.name, due:atTime(tk.date, tk.time), est:tk.est, own:tk.prio, basePrio:catPrio,
+                 desc:tk.desc, origin: manual ? t('task.fromManual') : t('task.fromClassroom', { name: tk.course }), ref:tk });
     });
     USER_EVENTS.forEach(function(e){
       if(!e.task){ return; }
@@ -3342,11 +3437,10 @@
     if(!list){ return; }
     var items = allTasks();
     el('task-list-wrap').hidden = !items.length;
-    el('task-empty').hidden = !!items.length;
     list.innerHTML = items.map(function(x){
       var when = x.due ? t('task.dueAt', { t: fmtWhen(x.due) }) : '—';
       var est = x.est ? fmtEst(x.est) : '<span class="est-missing">' + t('task.noEst') + '</span>';
-      return '<div class="row evt-row row-open" ' + openAttrs('openTaskForm', x.key) + '>' +
+      return '<div class="row evt-row row-open" ' + openAttrs('openTask', x.key) + '>' +
         '<div class="row-body">' +
           '<span class="evt-title-line"><span class="row-title">' + esc(x.name) + '</span>' +
             '<span class="prio-chip prio-' + x.prio + '">' + t('prio.' + x.prio) + '</span></span>' +
@@ -3358,11 +3452,35 @@
     }).join('');
   }
 
-  function openTaskForm(key){
+  function openTask(key){
     var x = allTasks().filter(function(it){ return it.key === key; })[0];
-    if(!x){ return; }
+    if(!x){ showView('task', 'list'); return; }
+    editingTask = x;
+    var dueTxt = x.due ? fmtWhen(x.due) : '—';
+    renderDetail('task', {
+      title: x.name, prio: x.prio,
+      rows: [
+        [t('d.origin'), TASK_SVG + esc(x.origin)],
+        [t('task.dueDate'), x.kind === 'activity' ? t('task.dueNextAt', { t: dueTxt }) : dueTxt],
+        [t('task.est'), x.est ? fmtEst(x.est) : '<span class="est-missing">' + t('task.noEst') + '</span>'],
+        [t('f.prio'), prioHtml(x.prio, !!x.own)],
+        [t('f.desc'), x.desc ? esc(x.desc) : '']
+      ],
+      edit: "openTaskForm('" + key + "')", del: 'deleteTask(this)', delLabel: t('task.delete')
+    });
+  }
+
+  // Sin clave: tarea suelta nueva, añadida a mano (prioridad por defecto: la de la categoría Tarea)
+  function openTaskForm(key){
+    var x = key ? allTasks().filter(function(it){ return it.key === key; })[0] : null;
+    if(key && !x){ return; }
+    if(!x){
+      var base = (findCategory('tarea') || {}).prio || 'Alta';
+      x = { kind:'manual', isNew:true, name:'', est:0, basePrio:base, prio:base, desc:'', origin:t('task.fromManual'), ref:{ date:'', time:'' } };
+    }
     editingTask = x;
     taskPrio = x.prio;
+    el('tk-form-title').textContent = t(x.isNew ? 'task.newTitle' : 'task.editTitle');
     el('tk-origin').innerHTML = TASK_SVG + '<span>' + esc(x.origin) + '</span>';
     el('tk-name').value = x.name;
     var auto = x.kind === 'activity';
@@ -3372,15 +3490,14 @@
     else { el('tk-date').value = x.ref.date; el('tk-time').value = x.ref.time; }
     setDur('tk-est', x.est);
     el('tk-desc').value = x.desc || '';
-    // Las de Classroom se pueden descartar; las de eventos y actividades se quitan de su origen
-    var del = el('tk-delete'); del.classList.remove('is-confirm'); del.textContent = t('task.delete');
     document.querySelectorAll('#task-form .is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); });
     refreshTaskPrio();
-    el('task-list-view').hidden = true;
-    el('task-form').hidden = false;
-    el('screen-tasks').parentElement.scrollTop = 0;
+    showView('task', 'form');
+    el('tk-name').focus();
   }
-  function closeTaskForm(){ editingTask = null; el('task-form').hidden = true; el('task-list-view').hidden = false; }
+  function closeTaskForm(){
+    if(editingTask && !editingTask.isNew){ openTask(editingTask.key); } else { editingTask = null; showView('task', 'list'); }
+  }
   function setTaskPrio(btn){ taskPrio = btn.dataset.prio; refreshTaskPrio(); }
   function refreshTaskPrio(){
     var x = editingTask;
@@ -3390,7 +3507,7 @@
       b.classList.toggle('is-active', on);
       b.setAttribute('aria-checked', on);
     });
-    var key = x.kind === 'event' ? 'hint.taskPrioEvt' : x.kind === 'activity' ? 'hint.taskPrioAct' : 'hint.taskPrioCat';
+    var key = x.kind === 'event' ? 'hint.taskPrioEvt' : x.kind === 'activity' ? 'hint.taskPrioAct' : 'hint.taskPrioCat';   // Classroom y a mano: categoría Tarea
     el('tk-prio-hint').textContent = t(key, { p: t('prio.' + x.basePrio) });
   }
 
@@ -3411,6 +3528,11 @@
       toast(t('err.taskAfter')); return;
     }
     var r = x.ref;
+    if(x.isNew){
+      r = { id:'m' + Date.now(), source:'manual' };
+      OWN_TASKS.push(r);
+      x.key = 's:' + r.id;
+    }
     r.name = el('tk-name').value.trim();
     if(!auto){ r.date = el('tk-date').value; r.time = el('tk-time').value; }
     r.est = getDur('tk-est');
@@ -3418,23 +3540,24 @@
     // Prioridad propia solo si es distinta de la que le corresponde por defecto
     r.prio = taskPrio !== x.basePrio ? taskPrio : null;
     storeTasks(); storeEvents(); storeActivities();
-    closeTaskForm();
     renderTasks(); renderEvents(); renderActivities(); renderCalendar(calView);
+    openTask(x.key);
     toast(t('toast.taskSaved', { name: r.name }));
   }
 
-  // Eliminar pide una segunda pulsación; en eventos y actividades la tarea se quita de su origen
+  // Eliminar (desde la ficha) pide una segunda pulsación; en eventos y actividades la tarea se quita de su origen
   function deleteTask(btn){
     var x = editingTask;
     if(!x){ return; }
     if(!btn.classList.contains('is-confirm')){
       btn.classList.add('is-confirm');
-      btn.textContent = t(x.kind === 'classroom' ? 'task.deleteConfirm' : 'task.deleteConfirmLinked', { name: x.parent ? x.parent.name : '' });
+      btn.textContent = t(x.parent ? 'task.deleteConfirmLinked' : 'task.deleteConfirm', { name: x.parent ? x.parent.name : '' });
       return;
     }
-    if(x.kind === 'classroom'){ OWN_TASKS.splice(OWN_TASKS.indexOf(x.ref), 1); } else { x.parent.task = null; }
+    if(x.parent){ x.parent.task = null; } else { OWN_TASKS.splice(OWN_TASKS.indexOf(x.ref), 1); }
     storeTasks(); storeEvents(); storeActivities();
-    closeTaskForm();
+    editingTask = null;
+    showView('task', 'list');
     renderTasks(); renderEvents(); renderActivities(); renderCalendar(calView);
     toast(t('toast.taskDeleted', { name: x.name }));
   }
