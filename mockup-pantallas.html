@@ -274,7 +274,7 @@
 
   .board{ position:relative; flex:none; height:384px; }
   .note{
-    position:absolute; width:min(56%, 188px); height:150px;
+    position:absolute; width:min(56%, 188px); min-height:150px;
     left:var(--x); top:var(--y); z-index:var(--z);
     transform:rotate(var(--rot));
     transition:left .8s cubic-bezier(.34,1.25,.5,1), top .8s cubic-bezier(.34,1.25,.5,1), transform .8s cubic-bezier(.34,1.25,.5,1);
@@ -292,7 +292,7 @@
     animation:shadowFloat var(--dur) ease-in-out infinite; animation-delay:var(--delay);
   }
   .note-card{
-    position:absolute; inset:0;
+    position:relative; min-height:150px;
     display:flex; flex-direction:column; justify-content:flex-end;
     padding:13px 15px; border-radius:22px;
     border:1.5px solid rgba(43,41,37,.8);
@@ -1123,7 +1123,7 @@
       '<path d="M0 -41.5 V-38.5 L2.2 -37.4" fill="none" stroke="' + INK + '" stroke-width=".8" stroke-linecap="round"/>' +
       // cartel
       '<rect x="-9" y="-29" width="18" height="6.4" rx=".8" fill="#fff8ec" stroke="' + INK + '" stroke-width=".8"/>' +
-      '<text x="0" y="-24.2" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="4.6" font-weight="700" fill="#2B2925" letter-spacing=".3">COLE</text>' +
+      '<text x="0" y="-24.2" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="4" font-weight="700" fill="#2B2925" letter-spacing=".15">SCHOOL</text>' +
       // puerta
       '<rect x="-5.5" y="-15" width="11" height="15" fill="' + GLASS + '" stroke="' + INK + '" stroke-width=".9"/>' +
       '<line x1="0" y1="-15" x2="0" y2="0" stroke="' + INK + '" stroke-width=".7"/>' +
@@ -1391,6 +1391,13 @@
       el.style.setProperty('--rot', sl.rot + 'deg');
       el.style.setProperty('--z', String(10 - slot));
     });
+    // El tablero crece si algún post-it tiene más texto (pantallas estrechas)
+    var board = els[noteOrder[0]].parentNode, h = 0;
+    noteOrder.forEach(function(id, slot){
+      var sl = NOTE_SLOTS[slot] || NOTE_SLOTS[NOTE_SLOTS.length - 1];
+      h = Math.max(h, sl.y + els[id].offsetHeight);
+    });
+    board.style.height = (h + 40) + 'px';
   }
 
   var toastTimer;
