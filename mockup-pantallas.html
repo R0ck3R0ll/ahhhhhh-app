@@ -2373,32 +2373,61 @@
 
   /* ---- Icono del colegio: edificio rojo con tejados grises, torre con reloj y cartel ---- */
   // Dibujo de 64 x 52 unidades con el origen en el centro del suelo.
+  // Estilo cómic: paredes y tejados con líneas torcidas, torre central con reloj y cartel,
+  // alas a los lados con su cara lateral más oscura, ventanas con marco crema y puerta de cristal.
   function schoolIcon(){
-    var RED = '#d9453b', RED_2 = '#e5574a', ROOF = '#4d535c', GLASS = '#a9dcf0', INK = 'var(--ink)';
-    function win(x, y){ return '<rect x="' + x + '" y="' + y + '" width="5.5" height="7" rx=".6" fill="' + GLASS + '" stroke="' + INK + '" stroke-width=".8"/>' +
-      '<line x1="' + (x + 2.75) + '" y1="' + y + '" x2="' + (x + 2.75) + '" y2="' + (y + 7) + '" stroke="' + INK + '" stroke-width=".5"/>'; }
-    return '<g stroke-linejoin="round">' +
-      // alas laterales y sus tejados
-      '<rect x="-30" y="-25" width="20" height="25" fill="' + RED + '" stroke="' + INK + '" stroke-width="1.1"/>' +
-      '<rect x="10" y="-25" width="20" height="25" fill="' + RED + '" stroke="' + INK + '" stroke-width="1.1"/>' +
-      '<polygon points="-32,-24 -10,-24 -10,-37 -25,-34" fill="' + ROOF + '" stroke="' + INK + '" stroke-width="1.1"/>' +
-      '<polygon points="32,-24 10,-24 10,-37 25,-34" fill="' + ROOF + '" stroke="' + INK + '" stroke-width="1.1"/>' +
-      win(-27, -19) + win(-18.5, -19) + win(12.5, -19) + win(21, -19) +
-      // torre central con tejado a dos aguas
-      '<rect x="-11" y="-35" width="22" height="35" fill="' + RED_2 + '" stroke="' + INK + '" stroke-width="1.1"/>' +
-      '<polygon points="-15,-33 0,-51 15,-33" fill="' + ROOF + '" stroke="' + INK + '" stroke-width="1.1"/>' +
-      '<polygon points="-10,-34 0,-46 10,-34" fill="' + RED_2 + '" stroke="' + INK + '" stroke-width=".8"/>' +
+    var WALL = '#d9453b', FRONT = '#e5564a', SIDE = '#a9322a', ROOF = '#454b55', ROOF_HI = '#5f6772',
+        GLASS = '#bfe6f6', SHINE = '#eef9fe', TRIM = '#f2dfbd', INK = 'var(--ink)';
+    function shape(d, fill, w){ return '<path d="' + d + '" fill="' + fill + '" stroke="' + INK + '" stroke-width="' + (w || 1.1) + '"/>'; }
+    // Ventana torcida: 4 esquinas (sup-izq, sup-der, inf-der, inf-izq) → marco, cristal, cruz y brillo
+    function win(p){
+      function mid(a, b, k){ return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k]; }
+      function pt(q){ return q[0].toFixed(2) + ',' + q[1].toFixed(2); }
+      var tl = p[0], tr = p[1], br = p[2], bl = p[3];
+      var inner = [mid(tl, br, .12), mid(tr, bl, .12), mid(br, tl, .12), mid(bl, tr, .12)];
+      var top = mid(inner[0], inner[1], .5), bot = mid(inner[3], inner[2], .5), lft = mid(inner[0], inner[3], .5), rgt = mid(inner[1], inner[2], .5);
+      return shape('M' + pt(tl) + ' L' + pt(tr) + ' L' + pt(br) + ' L' + pt(bl) + 'Z', TRIM, .9) +
+        shape('M' + pt(inner[0]) + ' L' + pt(inner[1]) + ' L' + pt(inner[2]) + ' L' + pt(inner[3]) + 'Z', GLASS, .7) +
+        '<path d="M' + pt(top) + ' L' + pt(bot) + ' M' + pt(lft) + ' L' + pt(rgt) + '" stroke="' + TRIM + '" stroke-width="1.1"/>' +
+        '<path d="M' + pt(mid(inner[3], inner[0], .35)) + ' L' + pt(mid(inner[0], inner[1], .35)) + '" stroke="' + SHINE + '" stroke-width=".9" stroke-linecap="round" opacity=".9"/>';
+    }
+    return '<g stroke-linejoin="round" stroke-linecap="round">' +
+      // ala derecha: cara lateral (más oscura) y fachada
+      shape('M25.4,-0.8 L30.6,-3.4 Q31.3,-14 30.2,-24.6 L26.6,-27.6 Q25.5,-14 25.4,-0.8Z', SIDE) +
+      shape('M12.2,-0.4 Q18.6,0.6 25.4,-0.8 Q24.4,-14 26.6,-27.6 Q19.2,-29.6 12.6,-31.2Z', WALL) +
+      // ala izquierda: cara lateral y fachada
+      shape('M-29.4,-0.9 L-31.6,-3.2 Q-32.2,-13 -31.2,-23.2 L-28.9,-25.6 Q-29.9,-13 -29.4,-0.9Z', SIDE) +
+      shape('M-29.4,-0.9 Q-21,0.6 -12.6,-0.5 L-12.9,-30.2 Q-20.6,-28.1 -28.9,-25.6 Q-28.2,-13 -29.4,-0.9Z', WALL) +
+      // tejados de las alas, con el alero que sobresale
+      shape('M-33.2,-23.6 Q-31.8,-29.6 -28.4,-33.8 Q-25.4,-37.6 -19.8,-39.2 Q-15.4,-40.4 -11.6,-42.6 L-11.2,-30.6 Q-20.2,-27.8 -29.4,-25 Q-31.8,-24.8 -33.2,-23.6Z', ROOF) +
+      shape('M11.2,-32.2 L12.6,-44.4 Q17.6,-43.8 21.8,-41.6 Q27.4,-39.4 30.2,-34.6 Q32.6,-30.4 33.2,-25 Q30,-26.8 26.6,-27.6 Q19.2,-30.4 11.2,-32.2Z', ROOF) +
+      '<path d="M-31.6,-26.4 Q-27.8,-34 -20,-38.6 M13.8,-41.6 Q22.4,-39.4 29.6,-31" fill="none" stroke="' + ROOF_HI + '" stroke-width="1.2"/>' +
+      // zócalo crema
+      shape('M-31.6,-3.2 Q-15,-1.6 0,-1.9 Q15,-2.2 30.6,-3.4 L30.8,-0.6 Q15,0.4 0,0.2 Q-15,0.4 -31.4,-0.4Z', TRIM, .9) +
+      // torre central: fachada y tejado a dos aguas muy inclinado
+      shape('M-12.9,-0.2 Q0,0.9 12.5,-0.4 Q14.6,-17 13.2,-34 Q7,-39 0.9,-45.6 Q-6,-40 -13.6,-33.4 Q-15.2,-17 -12.9,-0.2Z', FRONT) +
+      shape('M-17.6,-30.6 Q-10.4,-37 -5.6,-43.6 Q-2.6,-48 0.8,-51.2 Q5.4,-45.4 9.6,-40.8 Q13.6,-36.4 18.2,-32.8 Q16.4,-31.2 14.4,-31.4 Q8.6,-36.8 0.9,-46.4 Q-6.8,-38.2 -14.2,-30.2 Q-16,-29.8 -17.6,-30.6Z', ROOF) +
+      '<path d="M-15.8,-31.8 Q-7.8,-39.6 0.7,-49.4" fill="none" stroke="' + ROOF_HI + '" stroke-width="1.1"/>' +
       // reloj
-      '<circle cx="0" cy="-38.5" r="4.3" fill="#fff" stroke="' + INK + '" stroke-width=".9"/>' +
-      '<path d="M0 -41.5 V-38.5 L2.2 -37.4" fill="none" stroke="' + INK + '" stroke-width=".8" stroke-linecap="round"/>' +
-      // cartel
-      '<rect x="-9" y="-29" width="18" height="6.4" rx=".8" fill="#fff8ec" stroke="' + INK + '" stroke-width=".8"/>' +
-      '<text x="0" y="-24.2" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="4" font-weight="700" fill="#2B2925" letter-spacing=".15">SCHOOL</text>' +
-      // puerta
-      '<rect x="-5.5" y="-15" width="11" height="15" fill="' + GLASS + '" stroke="' + INK + '" stroke-width=".9"/>' +
-      '<line x1="0" y1="-15" x2="0" y2="0" stroke="' + INK + '" stroke-width=".7"/>' +
+      '<circle cx=".3" cy="-37.4" r="5" fill="#fff" stroke="' + INK + '" stroke-width="1"/>' +
+      '<path d="M.3,-41.4 V-40.5 M.3,-33.4 V-34.3 M-3.7,-37.4 H-2.8 M4.3,-37.4 H3.4" stroke="' + INK + '" stroke-width=".6"/>' +
+      '<path d="M.3,-40.2 V-37.4 L2.6,-36.1" fill="none" stroke="' + INK + '" stroke-width=".9"/>' +
+      // cartel, un poco torcido
+      shape('M-9.6,-29.2 L9.3,-29.9 L9.7,-22.9 L-9.3,-22.3Z', '#fff6e6', .9) +
+      '<text x="0" y="-24.3" text-anchor="middle" transform="rotate(-2 0 -26)" font-family="Fraunces, Georgia, serif" font-size="4.1" font-weight="700" fill="#2B2925" letter-spacing=".05">SCHOOL</text>' +
+      // puerta de cristal con marco crema
+      shape('M-7,-0.2 L-6.7,-16 Q0,-16.8 6.8,-16.1 L7.1,-0.2Z', TRIM, .9) +
+      shape('M-5.5,-0.4 L-5.3,-14.4 L5.4,-14.6 L5.7,-0.4Z', GLASS, .7) +
+      '<path d="M.1,-14.5 L.1,-0.4" stroke="' + TRIM + '" stroke-width="1.1"/>' +
+      '<path d="M-4.4,-4 L-1.4,-12 M1.4,-3.6 L4.2,-11.4" stroke="' + SHINE + '" stroke-width=".9" opacity=".9"/>' +
+      // ventanas: dos en el ala izquierda, una en la fachada derecha y una en su cara lateral
+      win([[-27.6,-23.4], [-21.9,-24.4], [-21.6,-11.2], [-27.3,-10.6]]) +
+      win([[-20.2,-24.8], [-14.7,-25.6], [-14.5,-11.6], [-20,-11.2]]) +
+      win([[15,-25.8], [23.6,-24.6], [23.4,-10.8], [15.1,-11.4]]) +
+      win([[26.9,-22], [29.5,-20.4], [29.7,-9.6], [27.1,-9.2]]) +
     '</g>';
   }
+
 
   /* ---- Barra «Puntos» ---- */
   function renderDotsBar(host, r){
