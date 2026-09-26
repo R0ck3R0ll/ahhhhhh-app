@@ -180,7 +180,10 @@
 
   /* ---- Barra de tiempo «Puntos»: color de categoría + línea en la hora actual ---- */
   @keyframes needlePulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(43,41,37,.5); } 70%{ box-shadow:0 0 0 10px rgba(43,41,37,0); } }
-  .day-strip{ position:relative; height:64px; }
+  .day-strip{ position:relative; height:72px; }
+  .day-strip .ev-label{ position:absolute; transform:translateX(-50%); font-size:10px; font-weight:700; color:var(--text); white-space:nowrap; font-variant-numeric:tabular-nums; line-height:1; }
+  .day-strip .ev-label.at-end{ transform:translateX(-100%); }
+  .day-strip .ev-label.at-start{ transform:none; }
   .day-strip .bar{
     position:absolute; left:0; right:0; top:32px; height:12px; border-radius:999px;
     background:linear-gradient(90deg, #f0c9a0 0%, #f5e0a8 32%, #e0a06a 62%, #4a3a5a 85%, #2a2438 100%);
@@ -202,7 +205,7 @@
     border:1px solid var(--border);
     background:repeating-linear-gradient(135deg, var(--surface-alt), var(--surface-alt) 4px, var(--border) 4px, var(--border) 5px);
   }
-  .day-strip .school-icon{ position:absolute; bottom:14px; transform:translateX(-50%); height:auto; overflow:visible; }
+  .day-strip .school-icon{ position:absolute; bottom:22px; transform:translateX(-50%); height:auto; overflow:visible; }
 
   /* ---- Barra de tiempo «Niña soldado»: el camino del día ---- */
   .timeline svg{ display:block; width:100%; height:auto; overflow:visible; }
@@ -326,7 +329,7 @@
 
   .board{ position:relative; flex:none; height:392px; }
   .note{
-    position:absolute; width:min(52%, 180px); min-height:165px;
+    position:absolute; width:min(52%, 180px); min-height:158px;
     left:var(--x); top:var(--y); z-index:var(--z);
     transform:rotate(var(--rot));
     transition:left .8s cubic-bezier(.34,1.25,.5,1), top .8s cubic-bezier(.34,1.25,.5,1), transform .8s cubic-bezier(.34,1.25,.5,1);
@@ -344,7 +347,7 @@
     animation:shadowFloat var(--dur) ease-in-out infinite; animation-delay:var(--delay);
   }
   .note-card{
-    position:relative; min-height:165px;
+    position:relative; min-height:158px;
     display:flex; flex-direction:column; justify-content:flex-end;
     padding:13px 15px; border-radius:22px;
     border:1.5px solid rgba(43,41,37,.8);
@@ -376,7 +379,9 @@
   /* Post-it: hora en la esquina superior derecha, nombre centrado en la mitad inferior */
   .note .n-head{ position:absolute; top:13px; right:15px; }
   @media (max-width:360px){ .note .n-time{ font-size:22px; } .note .n-title{ font-size:15px; } }
-  .note .n-title{ min-height:76px; display:flex; align-items:center; justify-content:center; text-align:center; margin-top:0; font-size:16.5px; }
+  /* nombre al pie del post-it: así se lee aunque el de delante tape la parte de arriba */
+  .note-card{ padding-bottom:8px !important; }
+  .note .n-title{ min-height:40px; display:flex; align-items:center; justify-content:center; text-align:center; margin-top:0; font-size:16.5px; }
   .n-title{ font-family:var(--font-display); font-weight:600; font-size:15.5px; line-height:1.15; margin-top:3px; }
   .n-meta{ font-size:11px; font-weight:500; opacity:.82; margin-top:3px; }
   .n-travel{ display:flex; gap:5px; margin-top:8px; }
@@ -2393,8 +2398,12 @@
       html += '<div class="school-gap" style="left:' + (r.school.x0 * 100) + '%; width:' + gw + '%;"></div>' +
         '<svg class="school-icon" viewBox="-33 -53 66 54" aria-label="' + t('aria.school') + '" role="img" style="left:' + ((r.school.x0 + r.school.x1) * 50) + '%; width:max(' + (gw * 1.3).toFixed(1) + '%, 56px);">' + schoolIcon() + '</svg>';
     }
+    // Horas de los elementos: alternas abajo y arriba, empezando abajo por el más próximo (como en la barra de la niña)
+    var ahead = 0;
     todayEvents().forEach(function(e){
       var p = pct(e.t), end = p > 97 ? ' at-end' : '';
+      var below = e.t < NOW || ahead++ % 2 === 0, edge = p > 94 ? ' at-end' : (p < 6 ? ' at-start' : '');
+      html += '<div class="ev-label' + edge + (e.next ? ' is-next' : '') + '" style="left:' + p + '%; top:' + (below ? 58 : 12) + 'px;">' + fmtHour(e.t) + '</div>';
       if(e.next){
         // Mismo código de color que la tarjeta del próximo (según lo que falta)
         var st = nextState(e.t) + '" style="' + catVars(e.cat) + ';left:' + p + '%;';
@@ -2563,7 +2572,7 @@
 
   /* ---- Tema «Post-it 2» (boceto-today.html) ---- */
   // Escalonadas hacia la derecha para que la hora (esquina superior derecha) de cada una quede a la vista
-  var NOTE_SLOTS = [ { x:'0%', y:12, rot:-7 }, { x:'26%', y:98, rot:-2 }, { x:'47%', y:184, rot:5 } ];
+  var NOTE_SLOTS = [ { x:'0%', y:10, rot:-7 }, { x:'26%', y:64, rot:-2 }, { x:'47%', y:112, rot:5 } ];
   var NOTE_FLOAT = [
     { dur:'5.6s', delay:'-0.8s', sway:'1.4deg' },
     { dur:'6.8s', delay:'-3.1s', sway:'-1.2deg' },
@@ -2612,7 +2621,7 @@
 
   // Móviles pequeños: post-its más pequeños y más juntos
   var SMALL_PHONE = window.matchMedia('(max-width:360px), (max-height:620px)');
-  function noteY(sl){ return SMALL_PHONE.matches ? Math.round(sl.y * 0.66) : sl.y; }
+  function noteY(sl){ return SMALL_PHONE.matches ? Math.round(sl.y * 0.95) : sl.y; }
   SMALL_PHONE.addEventListener('change', function(){ if(el('screen-today').classList.contains('active')){ renderToday(); } });
   function placeNotes(els){
     noteOrder.forEach(function(id, slot){
@@ -2628,7 +2637,7 @@
       var sl = NOTE_SLOTS[slot] || NOTE_SLOTS[NOTE_SLOTS.length - 1];
       h = Math.max(h, noteY(sl) + els[id].offsetHeight);
     });
-    board.style.height = (h + 40) + 'px';
+    board.style.height = (h + 18) + 'px';
   }
 
   var toastTimer;

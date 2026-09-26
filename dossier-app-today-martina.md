@@ -103,12 +103,12 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 ### 2.4 Pantalla principal — "Today"
 - Nombre de la pantalla **en el idioma de la App**: Hoy (es), Today (en), Oggi (it), Aujourd’hui (fr), Heute (de); en la pestaña, en el título y en los textos que la mencionan.
-- **Barra de tiempo**: dibuja **todos** los deadlines del día. **Sin etiqueta con la hora actual**: el momento presente lo marcan la línea vertical (Puntos) o la niña (Niña soldado).
+- **Barra de tiempo**: dibuja **todos** los deadlines del día. En las dos barras (Puntos y Niña soldado) cada deadline lleva su hora, alternando abajo y arriba y empezando abajo por el más próximo. **Sin etiqueta con la hora actual**: el momento presente lo marcan la línea vertical (Puntos) o la niña (Niña soldado).
 - **Cuerpo** (debajo de la barra): **como máximo 4 deadlines**: el más próximo destacado y los siguientes por orden, según la vista elegida (Lista, Post-it 1, Post-it 2). Si hay más, una línea avisa de cuántos quedan («Y 2 más hoy: los ves en la barra de tiempo»).
 - **Solo el primer deadline lleva detalles** (lugar, traslado, hora de salida…); los siguientes muestran **solo hora y nombre**.
   - En **Post-it 1 y Post-it 2** el primer deadline es compacto: **hora y nombre en la misma línea**, **nombre del destino (sin dirección) y distancia**, y las **horas de salida solo con icono** (andando, si el destino está a menos de 1 km, y coche), cada una con su hora; caben las dos. En Post-it 2 van a la derecha, una encima de la otra.
 - **Pulsar una tarjeta de «Hoy»** abre ese elemento en su pantalla (Actividades, Eventos o Tareas), igual que al pulsarlo allí, con un botón **«‹ Volver a Hoy»**. En Post-it 2, un post-it de detrás primero viene al frente; el de delante se abre.
-  - En Post-it 2 los post-its son casi cuadrados: hora en la esquina superior derecha y nombre centrado en la mitad inferior; se solapan escalonados de modo que la hora de cada uno quede a la vista.
+  - En Post-it 2 los post-its son casi cuadrados: hora en la esquina superior derecha y nombre al pie; se solapan escalonados (bastante juntos, para que en un móvil grande quepa también «Próximos días» desplegada) de modo que la hora y el nombre de cada uno queden a la vista.
 - **Color del primer deadline según lo que falta:**
   - Más de 1 h: borde y texto del color de la categoría; relleno algo más oscuro que el fondo.
   - Entre 1 h y 30 min: borde y texto en **ámbar**, todo en negrita; relleno del color de la categoría.
