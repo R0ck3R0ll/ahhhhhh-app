@@ -25,7 +25,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 2. **Aspecto** (tema de Today, fondo claro/oscuro, barra de tiempo)
 3. **Horarios** (franja horaria de planificación y horario escolar)
 4. **Enlaces** (cuenta de Google para Classroom/Gmail y archivo del calendario escolar)
-5. **Categorías**: solo dos de serie, **Tarea** (prioridad alta por defecto) y **Actividad** (media): no se pueden borrar ni renombrar, solo cambiar su prioridad. Las demás las crea el usuario; cada una lleva a la derecha un botón de lápiz (editar nombre y color) y una X (borrar).
+5. **Categorías**: solo dos de serie, **Tarea** (prioridad alta por defecto) y **Actividad** (media): no se pueden borrar ni renombrar, solo cambiar su prioridad. Las demás las crea el usuario; cada una lleva un botón de lápiz (editar nombre y color) y una X (borrar) justo a la izquierda de la prioridad, que queda alineada con la de las categorías de serie.
 6. **Google Calendar** (exportación)
 
 - Inserción de credenciales / conexión de cuentas externas (Google, y las que se necesiten).

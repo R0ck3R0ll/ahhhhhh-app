@@ -929,24 +929,24 @@
           <div class="row cat-row" data-cat="cita">
             <button class="row-bar swatch" style="background:var(--cat-cita)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
             <div class="row-body"><input class="cat-name-input" value="Cita" readonly data-i18n-aria="aria.catName" onkeydown="if(event.key==='Enter'){ editCategory(this); }"></div>
+            <button class="row-edit" onclick="editCategory(this)" data-i18n-aria="aria.catEdit" data-i18n-title="aria.catEdit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+            <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
             <select class="priority-select" style="background:var(--cat-cita)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
               <option value="Alta" selected>Alta</option>
               <option value="Media">Media</option>
               <option value="Baja">Baja</option>
             </select>
-            <button class="row-edit" onclick="editCategory(this)" data-i18n-aria="aria.catEdit" data-i18n-title="aria.catEdit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-            <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
           </div>
           <div class="row cat-row" data-cat="libre">
             <button class="row-bar swatch" style="background:var(--cat-libre)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
             <div class="row-body"><input class="cat-name-input" value="Tiempo libre" readonly data-i18n-aria="aria.catName" onkeydown="if(event.key==='Enter'){ editCategory(this); }"></div>
+            <button class="row-edit" onclick="editCategory(this)" data-i18n-aria="aria.catEdit" data-i18n-title="aria.catEdit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+            <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
             <select class="priority-select" style="background:var(--cat-libre)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
               <option value="Alta">Alta</option>
               <option value="Media">Media</option>
               <option value="Baja" selected>Baja</option>
             </select>
-            <button class="row-edit" onclick="editCategory(this)" data-i18n-aria="aria.catEdit" data-i18n-title="aria.catEdit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-            <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
           </div>
         </div>
         <button class="add-btn" style="margin-top:12px" onclick="addCategory()">
@@ -2047,11 +2047,11 @@
     row.innerHTML =
       '<button class="row-bar swatch" style="background:' + color + '" onclick="cycleColor(this)" aria-label="' + t('aria.catColor') + '" title="' + t('aria.catColor') + '"></button>' +
       '<div class="row-body"><input class="cat-name-input" value="' + t('cat.new') + '" readonly aria-label="' + t('aria.catName') + '" onkeydown="if(event.key===\'Enter\'){ editCategory(this); }"></div>' +
+      '<button class="row-edit" onclick="editCategory(this)" aria-label="' + t('aria.catEdit') + '" title="' + t('aria.catEdit') + '"></button>' +
+      '<button class="row-delete" onclick="removeCategory(this)" aria-label="' + t('aria.catDelete') + '" title="' + t('aria.catDelete') + '">×</button>' +
       '<select class="priority-select" style="background:' + color + '" onchange="onPriorityChange(this)" aria-label="' + t('aria.catPrio') + '">' +
         '<option value="Alta">' + t('prio.Alta') + '</option><option value="Media" selected>' + t('prio.Media') + '</option><option value="Baja">' + t('prio.Baja') + '</option>' +
-      '</select>' +
-      '<button class="row-edit" onclick="editCategory(this)" aria-label="' + t('aria.catEdit') + '" title="' + t('aria.catEdit') + '"></button>' +
-      '<button class="row-delete" onclick="removeCategory(this)" aria-label="' + t('aria.catDelete') + '" title="' + t('aria.catDelete') + '">×</button>';
+      '</select>';
     row.querySelector('.row-edit').innerHTML = PENCIL_SVG;
     list.appendChild(row);
     renderExportCats();
