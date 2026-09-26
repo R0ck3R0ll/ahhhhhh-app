@@ -405,6 +405,55 @@
   .add-btn:hover{ filter:brightness(1.03); }
   .add-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
+  /* ---- Eventos: lista y formulario ---- */
+  .evt-view{ display:flex; flex-direction:column; gap:20px; }
+  .evt-view[hidden], .evt-form[hidden], .task-fields[hidden], #evt-list-wrap[hidden], .btn-danger[hidden]{ display:none; }
+  .evt-row{ align-items:flex-start; }
+  .evt-row .row-action{ margin-top:-4px; }
+  .evt-title-line{ display:flex; align-items:center; gap:8px; min-width:0; }
+  .evt-title-line .row-title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .evt-desc{ font-size:12.5px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .evt-task{
+    display:flex; align-items:flex-start; gap:6px; margin-top:4px;
+    font-size:12px; font-weight:500; color:var(--cat-tarea-ink);
+    background:var(--surface-alt); border-left:3px solid var(--cat-tarea); border-radius:0 8px 8px 0; padding:5px 8px;
+  }
+  .evt-task svg{ flex:none; margin-top:1px; }
+  .prio-chip{ flex:none; font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:999px; border:1px solid currentColor; }
+  .prio-Alta{ color:var(--accent-strong); }
+  .prio-Media{ color:var(--warn-ink); }
+  .prio-Baja{ color:var(--text-muted); }
+
+  .evt-form{ display:flex; flex-direction:column; gap:14px; }
+  .evt-form .section-title{ margin:0; }
+  .fld{ display:flex; flex-direction:column; gap:5px; flex:1; min-width:0; }
+  .fld-row{ display:flex; gap:10px; }
+  .fld-time{ flex:0 0 40%; }
+  .fld-opt{ text-transform:none; letter-spacing:0; font-weight:500; }
+  .txt-input{
+    font-family:var(--font-body); font-size:16px; color:var(--text); width:100%; min-width:0;
+    background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:9px 11px;
+  }
+  textarea.txt-input{ resize:vertical; line-height:1.35; }
+  /* Fecha y hora: sin icono (el selector se abre al tocar), así caben en móviles estrechos */
+  input.txt-input[type=date], input.txt-input[type=time]{ padding:9px 8px; font-variant-numeric:tabular-nums; }
+  input.txt-input::-webkit-calendar-picker-indicator{ display:none; }
+  .txt-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .txt-input.is-invalid{ border-color:var(--danger-bg); box-shadow:0 0 0 1px var(--danger-bg); }
+  .prio-row{ margin-top:0; }
+  .prio-row .toggle-btn{ flex:1; padding:8px 10px; font-size:13px; }
+  .task-box{ border:1px solid var(--border); border-radius:14px; background:var(--surface-alt); padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
+  .task-fields{ display:flex; flex-direction:column; gap:12px; border-top:1px solid var(--border); padding-top:12px; }
+  .prio-copy{ font-size:13px; font-weight:600; padding:10px 0; }
+  .form-actions{ display:flex; gap:10px; }
+  .form-actions button{ flex:1; font-size:14px; padding:11px; }
+  .btn-danger{
+    font-family:var(--font-body); font-weight:600; font-size:13.5px; cursor:pointer;
+    background:transparent; color:var(--danger-bg); border:1px solid var(--danger-bg); border-radius:10px; padding:10px;
+  }
+  .btn-danger.is-confirm{ background:var(--danger-bg); color:var(--danger-text); }
+  .btn-danger:focus-visible{ outline:2px solid var(--danger-bg); outline-offset:2px; }
+
   .context-note{
     display:flex; align-items:flex-start; gap:8px;
     background:var(--surface-alt); border:1px solid var(--border);
@@ -626,7 +675,7 @@
   .cal-bar .bar-time{ font-size:9.5px; opacity:.85; font-variant-numeric:tabular-nums; }
   .cal-bar.cat-actividad{ background:var(--cat-actividad); }
   .cal-bar.cat-libre{ background:var(--cat-libre); }
-  .cal-bar.cat-cita{ background:var(--cat-cita); }
+  .cal-bar.cat-cita, .cal-bar.cat-evento{ background:var(--cat-cita); }
 
   .cal-deadline{ position:absolute; left:2px; right:2px; display:flex; align-items:center; gap:4px; transform:translateY(-50%); z-index:2; }
   .cal-deadline .dl-dot{ width:9px; height:9px; border-radius:50%; background:var(--cat-tarea); border:2px solid var(--surface); flex:none; }
@@ -747,50 +796,96 @@
     </section>
 
     <!-- ============ EVENTOS ============ -->
+    <!-- Todo lo inserta el usuario: con la App nueva solo aparece «Añadir evento» -->
     <section class="screen" id="screen-events" aria-labelledby="screen-heading">
 
-      <div class="context-note">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <span class="school-note"></span>
+      <div id="evt-list-view" class="evt-view">
+        <div id="evt-list-wrap" hidden>
+          <h2 class="section-title" data-i18n="evt.upcoming"></h2>
+          <div class="row-list" id="evt-list"></div>
+        </div>
+        <button class="add-btn" onclick="openEventForm()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span data-i18n="evt.add"></span>
+        </button>
       </div>
 
-      <div>
-        <h2 class="section-title" data-i18n="evt.upcoming"></h2>
-        <div class="row-list">
-          <div class="row">
-            <div class="row-body">
-              <span class="row-title" style="color:var(--cat-libre-ink)">Cumpleaños de Sofía</span>
-              <span class="row-sub"><span><span data-date="2026-09-12"></span> · 17:00 · Bowling Las Rozas</span></span>
-            </div>
-            <button class="row-action" onclick="toast(t('toast.editEvt'))" data-i18n="edit"></button>
-          </div>
-          <div class="row">
-            <div class="row-body">
-              <span class="row-title" style="color:var(--cat-cita-ink)">Revisión dental</span>
-              <span class="row-sub"><span><span data-date="2026-09-16"></span> · 10:00 · Clínica Dental Sonrisas</span></span>
-            </div>
-            <button class="row-action" onclick="toast(t('toast.editEvt'))" data-i18n="edit"></button>
+      <form id="evt-form" class="evt-form" hidden novalidate onsubmit="saveEvent(event)">
+        <h2 class="section-title" id="evt-form-title"></h2>
+
+        <label class="fld">
+          <span class="field-label" data-i18n="f.name"></span>
+          <input class="txt-input" id="evt-name" type="text" autocomplete="off" data-i18n-ph="f.namePh">
+        </label>
+        <div class="fld-row">
+          <label class="fld">
+            <span class="field-label" data-i18n="f.date"></span>
+            <input class="txt-input" id="evt-date" type="date">
+          </label>
+          <label class="fld fld-time">
+            <span class="field-label" data-i18n="f.time"></span>
+            <input class="txt-input" id="evt-time" type="time">
+          </label>
+        </div>
+        <div class="fld">
+          <span class="field-label" id="evt-prio-label" data-i18n="f.prio"></span>
+          <div class="toggle-row prio-row" id="evt-prio" role="radiogroup" aria-labelledby="evt-prio-label">
+            <button type="button" class="toggle-btn" role="radio" data-prio="Alta" onclick="setEventPrio(this)" data-i18n="prio.Alta"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Media" onclick="setEventPrio(this)" data-i18n="prio.Media"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Baja" onclick="setEventPrio(this)" data-i18n="prio.Baja"></button>
           </div>
         </div>
-      </div>
 
-      <div>
-        <h2 class="section-title" data-i18n="evt.free"></h2>
-        <div class="row-list">
-          <div class="row">
-            <div class="row-body">
-              <span class="row-title" style="color:var(--cat-libre-ink)">Tarde libre</span>
-              <span class="row-sub"><span><span data-date="2026-09-12"></span> · 15:00–17:00</span></span>
+        <label class="fld">
+          <span class="field-label"><span data-i18n="f.place"></span> <span class="fld-opt" data-i18n="f.optional"></span></span>
+          <input class="txt-input" id="evt-place" type="text" autocomplete="off" data-i18n-ph="f.placePh">
+        </label>
+        <label class="fld">
+          <span class="field-label"><span data-i18n="f.desc"></span> <span class="fld-opt" data-i18n="f.optional"></span></span>
+          <textarea class="txt-input" id="evt-desc" rows="2" data-i18n-ph="f.descPh"></textarea>
+        </label>
+
+        <!-- Tarea de preparación: opcional, depende del evento -->
+        <div class="task-box">
+          <div class="config-line">
+            <span class="config-label" id="evt-task-label" data-i18n="task.gen"></span>
+            <button type="button" class="switch" id="evt-task-switch" role="switch" aria-checked="false" aria-labelledby="evt-task-label" onclick="toggleEventTask()"></button>
+          </div>
+          <p class="card-hint" data-i18n-html="hint.task"></p>
+          <div class="task-fields" id="evt-task-fields" hidden>
+            <label class="fld">
+              <span class="field-label" data-i18n="task.name"></span>
+              <input class="txt-input" id="task-name" type="text" autocomplete="off">
+            </label>
+            <div class="fld-row">
+              <label class="fld">
+                <span class="field-label" data-i18n="task.dueDate"></span>
+                <input class="txt-input" id="task-date" type="date">
+              </label>
+              <label class="fld fld-time">
+                <span class="field-label" data-i18n="task.dueTime"></span>
+                <input class="txt-input" id="task-time" type="time">
+              </label>
             </div>
-            <button class="row-action" onclick="toast(t('toast.editEvt'))" data-i18n="edit"></button>
+            <div class="fld-row">
+              <label class="fld">
+                <span class="field-label" data-i18n="task.est"></span>
+                <select class="txt-input" id="task-est"></select>
+              </label>
+              <div class="fld">
+                <span class="field-label" data-i18n="f.prio"></span>
+                <span class="prio-copy" id="task-prio"></span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <button class="add-btn" onclick="toast(t('toast.addEvt'))">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        <span data-i18n="evt.add"></span>
-      </button>
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" onclick="closeEventForm()" data-i18n="btn.cancel"></button>
+          <button type="submit" class="btn-primary" data-i18n="btn.save"></button>
+        </div>
+        <button type="button" class="btn-danger" id="evt-delete" hidden onclick="cancelEvent(this)"></button>
+      </form>
     </section>
 
     <!-- ============ CONFIGURACIÓN ============ -->
@@ -1023,8 +1118,7 @@
 
       <div class="cal-legend">
         <span><i style="background:var(--cat-actividad)"></i><span data-cat-name="actividad"></span></span>
-        <span><i style="background:var(--cat-cita)"></i><span data-cat-name="cita"></span></span>
-        <span><i style="background:var(--cat-libre)"></i><span data-cat-name="libre"></span></span>
+        <span><i style="background:var(--cat-cita)"></i><span data-i18n="legend.event"></span></span>
         <span><i style="background:var(--cat-tarea)"></i><span data-cat-name="tarea" data-suffix="legend.deadline"></span></span>
       </div>
     </section>
@@ -1076,9 +1170,17 @@
       'act.add':'Añadir actividad',
       'toast.editAct':'La edición de actividades se activa en la fase de datos',
       'toast.addAct':'Se podrá añadir una actividad nueva en la siguiente fase',
-      'evt.upcoming':'Próximos eventos', 'evt.free':'Tiempo libre', 'evt.add':'Añadir evento o tiempo libre',
-      'toast.editEvt':'La edición de eventos se activa en la siguiente fase',
-      'toast.addEvt':'Se podrá añadir un evento o bloque libre en la siguiente fase',
+      'evt.upcoming':'Próximos eventos', 'evt.add':'Añadir evento',
+      'evt.new':'Nuevo evento', 'evt.editTitle':'Editar evento',
+      'f.name':'Nombre', 'f.date':'Fecha', 'f.time':'Hora', 'f.prio':'Prioridad', 'f.place':'Ubicación', 'f.desc':'Descripción', 'f.optional':'(opcional)',
+      'f.namePh':'Ej.: Cumpleaños de Sofía', 'f.placePh':'Dirección o lugar', 'f.descPh':'Notas, qué llevar…',
+      'task.gen':'Generar tarea de preparación',
+      'hint.task':'Si hay que preparar algo antes. La tarea copia la prioridad del evento, <strong>solo se edita aquí</strong> y se cancela con el evento; en Today y en el Calendario cuenta como cualquier otra tarea (avisos incluidos).',
+      'task.name':'Nombre de la tarea', 'task.namePre':'Preparar: {event}', 'task.dueDate':'Entrega', 'task.dueTime':'Hora', 'task.est':'Tiempo estimado', 'task.samePrio':'{p} · la del evento',
+      'btn.save':'Guardar', 'btn.cancel':'Cancelar', 'evt.cancel':'Cancelar evento', 'evt.cancelConfirmTask':'Confirmar: se cancela también su tarea', 'evt.cancelConfirm':'Confirmar cancelación',
+      'toast.evtSaved':'Evento «{name}» guardado', 'toast.evtCancelled':'Evento «{name}» cancelado', 'toast.evtTaskCancelled':'Evento «{name}» y su tarea cancelados',
+      'err.missing':'Falta: {fields}', 'err.taskAfter':'La entrega de la tarea tiene que ser antes del evento',
+      'evt.taskRow':'Tarea: {task} · entrega {due} · {est}',
       'cfg.language':'Idioma', 'cfg.languageLabel':'Idioma de la App',
       'cfg.languageHint':'Fechas y horas se muestran en el idioma elegido. Lo que escribes tú (nombres de actividades, lugares…) no se traduce.',
       'cfg.appearance':'Apariencia de Today', 'cfg.theme':'Tema', 'cfg.themeAria':'Tema de la pantalla Today',
@@ -1129,7 +1231,7 @@
       'toast.weekNav':'La navegación entre semanas estará disponible con datos reales',
       'legend.event':'Evento', 'legend.task':'Tarea (deadline)',
       'tab.activities':'Actividades', 'sub.activities':'Extraescolares recurrentes de {name}',
-      'tab.events':'Eventos', 'sub.events':'Eventos puntuales y tiempo libre',
+      'tab.events':'Eventos', 'sub.events':'Eventos puntuales de {name}',
       'tab.calendar':'Calendario', 'sub.calendar':'Actividades en vista día o semana',
       'tab.config':'Config', 'title.config':'Configuración', 'sub.config':'Idioma, aspecto, horarios, enlaces y categorías',
       'today.soon':'Se acerca · faltan {t}', 'today.later':'Más tarde', 'today.leaves':'{place} · sale {leave} {how}',
@@ -1166,9 +1268,17 @@
       'act.add':'Add activity',
       'toast.editAct':'Editing activities comes with the data phase',
       'toast.addAct':'Adding a new activity comes in the next phase',
-      'evt.upcoming':'Upcoming events', 'evt.free':'Free time', 'evt.add':'Add event or free time',
-      'toast.editEvt':'Editing events comes in the next phase',
-      'toast.addEvt':'Adding an event or free block comes in the next phase',
+      'evt.upcoming':'Upcoming events', 'evt.add':'Add event',
+      'evt.new':'New event', 'evt.editTitle':'Edit event',
+      'f.name':'Name', 'f.date':'Date', 'f.time':'Time', 'f.prio':'Priority', 'f.place':'Location', 'f.desc':'Description', 'f.optional':'(optional)',
+      'f.namePh':'E.g. Sofía’s birthday', 'f.placePh':'Address or place', 'f.descPh':'Notes, what to bring…',
+      'task.gen':'Create a preparation task',
+      'hint.task':'If something needs preparing beforehand. The task copies the event’s priority, <strong>can only be edited here</strong> and is cancelled with the event; in Today and the Calendar it counts like any other task (alerts included).',
+      'task.name':'Task name', 'task.namePre':'Prepare: {event}', 'task.dueDate':'Due', 'task.dueTime':'Time', 'task.est':'Estimated time', 'task.samePrio':'{p} · same as the event',
+      'btn.save':'Save', 'btn.cancel':'Cancel', 'evt.cancel':'Cancel event', 'evt.cancelConfirmTask':'Confirm: its task is cancelled too', 'evt.cancelConfirm':'Confirm cancellation',
+      'toast.evtSaved':'Event “{name}” saved', 'toast.evtCancelled':'Event “{name}” cancelled', 'toast.evtTaskCancelled':'Event “{name}” and its task cancelled',
+      'err.missing':'Missing: {fields}', 'err.taskAfter':'The task must be due before the event',
+      'evt.taskRow':'Task: {task} · due {due} · {est}',
       'cfg.language':'Language', 'cfg.languageLabel':'App language',
       'cfg.languageHint':'Dates and times follow the chosen language. What you type yourself (activity names, places…) is not translated.',
       'cfg.appearance':'Today appearance', 'cfg.theme':'Theme', 'cfg.themeAria':'Today screen theme',
@@ -1219,7 +1329,7 @@
       'toast.weekNav':'Moving between weeks will be available with real data',
       'legend.event':'Event', 'legend.task':'Homework (deadline)',
       'tab.activities':'Activities', 'sub.activities':'{name}’s recurring after-school activities',
-      'tab.events':'Events', 'sub.events':'One-off events and free time',
+      'tab.events':'Events', 'sub.events':'{name}’s one-off events',
       'tab.calendar':'Calendar', 'sub.calendar':'Activities by day or week',
       'tab.config':'Settings', 'title.config':'Settings', 'sub.config':'Language, appearance, schedules, connections and categories',
       'today.soon':'Coming up · in {t}', 'today.later':'Later', 'today.leaves':'{place} · leave {leave} {how}',
@@ -1256,9 +1366,17 @@
       'act.add':'Aggiungi attività',
       'toast.editAct':'La modifica delle attività arriva nella fase dei dati',
       'toast.addAct':'Si potrà aggiungere una nuova attività nella prossima fase',
-      'evt.upcoming':'Prossimi eventi', 'evt.free':'Tempo libero', 'evt.add':'Aggiungi evento o tempo libero',
-      'toast.editEvt':'La modifica degli eventi arriva nella prossima fase',
-      'toast.addEvt':'Si potrà aggiungere un evento o un blocco libero nella prossima fase',
+      'evt.upcoming':'Prossimi eventi', 'evt.add':'Aggiungi evento',
+      'evt.new':'Nuovo evento', 'evt.editTitle':'Modifica evento',
+      'f.name':'Nome', 'f.date':'Data', 'f.time':'Ora', 'f.prio':'Priorità', 'f.place':'Luogo', 'f.desc':'Descrizione', 'f.optional':'(facoltativo)',
+      'f.namePh':'Es.: Compleanno di Sofía', 'f.placePh':'Indirizzo o luogo', 'f.descPh':'Note, cosa portare…',
+      'task.gen':'Crea un compito di preparazione',
+      'hint.task':'Se bisogna preparare qualcosa prima. Il compito copia la priorità dell’evento, <strong>si modifica solo qui</strong> e viene annullato con l’evento; in Today e nel Calendario conta come qualsiasi altro compito (avvisi compresi).',
+      'task.name':'Nome del compito', 'task.namePre':'Preparare: {event}', 'task.dueDate':'Consegna', 'task.dueTime':'Ora', 'task.est':'Tempo stimato', 'task.samePrio':'{p} · quella dell’evento',
+      'btn.save':'Salva', 'btn.cancel':'Annulla', 'evt.cancel':'Annulla evento', 'evt.cancelConfirmTask':'Conferma: si annulla anche il compito', 'evt.cancelConfirm':'Conferma annullamento',
+      'toast.evtSaved':'Evento «{name}» salvato', 'toast.evtCancelled':'Evento «{name}» annullato', 'toast.evtTaskCancelled':'Evento «{name}» e il suo compito annullati',
+      'err.missing':'Manca: {fields}', 'err.taskAfter':'La consegna del compito deve essere prima dell’evento',
+      'evt.taskRow':'Compito: {task} · consegna {due} · {est}',
       'cfg.language':'Lingua', 'cfg.languageLabel':'Lingua dell’app',
       'cfg.languageHint':'Date e orari seguono la lingua scelta. Quello che scrivi tu (nomi delle attività, luoghi…) non viene tradotto.',
       'cfg.appearance':'Aspetto di Today', 'cfg.theme':'Tema', 'cfg.themeAria':'Tema della schermata Today',
@@ -1309,7 +1427,7 @@
       'toast.weekNav':'La navigazione tra settimane sarà disponibile con dati reali',
       'legend.event':'Evento', 'legend.task':'Compito (scadenza)',
       'tab.activities':'Attività', 'sub.activities':'Attività extrascolastiche ricorrenti di {name}',
-      'tab.events':'Eventi', 'sub.events':'Eventi singoli e tempo libero',
+      'tab.events':'Eventi', 'sub.events':'Eventi singoli di {name}',
       'tab.calendar':'Calendario', 'sub.calendar':'Attività in vista giorno o settimana',
       'tab.config':'Opzioni', 'title.config':'Impostazioni', 'sub.config':'Lingua, aspetto, orari, collegamenti e categorie',
       'today.soon':'Sta arrivando · mancano {t}', 'today.later':'Più tardi', 'today.leaves':'{place} · partenza {leave} {how}',
@@ -1346,9 +1464,17 @@
       'act.add':'Ajouter une activité',
       'toast.editAct':'La modification des activités arrive avec la phase de données',
       'toast.addAct':'L’ajout d’une activité arrive dans la prochaine phase',
-      'evt.upcoming':'Événements à venir', 'evt.free':'Temps libre', 'evt.add':'Ajouter un événement ou du temps libre',
-      'toast.editEvt':'La modification des événements arrive dans la prochaine phase',
-      'toast.addEvt':'L’ajout d’un événement ou d’un créneau libre arrive dans la prochaine phase',
+      'evt.upcoming':'Événements à venir', 'evt.add':'Ajouter un événement',
+      'evt.new':'Nouvel événement', 'evt.editTitle':'Modifier l’événement',
+      'f.name':'Nom', 'f.date':'Date', 'f.time':'Heure', 'f.prio':'Priorité', 'f.place':'Lieu', 'f.desc':'Description', 'f.optional':'(facultatif)',
+      'f.namePh':'Ex. : Anniversaire de Sofía', 'f.placePh':'Adresse ou lieu', 'f.descPh':'Notes, quoi apporter…',
+      'task.gen':'Créer une tâche de préparation',
+      'hint.task':'S’il faut préparer quelque chose avant. La tâche reprend la priorité de l’événement, <strong>ne se modifie qu’ici</strong> et est annulée avec l’événement ; dans Today et le Calendrier, elle compte comme n’importe quelle autre tâche (alertes comprises).',
+      'task.name':'Nom de la tâche', 'task.namePre':'Préparer : {event}', 'task.dueDate':'Échéance', 'task.dueTime':'Heure', 'task.est':'Temps estimé', 'task.samePrio':'{p} · celle de l’événement',
+      'btn.save':'Enregistrer', 'btn.cancel':'Annuler', 'evt.cancel':'Annuler l’événement', 'evt.cancelConfirmTask':'Confirmer : sa tâche est aussi annulée', 'evt.cancelConfirm':'Confirmer l’annulation',
+      'toast.evtSaved':'Événement « {name} » enregistré', 'toast.evtCancelled':'Événement « {name} » annulé', 'toast.evtTaskCancelled':'Événement « {name} » et sa tâche annulés',
+      'err.missing':'Manquant : {fields}', 'err.taskAfter':'L’échéance de la tâche doit être avant l’événement',
+      'evt.taskRow':'Tâche : {task} · échéance {due} · {est}',
       'cfg.language':'Langue', 'cfg.languageLabel':'Langue de l’app',
       'cfg.languageHint':'Les dates et les heures suivent la langue choisie. Ce que vous saisissez (noms d’activités, lieux…) n’est pas traduit.',
       'cfg.appearance':'Apparence de Today', 'cfg.theme':'Thème', 'cfg.themeAria':'Thème de l’écran Today',
@@ -1399,7 +1525,7 @@
       'toast.weekNav':'La navigation entre semaines sera disponible avec de vraies données',
       'legend.event':'Événement', 'legend.task':'Devoir (échéance)',
       'tab.activities':'Activités', 'sub.activities':'Activités extrascolaires récurrentes de {name}',
-      'tab.events':'Événements', 'sub.events':'Événements ponctuels et temps libre',
+      'tab.events':'Événements', 'sub.events':'Événements ponctuels de {name}',
       'tab.calendar':'Calendrier', 'sub.calendar':'Activités en vue jour ou semaine',
       'tab.config':'Réglages', 'title.config':'Réglages', 'sub.config':'Langue, apparence, horaires, liens et catégories',
       'today.soon':'Bientôt · dans {t}', 'today.later':'Plus tard', 'today.leaves':'{place} · départ {leave} {how}',
@@ -1436,9 +1562,17 @@
       'act.add':'Aktivität hinzufügen',
       'toast.editAct':'Aktivitäten bearbeiten kommt in der Datenphase',
       'toast.addAct':'Neue Aktivitäten kommen in der nächsten Phase',
-      'evt.upcoming':'Anstehende Termine', 'evt.free':'Freizeit', 'evt.add':'Termin oder Freizeit hinzufügen',
-      'toast.editEvt':'Termine bearbeiten kommt in der nächsten Phase',
-      'toast.addEvt':'Termine oder freie Blöcke kommen in der nächsten Phase',
+      'evt.upcoming':'Anstehende Termine', 'evt.add':'Termin hinzufügen',
+      'evt.new':'Neuer Termin', 'evt.editTitle':'Termin bearbeiten',
+      'f.name':'Name', 'f.date':'Datum', 'f.time':'Uhrzeit', 'f.prio':'Priorität', 'f.place':'Ort', 'f.desc':'Beschreibung', 'f.optional':'(optional)',
+      'f.namePh':'Z. B. Sofías Geburtstag', 'f.placePh':'Adresse oder Ort', 'f.descPh':'Notizen, was mitbringen …',
+      'task.gen':'Vorbereitungsaufgabe erstellen',
+      'hint.task':'Wenn vorher etwas vorzubereiten ist. Die Aufgabe übernimmt die Priorität des Termins, <strong>wird nur hier bearbeitet</strong> und mit dem Termin abgesagt; in Today und im Kalender zählt sie wie jede andere Aufgabe (auch für Hinweise).',
+      'task.name':'Name der Aufgabe', 'task.namePre':'Vorbereiten: {event}', 'task.dueDate':'Fällig', 'task.dueTime':'Uhrzeit', 'task.est':'Geschätzte Zeit', 'task.samePrio':'{p} · wie der Termin',
+      'btn.save':'Speichern', 'btn.cancel':'Abbrechen', 'evt.cancel':'Termin absagen', 'evt.cancelConfirmTask':'Bestätigen: Die Aufgabe wird auch abgesagt', 'evt.cancelConfirm':'Absage bestätigen',
+      'toast.evtSaved':'Termin „{name}“ gespeichert', 'toast.evtCancelled':'Termin „{name}“ abgesagt', 'toast.evtTaskCancelled':'Termin „{name}“ und seine Aufgabe abgesagt',
+      'err.missing':'Es fehlt: {fields}', 'err.taskAfter':'Die Aufgabe muss vor dem Termin fällig sein',
+      'evt.taskRow':'Aufgabe: {task} · fällig {due} · {est}',
       'cfg.language':'Sprache', 'cfg.languageLabel':'App-Sprache',
       'cfg.languageHint':'Datum und Uhrzeit folgen der gewählten Sprache. Was du selbst eingibst (Namen von Aktivitäten, Orte …), wird nicht übersetzt.',
       'cfg.appearance':'Darstellung von Today', 'cfg.theme':'Design', 'cfg.themeAria':'Design des Today-Bildschirms',
@@ -1489,7 +1623,7 @@
       'toast.weekNav':'Das Blättern zwischen Wochen kommt mit echten Daten',
       'legend.event':'Veranstaltung', 'legend.task':'Hausaufgabe (Abgabe)',
       'tab.activities':'Aktivitäten', 'sub.activities':'{name}s wiederkehrende Freizeitaktivitäten',
-      'tab.events':'Termine', 'sub.events':'Einzeltermine und Freizeit',
+      'tab.events':'Termine', 'sub.events':'Einzeltermine von {name}',
       'tab.calendar':'Kalender', 'sub.calendar':'Aktivitäten in Tages- oder Wochenansicht',
       'tab.config':'Optionen', 'title.config':'Einstellungen', 'sub.config':'Sprache, Darstellung, Zeiten, Verknüpfungen und Kategorien',
       'today.soon':'Gleich · in {t}', 'today.later':'Später', 'today.leaves':'{place} · Abfahrt {leave} {how}',
@@ -1558,6 +1692,7 @@
     document.querySelectorAll('[data-i18n-html]').forEach(function(el){ el.innerHTML = t(el.dataset.i18nHtml); });
     document.querySelectorAll('[data-i18n-aria]').forEach(function(el){ el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
     document.querySelectorAll('[data-i18n-title]').forEach(function(el){ el.setAttribute('title', t(el.dataset.i18nTitle)); });
+    document.querySelectorAll('[data-i18n-ph]').forEach(function(el){ el.setAttribute('placeholder', t(el.dataset.i18nPh)); });
     document.querySelectorAll('.priority-select option').forEach(function(o){ o.textContent = t('prio.' + o.value); });
     // Días de la semana y fechas de los datos de ejemplo
     document.querySelectorAll('[data-days]').forEach(function(el){
@@ -1574,6 +1709,8 @@
     if(active){ setScreenHeading(active); }
     document.getElementById('cal-range').textContent = calRangeText(calView);
     renderExportCats();
+    renderEvents();
+    refreshEventForm();
     onScheduleChanged();
     applyAppearance();
   }
@@ -2253,6 +2390,192 @@
   }
 
 
+  /* ================= EVENTOS ================= */
+  // Eventos puntuales: todo lo inserta el usuario (con la App nueva, la lista está vacía).
+  // Cada evento puede llevar una tarea de preparación: copia la prioridad del evento, solo
+  // se edita desde aquí y se cancela con él; para Today, el Calendario y los avisos es una
+  // tarea más. En la maqueta se guardan en el dispositivo.
+  var USER_EVENTS = [], editingEvent = null, eventPrio = 'Media';
+  var EST_STEPS = [15, 30, 45, 60, 90, 120, 150, 180, 240, 300, 360];
+  (function loadEvents(){
+    try{ USER_EVENTS = JSON.parse(localStorage.getItem('app-events') || '[]') || []; }catch(e){ USER_EVENTS = []; }
+  })();
+  function storeEvents(){ try{ localStorage.setItem('app-events', JSON.stringify(USER_EVENTS)); }catch(e){} }
+
+  function fmtEst(min){
+    var h = Math.floor(min / 60), m = min % 60;
+    return h ? h + ' h' + (m ? ' ' + m + ' min' : '') : m + ' min';
+  }
+  function fmtDay(iso){ var d = isoDate(iso); return cap(fmtDate(d, { weekday:'short' }).replace('.', '')) + ' ' + ddmm(d); }
+  function esc(v){ return String(v).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
+
+  var PIN_SVG = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>';
+  var TASK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
+
+  function renderEvents(){
+    var list = document.getElementById('evt-list');
+    if(!list){ return; }
+    var items = USER_EVENTS.slice().sort(function(a, b){ return (a.date + a.time).localeCompare(b.date + b.time); });
+    document.getElementById('evt-list-wrap').hidden = !items.length;
+    list.innerHTML = items.map(function(e){
+      var sub = fmtDay(e.date) + ' · ' + e.time + (e.place ? ' · </span>' + PIN_SVG + '<span>' + esc(e.place) : '');
+      var task = e.task ? '<div class="evt-task">' + TASK_SVG + '<span>' + esc(t('evt.taskRow', {
+        task: e.task.name, due: fmtDay(e.task.date) + ' ' + e.task.time, est: fmtEst(e.task.est) })) + '</span></div>' : '';
+      return '<div class="row evt-row">' +
+        '<div class="row-body">' +
+          '<span class="evt-title-line"><span class="row-title">' + esc(e.name) + '</span>' +
+            '<span class="prio-chip prio-' + e.prio + '">' + t('prio.' + e.prio) + '</span></span>' +
+          '<span class="row-sub"><span>' + sub + '</span></span>' +
+          (e.desc ? '<span class="evt-desc">' + esc(e.desc) + '</span>' : '') + task +
+        '</div>' +
+        '<button class="row-action" onclick="openEventForm(\'' + e.id + '\')">' + t('edit') + '</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function el(id){ return document.getElementById(id); }
+
+  function openEventForm(id){
+    editingEvent = id ? USER_EVENTS.filter(function(e){ return e.id === id; })[0] : null;
+    var e = editingEvent || {};
+    el('evt-name').value = e.name || '';
+    el('evt-date').value = e.date || '';
+    el('evt-time').value = e.time || '';
+    el('evt-place').value = e.place || '';
+    el('evt-desc').value = e.desc || '';
+    eventPrio = e.prio || 'Media';
+    var tk = e.task;
+    el('task-name').value = tk ? tk.name : '';
+    el('task-date').value = tk ? tk.date : '';
+    el('task-time').value = tk ? tk.time : '';
+    el('task-est').value = tk ? tk.est : 60;
+    setTaskOn(!!tk);
+    var del = el('evt-delete');
+    del.hidden = !editingEvent;
+    resetCancelButton();
+    document.querySelectorAll('#evt-form .is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); });
+    refreshEventForm();
+    el('evt-list-view').hidden = true;
+    el('evt-form').hidden = false;
+    el('screen-events').parentElement.scrollTop = 0;
+    el('evt-name').focus();
+  }
+  function closeEventForm(){
+    editingEvent = null;
+    el('evt-form').hidden = true;
+    el('evt-list-view').hidden = false;
+  }
+
+  // Textos del formulario que dependen del estado (título, prioridad, tiempos)
+  function refreshEventForm(){
+    if(!el('evt-form')){ return; }
+    el('evt-form-title').textContent = t(editingEvent ? 'evt.editTitle' : 'evt.new');
+    document.querySelectorAll('#evt-prio .toggle-btn').forEach(function(b){
+      var on = b.dataset.prio === eventPrio;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-checked', on);
+    });
+    el('task-prio').textContent = t('task.samePrio', { p: t('prio.' + eventPrio) });
+    el('task-prio').className = 'prio-copy prio-' + eventPrio;
+    var est = el('task-est'), cur = +est.value || 60;
+    est.innerHTML = EST_STEPS.map(function(m){ return '<option value="' + m + '">' + fmtEst(m) + '</option>'; }).join('');
+    est.value = cur;
+    resetCancelButton();
+  }
+
+  function setEventPrio(btn){ eventPrio = btn.dataset.prio; refreshEventForm(); }
+
+  function setTaskOn(on){
+    el('evt-task-switch').setAttribute('aria-checked', on);
+    el('evt-task-fields').hidden = !on;
+  }
+  function toggleEventTask(){
+    var on = el('evt-task-switch').getAttribute('aria-checked') !== 'true';
+    setTaskOn(on);
+    if(on){
+      // Propuesta inicial: «Preparar: <evento>», para la víspera a las 20:00
+      if(!el('task-name').value && el('evt-name').value.trim()){
+        el('task-name').value = t('task.namePre', { event: el('evt-name').value.trim() });
+      }
+      if(!el('task-date').value && el('evt-date').value){
+        var d = isoDate(el('evt-date').value); d.setDate(d.getDate() - 1);
+        el('task-date').value = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+        if(!el('task-time').value){ el('task-time').value = '20:00'; }
+      }
+      el('task-name').focus();
+    }
+  }
+
+  function saveEvent(ev){
+    ev.preventDefault();
+    var withTask = el('evt-task-switch').getAttribute('aria-checked') === 'true';
+    var req = [['evt-name', 'f.name'], ['evt-date', 'f.date'], ['evt-time', 'f.time']];
+    if(withTask){ req.push(['task-name', 'task.name'], ['task-date', 'task.dueDate'], ['task-time', 'task.dueTime']); }
+    var missing = [];
+    document.querySelectorAll('#evt-form .is-invalid').forEach(function(f){ f.classList.remove('is-invalid'); });
+    req.forEach(function(r){
+      if(!el(r[0]).value.trim()){ el(r[0]).classList.add('is-invalid'); missing.push(t(r[1])); }
+    });
+    if(missing.length){ toast(t('err.missing', { fields: missing.join(', ') })); return; }
+    if(withTask && el('task-date').value + el('task-time').value > el('evt-date').value + el('evt-time').value){
+      el('task-date').classList.add('is-invalid'); el('task-time').classList.add('is-invalid');
+      toast(t('err.taskAfter')); return;
+    }
+    var data = {
+      id: editingEvent ? editingEvent.id : 'e' + Date.now(),
+      name: el('evt-name').value.trim(), date: el('evt-date').value, time: el('evt-time').value, prio: eventPrio,
+      place: el('evt-place').value.trim(), desc: el('evt-desc').value.trim(),
+      // La tarea no tiene prioridad propia: siempre la del evento
+      task: withTask ? { name: el('task-name').value.trim(), date: el('task-date').value, time: el('task-time').value, est: +el('task-est').value } : null
+    };
+    if(editingEvent){ USER_EVENTS[USER_EVENTS.indexOf(editingEvent)] = data; } else { USER_EVENTS.push(data); }
+    storeEvents();
+    closeEventForm();
+    renderEvents();
+    renderCalendar(calView);
+    toast(t('toast.evtSaved', { name: data.name }));
+  }
+
+  // Cancelar un evento pide una segunda pulsación y se lleva su tarea
+  function resetCancelButton(){
+    var b = el('evt-delete');
+    b.classList.remove('is-confirm');
+    b.textContent = t('evt.cancel');
+  }
+  function cancelEvent(btn){
+    var e = editingEvent;
+    if(!e){ return; }
+    if(!btn.classList.contains('is-confirm')){
+      btn.classList.add('is-confirm');
+      btn.textContent = t(e.task ? 'evt.cancelConfirmTask' : 'evt.cancelConfirm');
+      return;
+    }
+    USER_EVENTS.splice(USER_EVENTS.indexOf(e), 1);
+    storeEvents();
+    closeEventForm();
+    renderEvents();
+    renderCalendar(calView);
+    toast(t(e.task ? 'toast.evtTaskCancelled' : 'toast.evtCancelled', { name: e.name }));
+  }
+
+  // Para el Calendario: eventos y tareas del usuario que caen en la semana mostrada.
+  // El evento solo tiene hora de inicio: se dibuja con una duración nominal de 1 h.
+  function weekDayIndex(iso){
+    var diff = Math.round((isoDate(iso) - WEEK_DAYS[0].d) / 86400000);
+    return diff >= 0 && diff < 7 ? diff : -1;
+  }
+  function weekUserEvents(){
+    return USER_EVENTS.map(function(e){
+      var h = toHours(e.time);
+      return { day: weekDayIndex(e.date), title: e.name, start: h, end: Math.min(h + 1, CAL_END), cat: 'evento' };
+    }).filter(function(e){ return e.day >= 0; });
+  }
+  function weekUserTasks(){
+    return USER_EVENTS.filter(function(e){ return e.task; }).map(function(e){
+      return { day: weekDayIndex(e.task.date), title: e.task.name, time: toHours(e.task.time), cat: 'tarea' };
+    }).filter(function(e){ return e.day >= 0; });
+  }
+
   /* ---- Calendario (vista día / semana) ---- */
   // Alto de la cuadrícula: en el móvil, el que quede libre en la pantalla (ver fitCalendar);
   // en la maqueta de escritorio, fijo. El horario escolar se comprime en CAL_SCHOOL_PX y el
@@ -2269,9 +2592,7 @@
     {day:0, title:'Natación', start:18, end:19, cat:'actividad'},
     {day:1, title:'Inglés', start:17, end:18, cat:'actividad'},
     {day:3, title:'Piano', start:17.5, end:18.25, cat:'actividad'},
-    {day:4, title:'Natación', start:18, end:19, cat:'actividad'},
-    {day:4, title:'Merienda con Clara', start:19.5, end:20.5, cat:'libre'},
-    {day:5, title:'Cumpleaños de Sofía', start:17, end:19, cat:'libre'}
+    {day:4, title:'Natación', start:18, end:19, cat:'actividad'}
   ];
   var CAL_DEADLINES = [
     {day:4, title:'Entrega Lengua', time:22, cat:'tarea'}
@@ -2390,7 +2711,7 @@
         col.appendChild(band);
       }
 
-      CAL_EVENTS.filter(function(e){ return e.day === realDay; }).forEach(function(e){
+      CAL_EVENTS.concat(weekUserEvents()).filter(function(e){ return e.day === realDay; }).forEach(function(e){
         var bar = document.createElement('div');
         bar.className = 'cal-bar cat-' + e.cat;
         bar.style.top = pos(e.start) + 'px';
@@ -2401,7 +2722,7 @@
         col.appendChild(bar);
       });
 
-      CAL_DEADLINES.filter(function(e){ return e.day === realDay; }).forEach(function(e){
+      CAL_DEADLINES.concat(weekUserTasks()).filter(function(e){ return e.day === realDay; }).forEach(function(e){
         var mk = document.createElement('div');
         mk.className = 'cal-deadline';
         mk.style.top = pos(e.time) + 'px';

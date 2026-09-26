@@ -62,8 +62,16 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - Periodicidad habitual semanal (ej.: lunes y miércoles a una hora determinada).
 - Cada actividad puede llevar asociada una ubicación (dirección/coordenadas) para el cálculo de traslados.
 
-### 2.3 Eventos aislados y tiempo libre
-- El usuario puede insertar eventos puntuales (no recurrentes) y bloques de tiempo libre.
+### 2.3 Eventos
+- Eventos puntuales (no recurrentes): **todo lo inserta el usuario**. Con la App nueva la pantalla solo muestra el botón **Añadir evento**; después, la lista de próximos eventos ordenada por fecha y hora, cada uno con su botón Editar.
+- Campos **obligatorios**: nombre, fecha, hora y prioridad (Alta / Media / Baja).
+- Campos **opcionales**: descripción y ubicación.
+- **Tarea de preparación** (opcional): si el evento requiere preparar algo antes, se puede generar una tarea asociada.
+  - Tiene nombre propio (propuesta: «Preparar: <evento>»), deadline independiente (fecha y hora; propuesta: la víspera a las 20:00; tiene que ser antes del evento) y tiempo estimado de ejecución.
+  - **Copia la prioridad del evento** (no tiene prioridad propia; si cambia la del evento, cambia la de la tarea).
+  - No aparece en Configuración: **solo se edita desde el evento**. Si se cancela el evento, se cancela también la tarea (la cancelación pide confirmación y lo avisa).
+  - Para el resto de la App es **una tarea cualquiera**: se ve en Today y en el Calendario (punto de entrega) y cuenta para los avisos (p. ej. la alerta de tareas de más de 1,5 h en los próximos 5 días).
+- En el Calendario los eventos se dibujan con su propio color («Evento»). Como solo tienen hora de inicio, se muestran con una duración nominal de 1 h.
 
 ### 2.4 Pantalla principal — "Today"
 - Nombre de la pantalla en inglés: **Today**.
