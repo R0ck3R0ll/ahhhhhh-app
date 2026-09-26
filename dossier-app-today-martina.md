@@ -126,7 +126,8 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - **Datos reales** (fase 2 de «ejecución de tareas»): «Hoy» se construye con lo que hay en la App: las sesiones de hoy de las **actividades**, los **eventos** de hoy y las **tareas** (Classroom, sueltas, de eventos y de práctica) con entrega hoy.
   - Se quitan los elementos que ya han terminado y las **tareas hechas**; una tarea cuya hora ya pasó sin completarse queda en «Atrasadas» (pantalla Tareas).
   - En las tareas, la línea de detalle es su origen y el tiempo estimado (p. ej. «Classroom · Lengua»).
-  - El **✓ rápido** aparece en todas las tarjetas de tareas, también en la del primer deadline; marca la tarea como hecha en toda la App, con «Deshacer».
+  - El **✓ rápido** aparece en todas las tarjetas de tareas, también en la del primer deadline: un círculo pequeño con un **✓ atenuado dentro** (para que se entienda para qué sirve). Marca la tarea como hecha en toda la App, con «Deshacer». En Post-it 2 va debajo de la hora, en la esquina que queda a la vista aunque los post-its se solapen.
+  - El tiempo que falta se escribe **abreviado**: «45 min», «2h», «4h45».
   - Si no queda nada para hoy, el cuerpo muestra «No queda nada más para hoy.»
   - «Próximos días» también usa las tareas reales pendientes.
   - Los **traslados** (distancia y horas de salida) quedan pendientes hasta conectar Google Maps: mientras tanto se muestra solo el lugar.

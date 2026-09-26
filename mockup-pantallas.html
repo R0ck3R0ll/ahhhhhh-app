@@ -149,14 +149,26 @@
   #screen-today{ gap:14px; }
   /* ✓ rápido en las tarjetas de tareas de «Hoy» */
   .later-chip, .fan-card{ position:relative; }
-  .today-check{ position:absolute; top:6px; right:6px; width:22px; height:22px; background:rgba(255,255,255,.55); border-color:currentColor; color:transparent; z-index:2; }
-  .today-check:hover{ color:var(--cat-tarea-ink); }
-  .note .today-check{ top:12px; left:12px; right:auto; width:26px; height:26px; border-color:var(--deep); }
+  /* El círculo lleva dentro un ✓ atenuado (se entiende para qué sirve); al pasar por encima, entero */
+  .task-check.today-check{ position:absolute; top:6px; right:6px; width:19px; height:19px; border-width:1.8px; background:rgba(255,255,255,.55); color:inherit; border-color:currentColor; z-index:2; }
+  .task-check.today-check svg{ width:11px; height:11px; opacity:.35; }
+  .task-check.today-check:hover{ color:inherit; }
+  .task-check.today-check:hover svg{ opacity:1; }
+  /* Post-it 2: debajo de la hora, en la esquina que queda a la vista aunque los post-its se solapen */
+  .note .today-check{ top:48px; right:15px; left:auto; width:22px; height:22px; color:var(--deep); }
+  .note .today-check svg{ width:13px; height:13px; }
   /* Próximo: el ✓ en la esquina, con el color del código (categoría / ámbar / rojo oscuro) */
   .up-next-card, .hero-card, .pi-next{ position:relative; }
-  .up-next-card .today-check, .hero-card .today-check{ top:10px; right:10px; width:28px; height:28px; border-color:var(--st-line, currentColor); }
-  .pi-next .today-check{ position:static; flex:none; align-self:flex-end; margin:0; width:24px; height:24px; border-color:var(--st-line, currentColor); }
-  .fan-card .today-check{ top:auto; bottom:6px; right:6px; width:22px; height:22px; border-color:var(--deep); }
+  .up-next-card .today-check, .hero-card .today-check{ top:10px; right:10px; width:24px; height:24px; color:var(--st-line, currentColor); }
+  .up-next-card .today-check svg, .hero-card .today-check svg{ width:14px; height:14px; }
+  .pi-next .today-check{ position:static; flex:none; align-self:flex-end; margin:0; width:21px; height:21px; color:var(--st-line, currentColor); }
+  .pi-next .today-check svg{ width:12px; height:12px; }
+  .later-chip .today-check{ color:var(--c-ink); }
+  .fan-card .today-check{ top:auto; bottom:6px; right:6px; color:var(--deep); }
+  @media (max-width:360px), (max-height:620px){
+    .note .today-check{ top:34px; right:12px; width:19px; height:19px; }
+    .note .today-check svg{ width:11px; height:11px; }
+  }
   .today-empty{ margin:24px 0; font-size:15px; color:var(--text-muted); text-align:center; }
   .today-more{ margin:0; font-size:12.5px; color:var(--text-muted); text-align:center; }
   #screen-today.active{ min-height:100%; }
@@ -2372,10 +2384,9 @@
     var c = catColor(cat);
     return '--c:' + c + ';--c-ink:' + inkOf(cat) + ';--deep:color-mix(in srgb, ' + c + ' 30%, #000)';
   }
-  // «45 min», «2 h», «10 h 30 min»
   function untilText(t){
     var m = Math.max(0, Math.round((t - NOW) * 60)), h = Math.floor(m / 60), r = m % 60;
-    return h ? h + ' h' + (r ? ' ' + r + ' min' : '') : r + ' min';
+    return h ? h + 'h' + (r ? ('0' + r).slice(-2) : '') : r + ' min';   // abreviado: «4h45», «2h», «45 min»
   }
   function nextState(t){ var m = (t - NOW) * 60; return m > 60 ? 'st-calm' : m > 30 ? 'st-soon' : 'st-urgent'; }
   function nextCardAttrs(n){ return ' next-card ' + nextState(n.t) + '" style="' + catVars(n.cat); }
