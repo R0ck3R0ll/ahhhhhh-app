@@ -155,6 +155,7 @@
   .alert .alert-body{ font-size:13px; margin-top:2px; line-height:1.4; color:var(--alert-body-text); }
 
   /* ---- Today: estructura común ---- */
+  .today-more{ margin:0; font-size:12.5px; color:var(--text-muted); text-align:center; }
   #screen-today.active{ min-height:100%; }
   #screen-today .alert{ margin-top:auto; }
   #screen-today[data-layout="postit2"] .alert{ border:2px solid var(--ink); box-shadow:0 3px 0 var(--ink); }
@@ -795,7 +796,7 @@
 
   <div class="topbar">
     <span class="brand">AHHHHHH!!!!!</span>
-    <h1 id="screen-heading">Today</h1>
+    <h1 id="screen-heading" data-i18n="tab.today"></h1>
     <span class="subtitle" id="screen-subheading"></span>
   </div>
 
@@ -1340,7 +1341,7 @@
   <nav class="tabbar" data-i18n-aria="aria.nav">
     <button class="tab is-active" data-screen="today" onclick="showScreen(this)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      Today
+      <span data-i18n="tab.today"></span>
     </button>
     <button class="tab" data-screen="activities" data-title="tab.activities" data-sub="sub.activities" onclick="showScreen(this)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l3 3-8 8-4 1 1-4 8-8z"/><path d="M4 20h16"/></svg>
@@ -1408,7 +1409,7 @@
       'f.name':'Nombre', 'f.date':'Fecha', 'f.time':'Hora', 'f.prio':'Prioridad', 'f.place':'Ubicación', 'f.desc':'Descripción', 'f.optional':'(opcional)',
       'f.namePh':'Ej.: Cumpleaños de Sofía', 'f.placePh':'Dirección o lugar', 'f.descPh':'Notas, qué llevar…',
       'task.gen':'Generar tarea de preparación',
-      'hint.task':'Si hay que preparar algo antes. La tarea copia la prioridad del evento, <strong>solo se edita aquí</strong> y se cancela con el evento; en Today y en el Calendario cuenta como cualquier otra tarea (avisos incluidos).',
+      'hint.task':'Si hay que preparar algo antes. La tarea copia la prioridad del evento, <strong>solo se edita aquí</strong> y se cancela con el evento; en «Hoy» y en el Calendario cuenta como cualquier otra tarea (avisos incluidos).',
       'task.name':'Nombre de la tarea', 'task.namePre':'Preparar: {event}', 'task.dueDate':'Entrega', 'task.dueTime':'Hora', 'task.est':'Tiempo estimado', 'task.samePrio':'{p} · la del evento',
       'btn.save':'Guardar', 'btn.cancel':'Cancelar', 'evt.cancel':'Cancelar evento', 'evt.cancelConfirmTask':'Confirmar: se cancela también su tarea', 'evt.cancelConfirm':'Confirmar cancelación',
       'toast.evtSaved':'Evento «{name}» guardado', 'toast.evtCancelled':'Evento «{name}» cancelado', 'toast.evtTaskCancelled':'Evento «{name}» y su tarea cancelados',
@@ -1422,10 +1423,10 @@
       'evt.taskRow':'Tarea: {task} · entrega {due} · {est}',
       'cfg.language':'Idioma', 'cfg.languageLabel':'Idioma de la App',
       'cfg.languageHint':'Fechas y horas se muestran en el idioma elegido. Lo que escribes tú (nombres de actividades, lugares…) no se traduce.',
-      'cfg.appearance':'Apariencia de Today', 'cfg.theme':'Tema', 'cfg.themeAria':'Tema de la pantalla Today',
+      'cfg.appearance':'Apariencia de «Hoy»', 'cfg.theme':'Tema', 'cfg.themeAria':'Tema de la pantalla «Hoy»',
       'layout.list':'Lista', 'cfg.bg':'Fondo', 'cfg.bgAria':'Fondo claro u oscuro', 'mode.light':'Claro', 'mode.dark':'Oscuro',
-      'cfg.bar':'Barra de tiempo', 'cfg.barAria':'Barra de tiempo de Today', 'bar.dots':'Puntos', 'bar.nina':'Niña soldado',
-      'cfg.viewToday':'Ver Today',
+      'cfg.bar':'Barra de tiempo', 'cfg.barAria':'Barra de tiempo de «Hoy»', 'bar.dots':'Puntos', 'bar.nina':'Niña soldado',
+      'cfg.viewToday':'Ver «Hoy»',
       'hint.list':'Lista: el próximo evento destacado y el resto del día en fichas.',
       'hint.postit1':'Post-it 1: un solo protagonista, lo que viene ya; el resto del día espera detrás, como una baraja.',
       'hint.postit2':'Post-it 2: el próximo evento en una barra y el resto en post-its flotantes; toca uno para traerlo al frente.',
@@ -1480,6 +1481,7 @@
       'task.deleteConfirmLinked':'Confirmar: se quita la tarea de «{name}»', 'toast.taskSaved':'Tarea «{name}» guardada', 'toast.taskDeleted':'Tarea «{name}» eliminada',
       'task.ownPrio':'{p} · propia de la tarea',
       'btn.back':'Volver', 'tasks.add':'Añadir tarea', 'task.newTitle':'Nueva tarea', 'task.fromManual':'Añadida a mano', 'd.when':'Cuándo', 'd.task':'Tarea asociada', 'd.origin':'Origen', 'd.prioOwn':'(propia)', 'd.prioDefault':'(la de la categoría)',
+      'tab.today':'Hoy', 'today.more1':'Y 1 más hoy: la ves en la barra de tiempo.', 'today.more':'Y {n} más hoy: los ves en la barra de tiempo.',
       'tab.calendar':'Calendario', 'sub.calendar':'Actividades en vista día o semana',
       'tab.config':'Config', 'title.config':'Configuración', 'sub.config':'Idioma, aspecto, horarios, enlaces y categorías',
       'today.soon':'Se acerca · faltan {t}', 'today.later':'Más tarde', 'today.leaves':'{place} · sale {leave} {how}',
@@ -1598,6 +1600,7 @@
       'task.deleteConfirmLinked':'Confirm: the task is removed from “{name}”', 'toast.taskSaved':'Task “{name}” saved', 'toast.taskDeleted':'Task “{name}” deleted',
       'task.ownPrio':'{p} · set for this task',
       'btn.back':'Back', 'tasks.add':'Add task', 'task.newTitle':'New task', 'task.fromManual':'Added by hand', 'd.when':'When', 'd.task':'Linked task', 'd.origin':'Source', 'd.prioOwn':'(own)', 'd.prioDefault':'(the category’s)',
+      'tab.today':'Today', 'today.more1':'And 1 more today: see it on the time bar.', 'today.more':'And {n} more today: see them on the time bar.',
       'tab.calendar':'Calendar', 'sub.calendar':'Activities by day or week',
       'tab.config':'Settings', 'title.config':'Settings', 'sub.config':'Language, appearance, schedules, connections and categories',
       'today.soon':'Coming up · in {t}', 'today.later':'Later', 'today.leaves':'{place} · leave {leave} {how}',
@@ -1644,7 +1647,7 @@
       'f.name':'Nome', 'f.date':'Data', 'f.time':'Ora', 'f.prio':'Priorità', 'f.place':'Luogo', 'f.desc':'Descrizione', 'f.optional':'(facoltativo)',
       'f.namePh':'Es.: Compleanno di Sofía', 'f.placePh':'Indirizzo o luogo', 'f.descPh':'Note, cosa portare…',
       'task.gen':'Crea un compito di preparazione',
-      'hint.task':'Se bisogna preparare qualcosa prima. Il compito copia la priorità dell’evento, <strong>si modifica solo qui</strong> e viene annullato con l’evento; in Today e nel Calendario conta come qualsiasi altro compito (avvisi compresi).',
+      'hint.task':'Se bisogna preparare qualcosa prima. Il compito copia la priorità dell’evento, <strong>si modifica solo qui</strong> e viene annullato con l’evento; in «Oggi» e nel Calendario conta come qualsiasi altro compito (avvisi compresi).',
       'task.name':'Nome del compito', 'task.namePre':'Preparare: {event}', 'task.dueDate':'Consegna', 'task.dueTime':'Ora', 'task.est':'Tempo stimato', 'task.samePrio':'{p} · quella dell’evento',
       'btn.save':'Salva', 'btn.cancel':'Annulla', 'evt.cancel':'Annulla evento', 'evt.cancelConfirmTask':'Conferma: si annulla anche il compito', 'evt.cancelConfirm':'Conferma annullamento',
       'toast.evtSaved':'Evento «{name}» salvato', 'toast.evtCancelled':'Evento «{name}» annullato', 'toast.evtTaskCancelled':'Evento «{name}» e il suo compito annullati',
@@ -1658,10 +1661,10 @@
       'evt.taskRow':'Compito: {task} · consegna {due} · {est}',
       'cfg.language':'Lingua', 'cfg.languageLabel':'Lingua dell’app',
       'cfg.languageHint':'Date e orari seguono la lingua scelta. Quello che scrivi tu (nomi delle attività, luoghi…) non viene tradotto.',
-      'cfg.appearance':'Aspetto di Today', 'cfg.theme':'Tema', 'cfg.themeAria':'Tema della schermata Today',
+      'cfg.appearance':'Aspetto di «Oggi»', 'cfg.theme':'Tema', 'cfg.themeAria':'Tema della schermata «Oggi»',
       'layout.list':'Elenco', 'cfg.bg':'Sfondo', 'cfg.bgAria':'Sfondo chiaro o scuro', 'mode.light':'Chiaro', 'mode.dark':'Scuro',
-      'cfg.bar':'Barra del tempo', 'cfg.barAria':'Barra del tempo di Today', 'bar.dots':'Punti', 'bar.nina':'Bimba soldato',
-      'cfg.viewToday':'Vedi Today',
+      'cfg.bar':'Barra del tempo', 'cfg.barAria':'Barra del tempo di «Oggi»', 'bar.dots':'Punti', 'bar.nina':'Bimba soldato',
+      'cfg.viewToday':'Vedi «Oggi»',
       'hint.list':'Elenco: il prossimo evento in evidenza e il resto della giornata in schede.',
       'hint.postit1':'Post-it 1: un solo protagonista, ciò che arriva adesso; il resto della giornata aspetta dietro, come un mazzo di carte.',
       'hint.postit2':'Post-it 2: il prossimo evento in una barra e il resto in post-it fluttuanti; toccane uno per portarlo davanti.',
@@ -1716,6 +1719,7 @@
       'task.deleteConfirmLinked':'Conferma: il compito viene tolto da «{name}»', 'toast.taskSaved':'Compito «{name}» salvato', 'toast.taskDeleted':'Compito «{name}» eliminato',
       'task.ownPrio':'{p} · propria del compito',
       'btn.back':'Indietro', 'tasks.add':'Aggiungi compito', 'task.newTitle':'Nuovo compito', 'task.fromManual':'Aggiunto a mano', 'd.when':'Quando', 'd.task':'Compito associato', 'd.origin':'Origine', 'd.prioOwn':'(propria)', 'd.prioDefault':'(quella della categoria)',
+      'tab.today':'Oggi', 'today.more1':'E 1 altro oggi: lo vedi nella barra del tempo.', 'today.more':'E altri {n} oggi: li vedi nella barra del tempo.',
       'tab.calendar':'Calendario', 'sub.calendar':'Attività in vista giorno o settimana',
       'tab.config':'Opzioni', 'title.config':'Impostazioni', 'sub.config':'Lingua, aspetto, orari, collegamenti e categorie',
       'today.soon':'Sta arrivando · mancano {t}', 'today.later':'Più tardi', 'today.leaves':'{place} · partenza {leave} {how}',
@@ -1762,7 +1766,7 @@
       'f.name':'Nom', 'f.date':'Date', 'f.time':'Heure', 'f.prio':'Priorité', 'f.place':'Lieu', 'f.desc':'Description', 'f.optional':'(facultatif)',
       'f.namePh':'Ex. : Anniversaire de Sofía', 'f.placePh':'Adresse ou lieu', 'f.descPh':'Notes, quoi apporter…',
       'task.gen':'Créer une tâche de préparation',
-      'hint.task':'S’il faut préparer quelque chose avant. La tâche reprend la priorité de l’événement, <strong>ne se modifie qu’ici</strong> et est annulée avec l’événement ; dans Today et le Calendrier, elle compte comme n’importe quelle autre tâche (alertes comprises).',
+      'hint.task':'S’il faut préparer quelque chose avant. La tâche reprend la priorité de l’événement, <strong>ne se modifie qu’ici</strong> et est annulée avec l’événement ; dans « Aujourd’hui » et le Calendrier, elle compte comme n’importe quelle autre tâche (alertes comprises).',
       'task.name':'Nom de la tâche', 'task.namePre':'Préparer : {event}', 'task.dueDate':'Échéance', 'task.dueTime':'Heure', 'task.est':'Temps estimé', 'task.samePrio':'{p} · celle de l’événement',
       'btn.save':'Enregistrer', 'btn.cancel':'Annuler', 'evt.cancel':'Annuler l’événement', 'evt.cancelConfirmTask':'Confirmer : sa tâche est aussi annulée', 'evt.cancelConfirm':'Confirmer l’annulation',
       'toast.evtSaved':'Événement « {name} » enregistré', 'toast.evtCancelled':'Événement « {name} » annulé', 'toast.evtTaskCancelled':'Événement « {name} » et sa tâche annulés',
@@ -1776,10 +1780,10 @@
       'evt.taskRow':'Tâche : {task} · échéance {due} · {est}',
       'cfg.language':'Langue', 'cfg.languageLabel':'Langue de l’app',
       'cfg.languageHint':'Les dates et les heures suivent la langue choisie. Ce que vous saisissez (noms d’activités, lieux…) n’est pas traduit.',
-      'cfg.appearance':'Apparence de Today', 'cfg.theme':'Thème', 'cfg.themeAria':'Thème de l’écran Today',
+      'cfg.appearance':'Apparence de « Aujourd’hui »', 'cfg.theme':'Thème', 'cfg.themeAria':'Thème de l’écran « Aujourd’hui »',
       'layout.list':'Liste', 'cfg.bg':'Fond', 'cfg.bgAria':'Fond clair ou sombre', 'mode.light':'Clair', 'mode.dark':'Sombre',
-      'cfg.bar':'Barre de temps', 'cfg.barAria':'Barre de temps de Today', 'bar.dots':'Points', 'bar.nina':'Petite soldate',
-      'cfg.viewToday':'Voir Today',
+      'cfg.bar':'Barre de temps', 'cfg.barAria':'Barre de temps de « Aujourd’hui »', 'bar.dots':'Points', 'bar.nina':'Petite soldate',
+      'cfg.viewToday':'Voir « Aujourd’hui »',
       'hint.list':'Liste : le prochain événement mis en avant et le reste de la journée en fiches.',
       'hint.postit1':'Post-it 1 : une seule vedette, ce qui arrive maintenant ; le reste de la journée attend derrière, comme un jeu de cartes.',
       'hint.postit2':'Post-it 2 : le prochain événement dans une barre et le reste en post-it flottants ; touchez-en un pour le mettre devant.',
@@ -1834,6 +1838,7 @@
       'task.deleteConfirmLinked':'Confirmer : la tâche est retirée de « {name} »', 'toast.taskSaved':'Tâche « {name} » enregistrée', 'toast.taskDeleted':'Tâche « {name} » supprimée',
       'task.ownPrio':'{p} · propre à la tâche',
       'btn.back':'Retour', 'tasks.add':'Ajouter une tâche', 'task.newTitle':'Nouvelle tâche', 'task.fromManual':'Ajoutée à la main', 'd.when':'Quand', 'd.task':'Tâche associée', 'd.origin':'Origine', 'd.prioOwn':'(propre)', 'd.prioDefault':'(celle de la catégorie)',
+      'tab.today':'Aujourd’hui', 'today.more1':'Et 1 de plus aujourd’hui : voyez-le sur la barre de temps.', 'today.more':'Et {n} de plus aujourd’hui : voyez-les sur la barre de temps.',
       'tab.calendar':'Calendrier', 'sub.calendar':'Activités en vue jour ou semaine',
       'tab.config':'Réglages', 'title.config':'Réglages', 'sub.config':'Langue, apparence, horaires, liens et catégories',
       'today.soon':'Bientôt · dans {t}', 'today.later':'Plus tard', 'today.leaves':'{place} · départ {leave} {how}',
@@ -1880,7 +1885,7 @@
       'f.name':'Name', 'f.date':'Datum', 'f.time':'Uhrzeit', 'f.prio':'Priorität', 'f.place':'Ort', 'f.desc':'Beschreibung', 'f.optional':'(optional)',
       'f.namePh':'Z. B. Sofías Geburtstag', 'f.placePh':'Adresse oder Ort', 'f.descPh':'Notizen, was mitbringen …',
       'task.gen':'Vorbereitungsaufgabe erstellen',
-      'hint.task':'Wenn vorher etwas vorzubereiten ist. Die Aufgabe übernimmt die Priorität des Termins, <strong>wird nur hier bearbeitet</strong> und mit dem Termin abgesagt; in Today und im Kalender zählt sie wie jede andere Aufgabe (auch für Hinweise).',
+      'hint.task':'Wenn vorher etwas vorzubereiten ist. Die Aufgabe übernimmt die Priorität des Termins, <strong>wird nur hier bearbeitet</strong> und mit dem Termin abgesagt; in „Heute“ und im Kalender zählt sie wie jede andere Aufgabe (auch für Hinweise).',
       'task.name':'Name der Aufgabe', 'task.namePre':'Vorbereiten: {event}', 'task.dueDate':'Fällig', 'task.dueTime':'Uhrzeit', 'task.est':'Geschätzte Zeit', 'task.samePrio':'{p} · wie der Termin',
       'btn.save':'Speichern', 'btn.cancel':'Abbrechen', 'evt.cancel':'Termin absagen', 'evt.cancelConfirmTask':'Bestätigen: Die Aufgabe wird auch abgesagt', 'evt.cancelConfirm':'Absage bestätigen',
       'toast.evtSaved':'Termin „{name}“ gespeichert', 'toast.evtCancelled':'Termin „{name}“ abgesagt', 'toast.evtTaskCancelled':'Termin „{name}“ und seine Aufgabe abgesagt',
@@ -1894,10 +1899,10 @@
       'evt.taskRow':'Aufgabe: {task} · fällig {due} · {est}',
       'cfg.language':'Sprache', 'cfg.languageLabel':'App-Sprache',
       'cfg.languageHint':'Datum und Uhrzeit folgen der gewählten Sprache. Was du selbst eingibst (Namen von Aktivitäten, Orte …), wird nicht übersetzt.',
-      'cfg.appearance':'Darstellung von Today', 'cfg.theme':'Design', 'cfg.themeAria':'Design des Today-Bildschirms',
+      'cfg.appearance':'Darstellung von „Heute“', 'cfg.theme':'Design', 'cfg.themeAria':'Design des „Heute“-Bildschirms',
       'layout.list':'Liste', 'cfg.bg':'Hintergrund', 'cfg.bgAria':'Heller oder dunkler Hintergrund', 'mode.light':'Hell', 'mode.dark':'Dunkel',
-      'cfg.bar':'Zeitleiste', 'cfg.barAria':'Zeitleiste von Today', 'bar.dots':'Punkte', 'bar.nina':'Soldatenmädchen',
-      'cfg.viewToday':'Today ansehen',
+      'cfg.bar':'Zeitleiste', 'cfg.barAria':'Zeitleiste von „Heute“', 'bar.dots':'Punkte', 'bar.nina':'Soldatenmädchen',
+      'cfg.viewToday':'„Heute“ ansehen',
       'hint.list':'Liste: der nächste Termin hervorgehoben, der Rest des Tages als Karten.',
       'hint.postit1':'Post-it 1: ein einziger Star, das, was gleich kommt; der Rest des Tages wartet dahinter wie ein Kartenstapel.',
       'hint.postit2':'Post-it 2: der nächste Termin in einer Leiste, der Rest als schwebende Post-its; tippe einen an, um ihn nach vorne zu holen.',
@@ -1952,6 +1957,7 @@
       'task.deleteConfirmLinked':'Bestätigen: Die Aufgabe wird aus „{name}“ entfernt', 'toast.taskSaved':'Aufgabe „{name}“ gespeichert', 'toast.taskDeleted':'Aufgabe „{name}“ gelöscht',
       'task.ownPrio':'{p} · eigene der Aufgabe',
       'btn.back':'Zurück', 'tasks.add':'Aufgabe hinzufügen', 'task.newTitle':'Neue Aufgabe', 'task.fromManual':'Von Hand hinzugefügt', 'd.when':'Wann', 'd.task':'Zugehörige Aufgabe', 'd.origin':'Herkunft', 'd.prioOwn':'(eigene)', 'd.prioDefault':'(die der Kategorie)',
+      'tab.today':'Heute', 'today.more1':'Und 1 weiterer heute: siehe Zeitleiste.', 'today.more':'Und {n} weitere heute: siehe Zeitleiste.',
       'tab.calendar':'Kalender', 'sub.calendar':'Aktivitäten in Tages- oder Wochenansicht',
       'tab.config':'Optionen', 'title.config':'Einstellungen', 'sub.config':'Sprache, Darstellung, Zeiten, Verknüpfungen und Kategorien',
       'today.soon':'Gleich · in {t}', 'today.later':'Später', 'today.leaves':'{place} · Abfahrt {leave} {how}',
@@ -2058,7 +2064,7 @@
 
   function setScreenHeading(btn){
     var today = btn.dataset.screen === 'today';
-    document.getElementById('screen-heading').textContent = today ? 'Today' : t(btn.dataset.title);
+    document.getElementById('screen-heading').textContent = today ? t('tab.today') : t(btn.dataset.title);
     document.getElementById('screen-subheading').textContent = today ? todaySubtitle() : t(btn.dataset.sub);
   }
 
@@ -2084,8 +2090,15 @@
         walk:{ min:10, leave:'19:20' },
         car: { min:5,  leave:'19:25' } } },
     { id:'abuela', t:20.5, cat:'cita', title:'Videollamada con la abuela', place:'En casa', dist:'20 min' },
-    { id:'lengua', t:22, cat:'tarea', title:'Entrega de Lengua', place:'Classroom', dist:'redacción' }
+    { id:'piano', t:21, cat:'tarea', title:'Practicar: Piano', place:'En casa', dist:'30 min' },
+    { id:'lengua', t:22, cat:'tarea', title:'Entrega de Lengua', place:'Classroom', dist:'redacción' },
+    { id:'mates', t:22.5, cat:'tarea', title:'Ejercicios de Mates', place:'Classroom', dist:'pág. 24' }
   ];
+  // El cuerpo de la pantalla muestra como máximo TODAY_MAX deadlines (el próximo y los
+  // siguientes por orden); la barra de tiempo dibuja todos los del día.
+  var TODAY_MAX = 4;
+  var TODAY_LATER_ALL = TODAY_LATER.slice().sort(function(a, b){ return a.t - b.t; });
+  TODAY_LATER = TODAY_LATER_ALL.slice(0, TODAY_MAX - 1);
 
   /* ---- Apariencia (Configuración) ---- */
   var APPEARANCE = { layout:'list', mode:'light', bar:'dots' };
@@ -2162,7 +2175,7 @@
   }
 
   function todayEvents(){
-    return [ {t:TODAY_NEXT.t, cat:TODAY_NEXT.cat, next:true} ].concat(TODAY_LATER.map(function(e){ return {t:e.t, cat:e.cat}; }))
+    return [ {t:TODAY_NEXT.t, cat:TODAY_NEXT.cat, next:true} ].concat(TODAY_LATER_ALL.map(function(e){ return {t:e.t, cat:e.cat}; }))
       .sort(function(a, b){ return a.t - b.t; });
   }
 
@@ -2176,6 +2189,9 @@
     if(APPEARANCE.layout === 'postit1'){ renderPostit1(layout); }
     else if(APPEARANCE.layout === 'postit2'){ renderPostit2(layout); }
     else { renderList(layout); }
+    // Los que no caben en el cuerpo se ven en la barra de tiempo
+    var more = TODAY_LATER_ALL.length - TODAY_LATER.length;
+    if(more > 0){ layout.insertAdjacentHTML('beforeend', '<p class="today-more">' + t(more === 1 ? 'today.more1' : 'today.more', { n: more }) + '</p>'); }
     var hint = document.getElementById('bar-hint');
     if(hint){
       hint.textContent = t('hint.' + APPEARANCE.bar) + t('hint.range', { range: fmtHour(r.start) + '–' + fmtHour(r.end) }) +
