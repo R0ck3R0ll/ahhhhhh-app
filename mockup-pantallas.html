@@ -140,19 +140,35 @@
   }
 
   /* ---- Today: estructura común ---- */
+  /* Cabecera compacta: sin la marca, título más pequeño y la fecha al lado */
+  .is-today .topbar{ padding:12px 20px 10px; flex-direction:row; flex-wrap:wrap; align-items:baseline; column-gap:10px; }
+  .is-today .topbar .brand{ display:none; }
+  .is-today .topbar h1{ font-size:26px; margin:0; }
+  .is-today .topbar{ flex-wrap:nowrap; }
+  .is-today .topbar .subtitle{ margin:0; flex:1; min-width:0; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #screen-today{ gap:14px; }
   .today-more{ margin:0; font-size:12.5px; color:var(--text-muted); text-align:center; }
   #screen-today.active{ min-height:100%; }
   /* Próximos días: abajo del todo, pegada a la barra de pestañas aunque el resto se desplace */
   :root{ --load-border:#f2b27a; --load-bg:#fff4c7; --load-title:#8a4b12; }
   .load-card{
-    margin-top:auto; position:sticky; bottom:0; z-index:5;
+    margin-top:auto; position:sticky; bottom:0; z-index:30;
     background:var(--load-bg); border:2px solid var(--load-border); border-radius:14px;
     padding:10px 14px; box-shadow:0 -6px 16px rgba(0,0,0,.08);
     /* los colores de categoría del modo claro, legibles sobre el amarillo pastel también en modo oscuro */
     --cat-tarea-ink:#0e8077; --cat-cita-ink:#6a4aa8; --cat-actividad-ink:#557b3d; --cat-libre-ink:#3e6899;
   }
   .load-card[hidden]{ display:none; }
-  .load-title{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--load-title); margin-bottom:4px; }
+  .load-toggle{ all:unset; box-sizing:border-box; width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; color:var(--load-title); }
+  .load-toggle:focus-visible{ outline:2px solid var(--load-border); outline-offset:3px; border-radius:6px; }
+  .load-title{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--load-title); }
+  .load-count{ display:none; }
+  .load-chev{ flex:none; transition:transform .2s ease; }
+  .load-list{ margin-top:4px !important; }
+  /* Plegada (si no cabe todo sin taparse): solo el título con el número de tareas; se despliega al pulsar */
+  .load-card.is-collapsed .load-list{ display:none; }
+  .load-card.is-collapsed .load-count{ display:inline; }
+  .load-card.is-collapsed .load-chev{ transform:rotate(180deg); }
   .load-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px; }
   /* Cada tarea: nombre (se recorta si no cabe) y debajo tiempo · antes de fecha y hora */
   .load-list li{ display:flex; flex-direction:column; line-height:1.25; }
@@ -160,11 +176,11 @@
   .load-list .load-meta{ font-size:12px; font-weight:500; font-variant-numeric:tabular-nums; }
   .load-list .load-est{ font-weight:700; }
   .today-layout{ display:flex; flex-direction:column; gap:20px; }
-  .section-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
+  .section-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px; }
 
   /* ---- Barra de tiempo «Puntos»: color de categoría + línea en la hora actual ---- */
   @keyframes needlePulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(43,41,37,.5); } 70%{ box-shadow:0 0 0 10px rgba(43,41,37,0); } }
-  .day-strip{ position:relative; height:78px; }
+  .day-strip{ position:relative; height:64px; }
   .day-strip .bar{
     position:absolute; left:0; right:0; top:32px; height:12px; border-radius:999px;
     background:linear-gradient(90deg, #f0c9a0 0%, #f5e0a8 32%, #e0a06a 62%, #4a3a5a 85%, #2a2438 100%);
@@ -178,7 +194,7 @@
   .day-strip .now-label{ position:absolute; transform:translateX(-50%); font-size:10px; font-weight:700; color:var(--text); white-space:nowrap; }
   .day-strip .now-label.at-start{ transform:translateX(-6px); }
   .day-strip .now-label.at-end{ transform:translateX(calc(-100% + 6px)); }
-  .day-strip-scale{ position:relative; display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; }
+  .day-strip-scale{ position:relative; display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:0; font-variant-numeric:tabular-nums; }
   .day-strip-scale .scale-school{ position:absolute; top:0; white-space:nowrap; }
   /* Tramo del cole: hueco rayado sobre la barra */
   .day-strip .school-gap{
@@ -186,7 +202,7 @@
     border:1px solid var(--border);
     background:repeating-linear-gradient(135deg, var(--surface-alt), var(--surface-alt) 4px, var(--border) 4px, var(--border) 5px);
   }
-  .day-strip .school-icon{ position:absolute; bottom:30px; transform:translateX(-50%); height:auto; overflow:visible; }
+  .day-strip .school-icon{ position:absolute; bottom:16px; transform:translateX(-50%); height:auto; overflow:visible; }
 
   /* ---- Barra de tiempo «Niña soldado»: el camino del día ---- */
   .timeline svg{ display:block; width:100%; height:auto; overflow:visible; }
@@ -215,7 +231,7 @@
   @keyframes swing-hair{ from{ transform:rotate(-14deg); } to{ transform:rotate(16deg); } }
 
   /* ---- Tema «Lista» ---- */
-  .up-next-card{ border-radius:20px; padding:17px 19px; background:var(--warn-bg); color:var(--warn-text); }
+  .up-next-card{ border-radius:18px; padding:11px 16px; background:var(--warn-bg); color:var(--warn-text); }
   .up-next-time{ font-family:var(--font-display); font-weight:700; font-size:28px; }
   .up-next-title{ font-family:var(--font-display); font-weight:600; font-size:18px; }
   .up-next-sub{ font-size:12.5px; font-weight:600; margin-top:6px; }
@@ -235,16 +251,16 @@
   @keyframes bob1{ 0%,100%{ transform:translateY(0) rotate(-7deg); } 50%{ transform:translateY(-7px) rotate(-7deg); } }
   @keyframes bob2{ 0%,100%{ transform:translateY(0) rotate(5deg); } 50%{ transform:translateY(-10px) rotate(5deg); } }
   @keyframes bob3{ 0%,100%{ transform:translateY(0) rotate(-3deg); } 50%{ transform:translateY(-6px) rotate(-3deg); } }
-  .hero-eyebrow{ text-align:center; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:12px; }
+  .hero-eyebrow{ text-align:center; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; }
   .hero-card{
-    background:var(--warn-bg); color:var(--warn-text); border-radius:26px; padding:26px 24px; text-align:center;
+    background:var(--warn-bg); color:var(--warn-text); border-radius:26px; padding:14px 18px; text-align:center;
     animation:glowPulse 3.2s ease-in-out infinite, breathe 3.2s ease-in-out infinite;
   }
-  .hero-time{ font-family:var(--font-display); font-weight:700; font-size:52px; line-height:1; }
-  .hero-title{ font-family:var(--font-display); font-weight:600; font-size:24px; margin-top:6px; }
-  .hero-place{ font-size:13px; font-weight:600; margin-top:10px; opacity:.85; }
+  .hero-time{ font-family:var(--font-display); font-weight:700; font-size:40px; line-height:1; }
+  .hero-title{ font-family:var(--font-display); font-weight:600; font-size:21px; margin-top:4px; }
+  .hero-place{ font-size:13px; font-weight:600; margin-top:6px; opacity:.85; }
   .hero-leave{
-    display:inline-flex; align-items:center; gap:6px; margin-top:14px;
+    display:inline-flex; align-items:center; gap:6px; margin-top:8px;
     background:rgba(0,0,0,.14); font-weight:700; font-size:12.5px; padding:7px 14px; border-radius:999px;
   }
   .fan{ display:flex; align-items:center; justify-content:center; padding:8px 0 10px; }
@@ -813,7 +829,7 @@
 </head>
 <body>
 <div class="page-pad">
-<div class="app-shell">
+<div class="app-shell is-today">
 
   <div class="topbar">
     <span class="brand">AHHHHHH!!!!!</span>
@@ -832,7 +848,10 @@
 
       <!-- Próximos días: tareas de los siguientes 5 días con 1,5 h o más; fija justo encima de la barra de pestañas -->
       <div class="load-card" role="status" aria-labelledby="load-title">
-        <div class="load-title" id="load-title" data-i18n="load.title"></div>
+        <button type="button" class="load-toggle" id="load-toggle" aria-expanded="true" aria-controls="load-list" onclick="toggleLoad()">
+          <span class="load-title" id="load-title"><span data-i18n="load.title"></span> <span class="load-count" id="load-count"></span></span>
+          <svg class="load-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+        </button>
         <ul class="load-list" id="load-list"></ul>
       </div>
 
@@ -1411,6 +1430,7 @@
   var I18N = {
     es:{
       'planOf':'plan de {name}',
+      'load.show':'mostrar', 'load.hide':'ocultar',
       'load.title':'Próximos días', 'load.before':'antes de {t}',
       'note.school':'<strong>Horario escolar:</strong> {summary}. Fuera de ese horario la agenda de {name} está libre para actividades, tareas y otros planes.',
       'act.title':'Actividades recurrentes', 'edit':'Editar', 'noTravel':'En casa (sin traslado)', 'and':' y ',
@@ -1529,6 +1549,7 @@
     },
     en:{
       'planOf':'{name}’s plan',
+      'load.show':'show', 'load.hide':'hide',
       'load.title':'Coming days', 'load.before':'before {t}',
       'note.school':'<strong>School hours:</strong> {summary}. Outside those hours {name}’s schedule is free for activities, homework and other plans.',
       'act.title':'Recurring activities', 'edit':'Edit', 'noTravel':'At home (no travel)', 'and':' and ',
@@ -1647,6 +1668,7 @@
     },
     it:{
       'planOf':'piano di {name}',
+      'load.show':'mostra', 'load.hide':'nascondi',
       'load.title':'Prossimi giorni', 'load.before':'entro {t}',
       'note.school':'<strong>Orario scolastico:</strong> {summary}. Fuori da quell’orario l’agenda di {name} è libera per attività, compiti e altri impegni.',
       'act.title':'Attività ricorrenti', 'edit':'Modifica', 'noTravel':'A casa (nessuno spostamento)', 'and':' e ',
@@ -1765,6 +1787,7 @@
     },
     fr:{
       'planOf':'planning de {name}',
+      'load.show':'afficher', 'load.hide':'masquer',
       'load.title':'Prochains jours', 'load.before':'avant {t}',
       'note.school':'<strong>Horaires scolaires :</strong> {summary}. En dehors de ces horaires, l’agenda de {name} est libre pour les activités, les devoirs et d’autres projets.',
       'act.title':'Activités récurrentes', 'edit':'Modifier', 'noTravel':'À la maison (sans trajet)', 'and':' et ',
@@ -1883,6 +1906,7 @@
     },
     de:{
       'planOf':'Plan von {name}',
+      'load.show':'anzeigen', 'load.hide':'ausblenden',
       'load.title':'Nächste Tage', 'load.before':'bis {t}',
       'note.school':'<strong>Schulzeiten:</strong> {summary}. Außerhalb dieser Zeiten ist {name}s Kalender frei für Aktivitäten, Hausaufgaben und andere Pläne.',
       'act.title':'Wiederkehrende Aktivitäten', 'edit':'Bearbeiten', 'noTravel':'Zu Hause (keine Fahrt)', 'and':' und ',
@@ -2071,7 +2095,10 @@
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById('screen-'+btn.dataset.screen).classList.add('active');
     setScreenHeading(btn);
+    // «Hoy» lleva la cabecera compacta (sin la marca y con la fecha en la misma línea)
+    document.querySelector('.app-shell').classList.toggle('is-today', btn.dataset.screen === 'today');
     if(btn.dataset.screen === 'calendar'){ fitCalendar(); }
+    if(btn.dataset.screen === 'today'){ fitLoad(); }
   }
 
   function setScreenHeading(btn){
@@ -2170,12 +2197,29 @@
   function renderLoad(){
     var items = upcomingLoad(), card = document.querySelector('.load-card');
     card.hidden = !items.length;
+    el('load-count').textContent = '· ' + items.length;
     el('load-list').innerHTML = items.map(function(it){
       return '<li style="color:' + inkOf(it.x.cat) + '" title="' + esc(it.x.name) + '"><span class="load-name">' + esc(it.x.name) + '</span>' +
         '<span class="load-meta"><span class="load-est">' + fmtEst(it.x.est) + '</span> · ' +
         t('load.before', { t: fmtDay(it.x.date) + ' ' + it.x.time }) + '</span></li>';
     }).join('');
   }
+  // Regla: si con la tarjeta desplegada la pantalla no da para todo sin taparse, se queda plegada
+  function fitLoad(){
+    var card = document.querySelector('.load-card'), screen = el('screen-today');
+    if(!card || card.hidden || !screen.classList.contains('active')){ return; }
+    setLoadOpen(true);
+    var main = screen.parentElement;
+    if(main.scrollHeight > main.clientHeight + 1){ setLoadOpen(false); }
+  }
+  function setLoadOpen(open){
+    document.querySelector('.load-card').classList.toggle('is-collapsed', !open);
+    el('load-toggle').setAttribute('aria-expanded', open);
+    el('load-toggle').setAttribute('aria-label', t('load.title') + ' · ' + t(open ? 'load.hide' : 'load.show'));
+  }
+  function toggleLoad(){ setLoadOpen(document.querySelector('.load-card').classList.contains('is-collapsed')); }
+  window.addEventListener('resize', fitLoad);
+  window.addEventListener('load', fitLoad);
   function travelOf(item){ return item.travel ? item.travel[item.travel.mode] : null; }
   var CLOCK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
   var CAR_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14l-1.5-5.5A2 2 0 0 0 15.6 10H8.4a2 2 0 0 0-1.9 1.5Z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>';
@@ -2233,6 +2277,8 @@
     // Los que no caben en el cuerpo se ven en la barra de tiempo
     var more = TODAY_LATER_ALL.length - TODAY_LATER.length;
     if(more > 0){ layout.insertAdjacentHTML('beforeend', '<p class="today-more">' + t(more === 1 ? 'today.more1' : 'today.more', { n: more }) + '</p>'); }
+    renderLoad();
+    fitLoad();
     var hint = document.getElementById('bar-hint');
     if(hint){
       hint.textContent = t('hint.' + APPEARANCE.bar) + t('hint.range', { range: fmtHour(r.start) + '–' + fmtHour(r.end) }) +
@@ -2291,8 +2337,8 @@
       }
     });
     var n = pct(NOW);   // sin etiqueta con la hora actual: solo la línea y el punto
-    html += '<div class="now-line" style="left:' + n + '%; height:56px;"></div>' +
-            '<div class="now-dot" style="left:' + n + '%; top:52px; width:12px; height:12px;"></div>' +
+    html += '<div class="now-line" style="left:' + n + '%; height:50px;"></div>' +
+            '<div class="now-dot" style="left:' + n + '%; top:44px; width:12px; height:12px;"></div>' +
             '</div><div class="day-strip-scale"><span>' + fmtHour(r.start) + '</span>' +
             (r.school ? '<span class="scale-school" style="left:max(calc(' + ((r.school.x0 + r.school.x1) * 50) + '% - 29px), 36px)">' + fmtHour(r.school.from) + '–' + fmtHour(r.school.to) + '</span>' : '') +
             '<span>' + fmtHour(r.end) + '</span></div>';
@@ -2378,7 +2424,7 @@
     var track = 'M20 52 H316 V44 L338 58 L316 72 V64 H20 A6 6 0 0 1 20 52 Z';
     var nowLabel = '';   // sin etiqueta con la hora actual: la niña marca el momento
     var svg =
-      '<svg viewBox="0 -22 350 116" role="img" aria-label="Ahora ' + fmtHour(NOW) + '; próximos: ' + events.map(function(e){ return fmtHour(e.t); }).join(', ') + '">' +
+      '<svg viewBox="0 -2 350 96" role="img" aria-label="Ahora ' + fmtHour(NOW) + '; próximos: ' + events.map(function(e){ return fmtHour(e.t); }).join(', ') + '">' +
       '<defs>' +
         '<clipPath id="trackClip"><path d="' + track + '"/></clipPath>' +
         '<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +

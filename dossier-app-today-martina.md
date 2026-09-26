@@ -120,6 +120,8 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Va **abajo del todo, fija justo encima de la barra de pestañas** (se ve aunque el resto se desplace).
   - Marco naranja pastel, fondo amarillo pastel y el texto de cada tarea del color de su categoría.
   - Si no hay ninguna tarea que cumpla la condición, la tarjeta no aparece.
+  - **Regla de espacio:** si con la tarjeta desplegada la pantalla no da para todo sin que nada quede tapado, la tarjeta aparece **plegada** (solo «Próximos días · n») y hay que pulsarla para ver las tareas; al pulsar de nuevo se pliega.
+- Para ganar espacio, «Hoy» usa una **cabecera compacta** (sin la marca, título y fecha en una línea), una **barra de tiempo más baja** y un **primer elemento más compacto**.
 
 ---
 
