@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-  /* Tema único, claro por decisión de diseño (no sigue el modo del sistema) */
+  /* Fondo claro u oscuro según Configuración > Apariencia (no sigue el modo del sistema) */
   :root{
     --bg:#D9D9D9;
     --surface:#FFFFFF;
@@ -34,6 +34,29 @@
     --shadow: 0 1px 2px rgba(0,0,0,.06), 0 10px 26px rgba(0,0,0,.10);
     --font-display:'Fraunces', serif;
     --font-body:'IBM Plex Sans', system-ui, sans-serif;
+    /* Trazo de dibujo (post-its y barra de la niña) y tinta sobre post-its de color */
+    --ink:#2B2925;
+    --cat-tarea-deep:#0b3431; --cat-cita-deep:#271a47; --cat-actividad-deep:#1f3312; --cat-libre-deep:#14263d;
+  }
+  /* Fondo oscuro: paleta de Design.html */
+  :root[data-theme="dark"]{
+    --bg:#322e2b;
+    --surface:#47413a;
+    --surface-alt:#3c3732;
+    --border:#5c554c;
+    --text:#f5f0e8;
+    --text-muted:#b3a99b;
+    --accent:#d6738a;
+    --accent-strong:#e896aa;
+    --accent-soft:rgba(214,115,138,.18);
+    --on-accent:#2b1a1f;
+    --cat-tarea-ink:#5fb8b0;
+    --cat-cita-ink:#a08bd8;
+    --cat-actividad-ink:#8bb06a;
+    --cat-libre-ink:#6f95c4;
+    --warn-ink:#e8b839;
+    --ink:#15120f;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 26px rgba(0,0,0,.35);
   }
 
   *{box-sizing:border-box;}
@@ -121,13 +144,16 @@
   .alert .alert-title{ font-weight:600; font-size:13.5px; }
   .alert .alert-body{ font-size:13px; margin-top:2px; line-height:1.4; color:var(--alert-body-text); }
 
-  /* ---- Today: franja horaria ---- */
+  /* ---- Today: estructura común ---- */
+  #screen-today.active{ min-height:100%; }
+  #screen-today .alert{ margin-top:auto; }
+  #screen-today[data-layout="postit2"] .alert{ border:2px solid var(--ink); box-shadow:0 3px 0 var(--ink); }
+  .today-layout{ display:flex; flex-direction:column; gap:20px; }
+  .section-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
+
+  /* ---- Barra de tiempo «Puntos»: color de categoría + línea en la hora actual ---- */
   @keyframes needlePulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(43,41,37,.5); } 70%{ box-shadow:0 0 0 10px rgba(43,41,37,0); } }
   @keyframes amberPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(232,184,57,.65); } 70%{ box-shadow:0 0 0 12px rgba(232,184,57,0); } }
-  @media (prefers-reduced-motion: reduce){
-    .now-dot, .pulse-amber{ animation:none; }
-  }
-
   .day-strip{ position:relative; height:78px; }
   .day-strip .bar{
     position:absolute; left:0; right:0; top:32px; height:12px; border-radius:999px;
@@ -140,19 +166,164 @@
   .day-strip .now-line{ position:absolute; top:0; width:3px; border-radius:2px; background:var(--text); transform:translateX(-50%); }
   .day-strip .now-dot{ position:absolute; border-radius:50%; background:var(--text); transform:translateX(-50%); animation:needlePulse 2s ease-out infinite; }
   .day-strip .now-label{ position:absolute; transform:translateX(-50%); font-size:10px; font-weight:700; color:var(--text); white-space:nowrap; }
-  .day-strip-scale{ display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; }
+  .day-strip .now-label.at-start{ transform:translateX(-6px); }
+  .day-strip .now-label.at-end{ transform:translateX(calc(-100% + 6px)); }
+  .day-strip-scale{ position:relative; display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; }
+  .day-strip-scale .scale-school{ position:absolute; top:0; white-space:nowrap; }
+  /* Tramo del cole: hueco rayado sobre la barra */
+  .day-strip .school-gap{
+    position:absolute; top:28px; height:20px; border-radius:6px;
+    border:1px solid var(--border);
+    background:repeating-linear-gradient(135deg, var(--surface-alt), var(--surface-alt) 4px, var(--border) 4px, var(--border) 5px);
+  }
+  .day-strip .school-icon{ position:absolute; bottom:30px; transform:translateX(-50%); height:auto; overflow:visible; }
 
-  .section-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
+  /* ---- Barra de tiempo «Niña soldado»: el camino del día ---- */
+  .timeline svg{ display:block; width:100%; height:auto; overflow:visible; }
+  .tl-label{ font-family:var(--font-body); font-size:10px; font-weight:700; fill:var(--text); font-variant-numeric:tabular-nums; }
+  .tl-label.is-muted{ fill:var(--text-muted); font-weight:500; }
+  .tl-label.is-now{ fill:var(--accent-strong); }
+  .boom{ transform-box:fill-box; transform-origin:center; animation:boomIdle var(--dur,2.6s) ease-in-out infinite; animation-delay:var(--delay,0s); }
+  .boom.is-next{ animation:boomBig 2.4s cubic-bezier(.3,1.6,.5,1) infinite; }
+  @keyframes boomIdle{ 0%,100%{ transform:scale(1) rotate(0deg); } 50%{ transform:scale(1.08) rotate(5deg); } }
+  @keyframes boomBig{
+    0%{ transform:scale(.8) rotate(0deg); }
+    14%{ transform:scale(1.24) rotate(-8deg); }
+    30%{ transform:scale(1) rotate(2deg); }
+    100%{ transform:scale(.8) rotate(0deg); }
+  }
+  .spark{ opacity:0; animation:spark 2.4s ease-out infinite; }
+  @keyframes spark{
+    0%,10%{ opacity:0; transform:translate(0,0); }
+    16%{ opacity:1; }
+    55%{ opacity:0; transform:translate(var(--sx),var(--sy)); }
+    100%{ opacity:0; transform:translate(var(--sx),var(--sy)); }
+  }
+  .w-bob{ animation:bob .45s ease-in-out infinite alternate; }
+  .ponytail{ transform-box:fill-box; transform-origin:100% 50%; animation:swing-hair .45s ease-in-out infinite alternate; }
+  @keyframes bob{ from{ transform:translateY(0); } to{ transform:translateY(-1.4px); } }
+  @keyframes swing-hair{ from{ transform:rotate(-14deg); } to{ transform:rotate(16deg); } }
+
+  /* ---- Tema «Lista» ---- */
   .up-next-card{ border-radius:20px; padding:17px 19px; background:var(--warn-bg); color:var(--warn-text); }
   .up-next-time{ font-family:var(--font-display); font-weight:700; font-size:28px; }
   .up-next-title{ font-family:var(--font-display); font-weight:600; font-size:18px; }
   .up-next-sub{ font-size:12.5px; font-weight:600; margin-top:6px; }
-
   .later-row{ display:flex; flex-wrap:wrap; gap:10px; }
-  .later-chip{ border-radius:14px; padding:10px 14px; flex:1; min-width:152px; }
-  .later-time{ font-size:11px; font-weight:700; }
+  .later-chip{
+    border-radius:14px; padding:10px 14px; flex:1; min-width:152px;
+    background:color-mix(in srgb, var(--c) 14%, transparent);
+    border:1px solid color-mix(in srgb, var(--c) 40%, transparent);
+  }
+  .later-time{ font-size:11px; font-weight:700; color:var(--c-ink); }
   .later-title{ font-size:12.5px; font-weight:600; margin-top:3px; }
   .later-sub{ font-size:10.5px; color:var(--text-muted); margin-top:2px; }
+
+  /* ---- Tema «Post-it 1» (Design.html · Siguiente ahora): protagonista + baraja ---- */
+  @keyframes breathe{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.015); } }
+  @keyframes glowPulse{ 0%,100%{ box-shadow:0 0 0 rgba(232,184,57,0), 0 16px 34px rgba(0,0,0,.22); } 50%{ box-shadow:0 0 46px rgba(232,184,57,.5), 0 16px 34px rgba(0,0,0,.22); } }
+  @keyframes bob1{ 0%,100%{ transform:translateY(0) rotate(-7deg); } 50%{ transform:translateY(-7px) rotate(-7deg); } }
+  @keyframes bob2{ 0%,100%{ transform:translateY(0) rotate(5deg); } 50%{ transform:translateY(-10px) rotate(5deg); } }
+  @keyframes bob3{ 0%,100%{ transform:translateY(0) rotate(-3deg); } 50%{ transform:translateY(-6px) rotate(-3deg); } }
+  .hero-eyebrow{ text-align:center; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:12px; }
+  .hero-card{
+    background:var(--warn-bg); color:var(--warn-text); border-radius:26px; padding:26px 24px; text-align:center;
+    animation:glowPulse 3.2s ease-in-out infinite, breathe 3.2s ease-in-out infinite;
+  }
+  .hero-time{ font-family:var(--font-display); font-weight:700; font-size:52px; line-height:1; }
+  .hero-title{ font-family:var(--font-display); font-weight:600; font-size:24px; margin-top:6px; }
+  .hero-place{ font-size:13px; font-weight:600; margin-top:10px; opacity:.85; }
+  .hero-leave{
+    display:inline-flex; align-items:center; gap:6px; margin-top:14px;
+    background:rgba(0,0,0,.14); font-weight:700; font-size:12.5px; padding:7px 14px; border-radius:999px;
+  }
+  .fan{ display:flex; align-items:center; justify-content:center; padding:8px 0 10px; }
+  .fan-card{
+    position:relative; flex:none; width:112px; min-height:134px; margin-right:-16px;
+    background:var(--surface); border:1px solid var(--c); border-radius:16px; padding:13px;
+    box-shadow:var(--shadow);
+  }
+  .fan-card:last-child{ margin-right:0; }
+  .fan-card:nth-child(3n+1){ animation:bob1 3.6s ease-in-out infinite; }
+  .fan-card:nth-child(3n+2){ animation:bob2 4.1s ease-in-out infinite; }
+  .fan-card:nth-child(3n+3){ animation:bob3 3.8s ease-in-out infinite; }
+  .fan-time{ font-size:11px; font-weight:700; color:var(--c-ink); }
+  .fan-title{ font-size:13px; font-weight:700; margin-top:5px; line-height:1.2; hyphens:auto; overflow-wrap:break-word; }
+  .fan-sub{ font-size:10.5px; color:var(--text-muted); margin-top:4px; }
+
+  /* ---- Tema «Post-it 2» (boceto-today.html): barra del próximo + post-its flotantes ---- */
+  .pi-next{
+    position:relative; overflow:hidden; flex:none;
+    display:flex; align-items:center; gap:12px;
+    background:var(--warn-bg); color:var(--warn-text);
+    border:2px solid var(--ink); border-radius:16px;
+    box-shadow:0 3px 0 var(--ink);
+    padding:11px 16px;
+  }
+  .pi-next::after{
+    content:""; position:absolute; top:0; bottom:0; left:-60%; width:40%;
+    background:linear-gradient(100deg, transparent, rgba(255,255,255,.5), transparent);
+    animation:sheen 6s ease-in-out infinite; pointer-events:none;
+  }
+  @keyframes sheen{ 0%,70%{ left:-60%; } 100%{ left:130%; } }
+  .pi-next-time{ font-family:var(--font-display); font-weight:700; font-size:24px; line-height:1; font-variant-numeric:tabular-nums; }
+  .pi-next-title{ flex:1; min-width:0; font-family:var(--font-display); font-weight:600; font-size:18px; line-height:1.1; }
+  .pi-next-side{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; text-align:right; }
+  .pi-next-when{ font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .pi-next-leave{ display:flex; align-items:center; gap:4px; font-size:12px; font-weight:600; }
+
+  .board{ position:relative; flex:none; height:384px; }
+  .note{
+    position:absolute; width:min(56%, 188px); min-height:150px;
+    left:var(--x); top:var(--y); z-index:var(--z);
+    transform:rotate(var(--rot));
+    transition:left .8s cubic-bezier(.34,1.25,.5,1), top .8s cubic-bezier(.34,1.25,.5,1), transform .8s cubic-bezier(.34,1.25,.5,1);
+    animation:noteIn .9s cubic-bezier(.2,.9,.3,1.15) backwards;
+    animation-delay:var(--in-delay, 0s);
+    cursor:pointer; outline:none;
+  }
+  @keyframes noteIn{
+    from{ opacity:0; transform:translateY(-40px) rotate(calc(var(--rot) - 14deg)) scale(.9); }
+    to{ opacity:1; transform:translateY(0) rotate(var(--rot)) scale(1); }
+  }
+  .note-shadow{
+    position:absolute; left:14%; right:14%; bottom:-22px; height:18px; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(20,18,15,.34), rgba(20,18,15,0));
+    animation:shadowFloat var(--dur) ease-in-out infinite; animation-delay:var(--delay);
+  }
+  .note-card{
+    position:relative; min-height:150px;
+    display:flex; flex-direction:column; justify-content:flex-end;
+    padding:13px 15px; border-radius:22px;
+    border:1.5px solid rgba(43,41,37,.8);
+    background:linear-gradient(160deg, rgba(255,255,255,.32), rgba(255,255,255,0) 48%), var(--c);
+    color:var(--deep);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.45), 0 10px 20px rgba(0,0,0,.10);
+    animation:float var(--dur) ease-in-out infinite; animation-delay:var(--delay);
+  }
+  @keyframes float{ 0%,100%{ transform:translateY(0) rotate(0deg); } 50%{ transform:translateY(-10px) rotate(var(--sway)); } }
+  @keyframes shadowFloat{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(.76); opacity:.5; } }
+  .note:focus-visible .note-card{ outline:3px solid var(--accent); outline-offset:3px; }
+  .n-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .n-cat{ font-size:9px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; opacity:.75; }
+  .n-time{ font-family:var(--font-display); font-weight:700; font-size:26px; line-height:1; font-variant-numeric:tabular-nums; }
+  .n-title{ font-family:var(--font-display); font-weight:600; font-size:15.5px; line-height:1.15; margin-top:3px; }
+  .n-meta{ font-size:11px; font-weight:500; opacity:.82; margin-top:3px; }
+  .n-travel{ display:flex; gap:5px; margin-top:8px; }
+  .n-pill{
+    font-family:var(--font-body); font-size:10.5px; font-weight:600;
+    padding:4px 8px; border-radius:999px; cursor:pointer; white-space:nowrap;
+    border:1px solid rgba(43,41,37,.35); background:rgba(255,255,255,.45); color:var(--deep);
+  }
+  .n-pill.is-on{ background:#2B2925; border-color:#2B2925; color:#fff; }
+  .n-pill:focus-visible{ outline:2px solid #2B2925; outline-offset:2px; }
+  .n-leave{ display:flex; align-items:center; gap:5px; font-size:11px; font-weight:700; margin-top:5px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .now-dot, .pulse-amber, .boom, .spark, .w-bob, .ponytail, .hero-card, .fan-card,
+    .pi-next::after, .note, .note-card, .note-shadow{ animation:none !important; }
+    .note{ transition-duration:.01s; }
+  }
 
   .chip{
     display:inline-flex; align-items:center; gap:5px;
@@ -261,6 +432,76 @@
     padding:7px 13px; border-radius:9px; cursor:pointer;
   }
 
+  .card-hint{ font-size:12.5px; color:var(--text-muted); line-height:1.4; margin:0; }
+  .card-hint strong{ color:var(--text); font-weight:600; }
+  .field-label{ font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+
+  /* ---- Interruptor on/off ---- */
+  .switch{
+    flex:none; position:relative; width:38px; height:22px; padding:0;
+    border-radius:999px; border:1px solid var(--border); background:var(--surface);
+    cursor:pointer; transition:background .15s ease, border-color .15s ease;
+  }
+  .switch::after{
+    content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%;
+    background:var(--text-muted); transition:transform .15s ease;
+  }
+  .switch[aria-checked="true"]{ background:var(--accent); border-color:var(--accent); }
+  .switch[aria-checked="true"]::after{ transform:translateX(16px); background:var(--on-accent); }
+  .switch:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){ .switch, .switch::after{ transition:none; } }
+
+  /* ---- Franja horaria y horario escolar ---- */
+  .time-input{
+    font-family:var(--font-body); font-size:13px; font-variant-numeric:tabular-nums; color:var(--text);
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:5px 6px; width:84px; min-width:0; text-align:center;
+  }
+  .time-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  /* Sin icono de reloj: en el móvil el selector se abre al tocar y así caben las horas */
+  .time-input::-webkit-calendar-picker-indicator{ display:none; }
+  .time-line{ flex-wrap:wrap; }
+  .time-line[hidden]{ display:none; }
+  .time-pair{ display:flex; align-items:center; gap:6px; color:var(--text-muted); }
+  .cover-block{ display:flex; flex-direction:column; gap:6px; border-top:1px solid var(--border); padding-top:12px; }
+  .cover-list{ display:flex; flex-direction:column; gap:4px; }
+  .cover-list .config-value{ color:var(--cat-libre-ink); font-weight:600; text-align:right; }
+
+  /* ---- Exportación a Google Calendar ---- */
+  .export-options{ display:flex; flex-direction:column; gap:10px; border-top:1px solid var(--border); padding-top:12px; }
+  .export-options[hidden]{ display:none; }
+  .check-list{ display:flex; flex-direction:column; gap:2px; }
+  .check-row{ display:flex; align-items:center; gap:9px; font-size:13.5px; padding:5px 0; cursor:pointer; }
+  .check-row input{ width:16px; height:16px; margin:0; accent-color:var(--accent); flex:none; }
+  .check-row .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  /* ---- Configuración: bloques plegables ---- */
+  .cfg-groups{ display:flex; flex-direction:column; gap:10px; }
+  .cfg-group{ border:1px solid var(--border); border-radius:14px; background:var(--surface-alt); }
+  .cfg-group > summary{
+    list-style:none; display:flex; align-items:center; gap:10px;
+    padding:14px; cursor:pointer; border-radius:14px;
+  }
+  .cfg-group > summary::-webkit-details-marker{ display:none; }
+  .cfg-group > summary:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .cfg-group-title{ flex:none; font-family:var(--font-display); font-weight:600; font-size:16px; }
+  .cfg-group-sum{ flex:1; min-width:0; text-align:right; font-size:12px; line-height:1.3; color:var(--text-muted); }
+  .cfg-group .chev{ flex:none; color:var(--text-muted); transition:transform .2s ease; }
+  .cfg-group[open] .chev{ transform:rotate(180deg); }
+  .cfg-group[open] > summary{ border-bottom:1px solid var(--border); border-radius:14px 14px 0 0; }
+  .cfg-group-body{ padding:14px; display:flex; flex-direction:column; gap:14px; }
+  /* Dentro de un bloque, las tarjetas pierden su marco */
+  .cfg-group .config-card{ border:none; background:none; padding:0; }
+  .cfg-sub{ display:flex; flex-direction:column; gap:10px; }
+  .cfg-sub + .cfg-sub{ border-top:1px solid var(--border); padding-top:14px; }
+  .cfg-sub-title{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--accent-strong); }
+  @media (prefers-reduced-motion: reduce){ .cfg-group .chev{ transition:none; } }
+  .lang-select{
+    font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--text);
+    background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:6px 8px;
+  }
+  .lang-select:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .status-chip.pending{ background:var(--accent-soft); color:var(--accent-strong); border:1px solid var(--accent); }
+
   /* ---- Editable categories ---- */
   .cat-row{ align-items:center; }
   .swatch{ border:none; cursor:pointer; padding:0; }
@@ -272,10 +513,16 @@
     padding:2px 0; width:100%; min-width:0;
   }
   .cat-name-input:hover{ border-bottom-color:var(--border); }
+  .cat-name-input[readonly]{ cursor:default; }
+  .cat-name-input[readonly]:hover, .cat-name-input[readonly]:focus{ border-bottom-color:transparent; }
+  .cat-name{ font-weight:600; font-size:14.5px; padding:2px 0; }
+  /* El color solo se cambia mientras se edita la categoría */
+  .cat-row:not(.is-editing) .swatch{ pointer-events:none; }
+  .cat-row.is-editing .swatch{ box-shadow:0 0 0 2px var(--surface-alt), 0 0 0 3px var(--accent); }
   .cat-name-input:focus{ outline:none; border-bottom-color:var(--accent); }
   .priority-select{
     flex:none;
-    font-family:var(--font-body); font-weight:700; font-size:11px; color:var(--text);
+    font-family:var(--font-body); font-weight:700; font-size:11px; color:#2B2925;
     border:none; border-radius:999px; padding:4px 22px 4px 10px;
     cursor:pointer;
     -webkit-appearance:none; appearance:none;
@@ -290,6 +537,15 @@
     color:var(--text-muted); font-size:15px; line-height:1; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
   }
+  .row-edit{
+    flex:none; width:24px; height:24px; border-radius:50%;
+    border:1px solid var(--border); background:var(--surface);
+    color:var(--text-muted); cursor:pointer; padding:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .row-edit:hover{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent-strong); }
+  .row-edit:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .cat-row.is-editing .row-edit{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
   .row-delete:hover{ background:var(--alert-bg); border-color:var(--alert-border); color:var(--alert-text); }
   .row-delete:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 
@@ -346,7 +602,7 @@
   .cal-bar{
     position:absolute; left:2px; right:2px; border-radius:6px; padding:3px 5px;
     overflow:hidden; display:flex; flex-direction:column; justify-content:flex-start;
-    font-size:10.5px; color:var(--text); line-height:1.15;
+    font-size:10.5px; color:#2B2925; line-height:1.15;
   }
   .cal-bar .bar-title{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .cal-bar .bar-time{ font-size:9.5px; opacity:.85; font-variant-numeric:tabular-nums; }
@@ -402,7 +658,7 @@
   <div class="topbar">
     <span class="brand">AHHHHHH!!!!!</span>
     <h1 id="screen-heading">Today</h1>
-    <span class="subtitle" id="screen-subheading">Viernes, 11 de septiembre · plan de Martina</span>
+    <span class="subtitle" id="screen-subheading"></span>
   </div>
 
   <main class="screen-container">
@@ -410,69 +666,15 @@
     <!-- ============ TODAY ============ -->
     <section class="screen active" id="screen-today" aria-labelledby="screen-heading">
 
-      <div class="alert">
+      <!-- Barra de tiempo y tema: se dibujan según Configuración > Apariencia de Today -->
+      <div id="today-bar"></div>
+      <div class="today-layout" id="today-layout"></div>
+
+      <div class="alert" role="status">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
         <div>
-          <div class="alert-title">Carga de trabajo próxima</div>
-          <div class="alert-body">Trabajo de Ciencias Naturales · estimado 2 h · entrega el lunes 14/09</div>
-        </div>
-      </div>
-
-      <div>
-        <div class="day-strip">
-          <div class="bar"></div>
-
-          <div class="marker" style="left:64.3%; top:26px; width:10px; height:10px; background:var(--border);"></div>
-          <div class="stem" style="left:64.3%; top:44px; height:12px; background:var(--border);"></div>
-
-          <div class="marker pulse-amber" style="left:71.4%; top:18px; width:16px; height:16px; background:var(--warn-bg);"></div>
-          <div class="stem" style="left:71.4%; top:44px; height:14px; width:2px; background:var(--warn-bg);"></div>
-
-          <div class="marker" style="left:82.1%; top:28px; width:9px; height:9px; background:var(--cat-libre);"></div>
-          <div class="stem" style="left:82.1%; top:44px; height:12px; background:var(--cat-libre);"></div>
-
-          <div class="marker at-end" style="left:100%; top:28px; width:9px; height:9px; background:var(--cat-tarea);"></div>
-          <div class="stem at-end" style="left:100%; top:44px; height:12px; background:var(--cat-tarea);"></div>
-
-          <div class="now-line" style="left:66.1%; height:56px;"></div>
-          <div class="now-dot" style="left:66.1%; top:52px; width:12px; height:12px;"></div>
-          <div class="now-label" style="left:66.1%; top:66px;">AHORA · 17:15</div>
-        </div>
-        <div class="day-strip-scale"><span>8:00</span><span>22:00</span></div>
-      </div>
-
-      <div>
-        <div class="section-eyebrow" style="color:var(--warn-ink)">Se acerca · faltan 45 min</div>
-        <div class="up-next-card">
-          <div style="display:flex; align-items:baseline; gap:10px;">
-            <span class="up-next-time">18:00</span>
-            <span class="up-next-title">Natación</span>
-          </div>
-          <div class="up-next-sub">Piscina Municipal Las Rozas · sale 17:35 en coche</div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-eyebrow" style="color:var(--text-muted)">Más tarde</div>
-        <div class="later-row">
-          <div class="later-chip" style="background:rgba(111,149,196,.14); border:1px solid rgba(111,149,196,.4);">
-            <div class="later-time" style="color:var(--cat-libre-ink)">19:30</div>
-            <div class="later-title">Merienda con Clara</div>
-            <div class="later-sub">Casa de Clara · 600 m</div>
-            <div class="toggle-row" role="group" aria-label="Modo de traslado a Merienda con Clara">
-              <button type="button" class="toggle-btn is-active" data-walk="1" onclick="setTravelMode(this,'walk')">A pie · 10 min</button>
-              <button type="button" class="toggle-btn" data-walk="0" onclick="setTravelMode(this,'car')">En coche · 5 min</button>
-            </div>
-            <div class="travel-note" id="clara-departure">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              Salida 19:20
-            </div>
-          </div>
-          <div class="later-chip" style="background:rgba(95,184,176,.14); border:1px solid rgba(95,184,176,.4);">
-            <div class="later-time" style="color:var(--cat-tarea-ink)">22:00</div>
-            <div class="later-title">Entrega Lengua</div>
-            <div class="later-sub">Deadline vía Classroom</div>
-          </div>
+          <div class="alert-title" data-i18n="alert.title"></div>
+          <div class="alert-body" id="alert-body"></div>
         </div>
       </div>
 
@@ -482,47 +684,47 @@
     <section class="screen" id="screen-activities" aria-labelledby="screen-heading">
       <div class="context-note">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <span><strong>Horario escolar:</strong> lunes a viernes, 09:00–17:00. Fuera de ese horario la agenda de Martina está libre para actividades, tareas y otros planes.</span>
+        <span class="school-note"></span>
       </div>
 
       <div>
-        <h2 class="section-title">Actividades recurrentes</h2>
+        <h2 class="section-title" data-i18n="act.title"></h2>
         <div class="row-list">
 
           <div class="row">
             <div class="row-body">
               <span class="row-title" style="color:var(--cat-actividad-ink)">Natación</span>
-              <span class="row-sub">Lunes y viernes · 18:00–19:00
+              <span class="row-sub"><span><span data-days="0,4"></span> · 18:00–19:00</span>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                 Piscina Municipal Las Rozas</span>
             </div>
-            <button class="row-action" onclick="toast('La edición de actividades se activa en la fase de datos')">Editar</button>
+            <button class="row-action" onclick="toast(t('toast.editAct'))" data-i18n="edit"></button>
           </div>
 
           <div class="row">
             <div class="row-body">
               <span class="row-title" style="color:var(--cat-actividad-ink)">Inglés</span>
-              <span class="row-sub">Martes · 17:00–18:00
+              <span class="row-sub"><span><span data-days="1"></span> · 17:00–18:00</span>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                 Academia Oxford Las Rozas</span>
             </div>
-            <button class="row-action" onclick="toast('La edición de actividades se activa en la fase de datos')">Editar</button>
+            <button class="row-action" onclick="toast(t('toast.editAct'))" data-i18n="edit"></button>
           </div>
 
           <div class="row">
             <div class="row-body">
               <span class="row-title" style="color:var(--cat-actividad-ink)">Piano</span>
-              <span class="row-sub">Jueves · 17:30–18:15 · En casa (sin traslado)</span>
+              <span class="row-sub"><span><span data-days="3"></span> · 17:30–18:15</span> · <span data-i18n="noTravel"></span></span>
             </div>
-            <button class="row-action" onclick="toast('La edición de actividades se activa en la fase de datos')">Editar</button>
+            <button class="row-action" onclick="toast(t('toast.editAct'))" data-i18n="edit"></button>
           </div>
 
         </div>
       </div>
 
-      <button class="add-btn" onclick="toast('Se podrá añadir una actividad nueva en la siguiente fase')">
+      <button class="add-btn" onclick="toast(t('toast.addAct'))">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        Añadir actividad
+        <span data-i18n="act.add"></span>
       </button>
     </section>
 
@@ -531,147 +733,271 @@
 
       <div class="context-note">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <span><strong>Horario escolar:</strong> lunes a viernes, 09:00–17:00. Fuera de ese horario la agenda de Martina está libre para actividades, tareas y otros planes.</span>
+        <span class="school-note"></span>
       </div>
 
       <div>
-        <h2 class="section-title">Próximos eventos</h2>
+        <h2 class="section-title" data-i18n="evt.upcoming"></h2>
         <div class="row-list">
           <div class="row">
             <div class="row-body">
               <span class="row-title" style="color:var(--cat-libre-ink)">Cumpleaños de Sofía</span>
-              <span class="row-sub">Sáb 12/09 · 17:00 · Bowling Las Rozas</span>
+              <span class="row-sub"><span><span data-date="2026-09-12"></span> · 17:00 · Bowling Las Rozas</span></span>
             </div>
-            <button class="row-action" onclick="toast('La edición de eventos se activa en la siguiente fase')">Editar</button>
+            <button class="row-action" onclick="toast(t('toast.editEvt'))" data-i18n="edit"></button>
           </div>
           <div class="row">
             <div class="row-body">
               <span class="row-title" style="color:var(--cat-cita-ink)">Revisión dental</span>
-              <span class="row-sub">Mié 16/09 · 10:00 · Clínica Dental Sonrisas</span>
+              <span class="row-sub"><span><span data-date="2026-09-16"></span> · 10:00 · Clínica Dental Sonrisas</span></span>
             </div>
-            <button class="row-action" onclick="toast('La edición de eventos se activa en la siguiente fase')">Editar</button>
+            <button class="row-action" onclick="toast(t('toast.editEvt'))" data-i18n="edit"></button>
           </div>
         </div>
       </div>
 
       <div>
-        <h2 class="section-title">Tiempo libre</h2>
+        <h2 class="section-title" data-i18n="evt.free"></h2>
         <div class="row-list">
           <div class="row">
             <div class="row-body">
               <span class="row-title" style="color:var(--cat-libre-ink)">Tarde libre</span>
-              <span class="row-sub">Sáb 12/09 · 15:00–17:00</span>
+              <span class="row-sub"><span><span data-date="2026-09-12"></span> · 15:00–17:00</span></span>
             </div>
-            <button class="row-action" onclick="toast('La edición de eventos se activa en la siguiente fase')">Editar</button>
+            <button class="row-action" onclick="toast(t('toast.editEvt'))" data-i18n="edit"></button>
           </div>
         </div>
       </div>
 
-      <button class="add-btn" onclick="toast('Se podrá añadir un evento o bloque libre en la siguiente fase')">
+      <button class="add-btn" onclick="toast(t('toast.addEvt'))">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        Añadir evento o tiempo libre
+        <span data-i18n="evt.add"></span>
       </button>
     </section>
 
     <!-- ============ CONFIGURACIÓN ============ -->
     <section class="screen" id="screen-config" aria-labelledby="screen-heading">
 
-      <div>
-        <h2 class="section-title">Cuentas conectadas</h2>
+      <div class="cfg-groups">
+      <details class="cfg-group" data-group="language">
+        <summary><span class="cfg-group-title" data-i18n="grp.language"></span><span class="cfg-group-sum" id="sum-language"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
         <div class="config-card">
           <div class="config-line">
-            <span class="config-label">Google (Classroom y Gmail)</span>
-            <span class="status-chip off">No conectado</span>
+            <label class="config-label" for="lang-select" data-i18n="cfg.languageLabel"></label>
+            <select id="lang-select" class="lang-select" onchange="setLanguage(this.value)">
+              <option value="es">Español</option>
+              <option value="en">English</option>
+              <option value="it">Italiano</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+            </select>
           </div>
-          <button class="btn-primary" style="align-self:flex-start" onclick="toast('La conexión con Google se configura en la fase de integraciones')">Conectar</button>
+          <p class="card-hint" data-i18n="cfg.languageHint"></p>
         </div>
-      </div>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="look">
+        <summary><span class="cfg-group-title" data-i18n="grp.look"></span><span class="cfg-group-sum" id="sum-look"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="config-card">
+          <div class="field-label" data-i18n="cfg.theme"></div>
+          <div class="seg-control" role="group" data-i18n-aria="cfg.themeAria">
+            <button type="button" class="seg-btn" data-appearance="layout" data-value="list" onclick="setAppearance('layout','list')" data-i18n="layout.list"></button>
+            <button type="button" class="seg-btn" data-appearance="layout" data-value="postit1" onclick="setAppearance('layout','postit1')">Post-it 1</button>
+            <button type="button" class="seg-btn" data-appearance="layout" data-value="postit2" onclick="setAppearance('layout','postit2')">Post-it 2</button>
+          </div>
+          <p class="card-hint" id="layout-hint"></p>
+          <div class="config-line">
+            <span class="config-label" data-i18n="cfg.bg"></span>
+            <div class="seg-control" role="group" data-i18n-aria="cfg.bgAria" style="width:180px">
+              <button type="button" class="seg-btn" data-appearance="mode" data-value="light" onclick="setAppearance('mode','light')" data-i18n="mode.light"></button>
+              <button type="button" class="seg-btn" data-appearance="mode" data-value="dark" onclick="setAppearance('mode','dark')" data-i18n="mode.dark"></button>
+            </div>
+          </div>
 
-      <div>
-        <h2 class="section-title">Horario escolar</h2>
+          <div class="cover-block">
+            <div class="field-label" data-i18n="cfg.bar"></div>
+            <div class="seg-control" role="group" data-i18n-aria="cfg.barAria">
+              <button type="button" class="seg-btn" data-appearance="bar" data-value="dots" onclick="setAppearance('bar','dots')" data-i18n="bar.dots"></button>
+              <button type="button" class="seg-btn" data-appearance="bar" data-value="nina" onclick="setAppearance('bar','nina')" data-i18n="bar.nina"></button>
+            </div>
+            <p class="card-hint" id="bar-hint"></p>
+          </div>
+          <button class="btn-ghost" style="align-self:flex-start" onclick="document.querySelector('.tab[data-screen=today]').click()" data-i18n="cfg.viewToday"></button>
+        </div>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="hours">
+        <summary><span class="cfg-group-title" data-i18n="grp.hours"></span><span class="cfg-group-sum" id="sum-hours"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="cfg-sub">
+          <div class="cfg-sub-title" data-i18n="cfg.window"></div>
+        <div class="config-card">
+          <div class="config-line time-line">
+            <span class="config-label" data-i18n="cfg.everyDay"></span>
+            <span class="time-pair">
+              <input type="time" class="time-input" id="day-start" value="07:30" data-i18n-aria="aria.windowStart" onchange="onBoundsChange(this)">
+              –
+              <input type="time" class="time-input" id="day-end" value="23:00" data-i18n-aria="aria.windowEnd" onchange="onBoundsChange(this)">
+            </span>
+          </div>
+          <p class="card-hint" data-i18n="hint.window"></p>
+        </div>
+        </div>
+        <div class="cfg-sub">
+          <div class="cfg-sub-title" data-i18n="cfg.school"></div>
+        <div class="config-card">
+          <div class="config-line time-line">
+            <span class="config-label" data-i18n="monFri"></span>
+            <span class="time-pair">
+              <input type="time" class="time-input" value="09:00" data-i18n-aria="aria.entryWeek" onchange="onSchoolTime('week','entry',this)">
+              –
+              <input type="time" class="time-input" value="17:00" data-i18n-aria="aria.exitWeek" onchange="onSchoolTime('week','exit',this)">
+            </span>
+          </div>
+          <div class="config-line">
+            <span class="config-label" data-i18n="satClasses"></span>
+            <button type="button" class="switch" role="switch" aria-checked="false" data-i18n-aria="satClasses" onclick="toggleSaturday(this)"></button>
+          </div>
+          <div class="config-line time-line" id="sat-times" hidden>
+            <span class="config-label" data-i18n="saturday"></span>
+            <span class="time-pair">
+              <input type="time" class="time-input" value="09:00" data-i18n-aria="aria.entrySat" onchange="onSchoolTime('sat','entry',this)">
+              –
+              <input type="time" class="time-input" value="13:00" data-i18n-aria="aria.exitSat" onchange="onSchoolTime('sat','exit',this)">
+            </span>
+          </div>
+          <p class="card-hint" data-i18n-html="hint.school"></p>
+          <div class="cover-block">
+            <div class="field-label" data-i18n="cover.title"></div>
+            <div class="cover-list" id="cover-list"></div>
+          </div>
+        </div>
+        </div>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="links">
+        <summary><span class="cfg-group-title" data-i18n="grp.links"></span><span class="cfg-group-sum" id="sum-links"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="cfg-sub">
+          <div class="cfg-sub-title" data-i18n="cfg.google"></div>
         <div class="config-card">
           <div class="config-line">
-            <span class="config-label">Lunes – Viernes</span>
-            <span class="config-value">09:00 – 17:00</span>
+            <span class="config-label" data-i18n="cfg.accountsLabel"></span>
+            <span class="status-chip off" data-i18n="status.off"></span>
           </div>
-          <button class="btn-ghost" style="align-self:flex-start" onclick="toast('La edición del horario se activa en la fase de datos')">Editar horario</button>
+          <button class="btn-primary" style="align-self:flex-start" onclick="toast(t('toast.google'))" data-i18n="connect"></button>
         </div>
-      </div>
-
-      <div>
-        <h2 class="section-title">Calendario escolar</h2>
+        </div>
+        <div class="cfg-sub">
+          <div class="cfg-sub-title" data-i18n="cfg.schoolCal"></div>
         <div class="config-card">
           <div class="config-line">
-            <span class="config-label">Archivo del calendario</span>
-            <span class="config-value">Ningún archivo cargado</span>
+            <span class="config-label" data-i18n="schoolCal.file"></span>
+            <span class="config-value" data-i18n="schoolCal.none"></span>
           </div>
-          <button class="btn-ghost" style="align-self:flex-start" onclick="toast('La importación de archivos se activa en la fase de datos')">Seleccionar archivo</button>
+          <p class="card-hint" data-i18n-html="hint.schoolCal"></p>
+          <button class="btn-ghost" style="align-self:flex-start" onclick="toast(t('toast.import'))" data-i18n="schoolCal.pick"></button>
         </div>
-      </div>
-
-      <div>
-        <h2 class="section-title">Categorías y prioridades</h2>
+        </div>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="cats">
+        <summary><span class="cfg-group-title" data-i18n="grp.cats"></span><span class="cfg-group-sum" id="sum-cats"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <p class="card-hint" data-i18n="hint.cats"></p>
         <div class="row-list" id="category-list">
-          <div class="row cat-row">
-            <button class="row-bar swatch" style="background:var(--cat-tarea)" onclick="cycleColor(this)" aria-label="Cambiar color de la categoría Tarea" title="Cambiar color"></button>
-            <div class="row-body"><input class="cat-name-input" value="Tarea" aria-label="Nombre de la categoría"></div>
-            <select class="priority-select" style="background:var(--cat-tarea)" onchange="onPriorityChange(this)" aria-label="Prioridad de la categoría Tarea">
+          <div class="row cat-row" data-default="1" data-cat="tarea">
+            <span class="row-bar" style="background:var(--cat-tarea)"></span>
+            <div class="row-body"><span class="cat-name" data-i18n="cat.tarea"></span></div>
+            <select class="priority-select" style="background:var(--cat-tarea)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
               <option value="Alta" selected>Alta</option>
               <option value="Media">Media</option>
               <option value="Baja">Baja</option>
             </select>
-            <button class="row-delete" onclick="removeCategory(this)" aria-label="Eliminar categoría Tarea" title="Eliminar categoría">×</button>
           </div>
-          <div class="row cat-row">
-            <button class="row-bar swatch" style="background:var(--cat-cita)" onclick="cycleColor(this)" aria-label="Cambiar color de la categoría Cita" title="Cambiar color"></button>
-            <div class="row-body"><input class="cat-name-input" value="Cita" aria-label="Nombre de la categoría"></div>
-            <select class="priority-select" style="background:var(--cat-cita)" onchange="onPriorityChange(this)" aria-label="Prioridad de la categoría Cita">
-              <option value="Alta" selected>Alta</option>
-              <option value="Media">Media</option>
-              <option value="Baja">Baja</option>
-            </select>
-            <button class="row-delete" onclick="removeCategory(this)" aria-label="Eliminar categoría Cita" title="Eliminar categoría">×</button>
-          </div>
-          <div class="row cat-row">
-            <button class="row-bar swatch" style="background:var(--cat-actividad)" onclick="cycleColor(this)" aria-label="Cambiar color de la categoría Actividad" title="Cambiar color"></button>
-            <div class="row-body"><input class="cat-name-input" value="Actividad" aria-label="Nombre de la categoría"></div>
-            <select class="priority-select" style="background:var(--cat-actividad)" onchange="onPriorityChange(this)" aria-label="Prioridad de la categoría Actividad">
+          <div class="row cat-row" data-default="1" data-cat="actividad">
+            <span class="row-bar" style="background:var(--cat-actividad)"></span>
+            <div class="row-body"><span class="cat-name" data-i18n="cat.actividad"></span></div>
+            <select class="priority-select" style="background:var(--cat-actividad)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
               <option value="Alta">Alta</option>
               <option value="Media" selected>Media</option>
               <option value="Baja">Baja</option>
             </select>
-            <button class="row-delete" onclick="removeCategory(this)" aria-label="Eliminar categoría Actividad" title="Eliminar categoría">×</button>
           </div>
-          <div class="row cat-row">
-            <button class="row-bar swatch" style="background:var(--cat-libre)" onclick="cycleColor(this)" aria-label="Cambiar color de la categoría Tiempo libre" title="Cambiar color"></button>
-            <div class="row-body"><input class="cat-name-input" value="Tiempo libre" aria-label="Nombre de la categoría"></div>
-            <select class="priority-select" style="background:var(--cat-libre)" onchange="onPriorityChange(this)" aria-label="Prioridad de la categoría Tiempo libre">
+          <div class="row cat-row" data-cat="cita">
+            <button class="row-bar swatch" style="background:var(--cat-cita)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
+            <div class="row-body"><input class="cat-name-input" value="Cita" readonly data-i18n-aria="aria.catName" onkeydown="if(event.key==='Enter'){ editCategory(this); }"></div>
+            <button class="row-edit" onclick="editCategory(this)" data-i18n-aria="aria.catEdit" data-i18n-title="aria.catEdit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+            <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
+            <select class="priority-select" style="background:var(--cat-cita)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
+              <option value="Alta" selected>Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+          </div>
+          <div class="row cat-row" data-cat="libre">
+            <button class="row-bar swatch" style="background:var(--cat-libre)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
+            <div class="row-body"><input class="cat-name-input" value="Tiempo libre" readonly data-i18n-aria="aria.catName" onkeydown="if(event.key==='Enter'){ editCategory(this); }"></div>
+            <button class="row-edit" onclick="editCategory(this)" data-i18n-aria="aria.catEdit" data-i18n-title="aria.catEdit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+            <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
+            <select class="priority-select" style="background:var(--cat-libre)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
               <option value="Alta">Alta</option>
               <option value="Media">Media</option>
               <option value="Baja" selected>Baja</option>
             </select>
-            <button class="row-delete" onclick="removeCategory(this)" aria-label="Eliminar categoría Tiempo libre" title="Eliminar categoría">×</button>
           </div>
         </div>
         <button class="add-btn" style="margin-top:12px" onclick="addCategory()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-          Añadir categoría
+          <span data-i18n="cat.add"></span>
         </button>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="gcal">
+        <summary><span class="cfg-group-title" data-i18n="grp.gcal"></span><span class="cfg-group-sum" id="sum-gcal"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="config-card">
+          <div class="config-line">
+            <span class="config-label" data-i18n="gcal.export"></span>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="export-switch" data-i18n-aria="gcal.export" onclick="toggleExport(this)"></button>
+          </div>
+          <p class="card-hint" data-i18n-html="hint.gcal"></p>
+
+          <div class="export-options" id="export-options" hidden>
+            <div class="field-label" data-i18n="gcal.what"></div>
+            <div class="check-list" id="export-cats"></div>
+            <p class="card-hint" data-i18n="hint.gcalTasks"></p>
+            <div class="config-line">
+              <span class="config-label" data-i18n="gcal.leaveAlert"></span>
+              <button type="button" class="switch" role="switch" aria-checked="true" data-i18n-aria="gcal.leaveAlert" onclick="toggleSwitch(this, t('gcal.leaveAlert'))"></button>
+            </div>
+            <p class="card-hint" data-i18n="hint.gcalLeave"></p>
+            <div class="config-line">
+              <span class="config-label" data-i18n="gcal.status"></span>
+              <span class="status-chip off" data-i18n="gcal.needsGoogle"></span>
+            </div>
+            <button class="btn-primary" style="align-self:flex-start" onclick="toast(t('toast.gcal'))" data-i18n="gcal.create"></button>
+          </div>
+        </div>
+        </div>
+      </details>
       </div>
 
     </section>
 
     <!-- ============ CALENDARIO ============ -->
     <section class="screen" id="screen-calendar" aria-labelledby="screen-heading">
-      <div class="seg-control" role="tablist" aria-label="Vista de calendario">
-        <button class="seg-btn is-active" data-view="week" onclick="setCalView(this)">Semana</button>
-        <button class="seg-btn" data-view="day" onclick="setCalView(this)">Día</button>
+      <div class="seg-control" role="tablist" data-i18n-aria="tab.calendar">
+        <button class="seg-btn is-active" data-view="week" onclick="setCalView(this)" data-i18n="cal.week"></button>
+        <button class="seg-btn" data-view="day" onclick="setCalView(this)" data-i18n="cal.day"></button>
       </div>
 
       <div class="cal-nav">
-        <button class="nav-arrow" onclick="toast('La navegación entre semanas estará disponible con datos reales')" aria-label="Semana anterior">‹</button>
-        <span class="cal-range" id="cal-range">7–13 septiembre</span>
-        <button class="nav-arrow" onclick="toast('La navegación entre semanas estará disponible con datos reales')" aria-label="Semana siguiente">›</button>
+        <button class="nav-arrow" onclick="toast(t('toast.weekNav'))" data-i18n-aria="aria.prevWeek">‹</button>
+        <span class="cal-range" id="cal-range"></span>
+        <button class="nav-arrow" onclick="toast(t('toast.weekNav'))" data-i18n-aria="aria.nextWeek">›</button>
       </div>
 
       <div class="cal-scroll">
@@ -679,35 +1005,35 @@
       </div>
 
       <div class="cal-legend">
-        <span><i style="background:var(--cat-actividad)"></i>Actividad</span>
-        <span><i style="background:var(--cat-cita)"></i>Cita</span>
-        <span><i style="background:var(--cat-libre)"></i>Evento</span>
-        <span><i style="background:var(--cat-tarea)"></i>Tarea (deadline)</span>
+        <span><i style="background:var(--cat-actividad)"></i><span data-cat-name="actividad"></span></span>
+        <span><i style="background:var(--cat-cita)"></i><span data-cat-name="cita"></span></span>
+        <span><i style="background:var(--cat-libre)"></i><span data-cat-name="libre"></span></span>
+        <span><i style="background:var(--cat-tarea)"></i><span data-cat-name="tarea" data-suffix="legend.deadline"></span></span>
       </div>
     </section>
 
   </main>
 
-  <nav class="tabbar" aria-label="Navegación principal">
-    <button class="tab is-active" data-screen="today" data-title="Today" data-sub="Viernes, 11 de septiembre · plan de Martina" onclick="showScreen(this)">
+  <nav class="tabbar" data-i18n-aria="aria.nav">
+    <button class="tab is-active" data-screen="today" onclick="showScreen(this)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
       Today
     </button>
-    <button class="tab" data-screen="activities" data-title="Actividades" data-sub="Extraescolares recurrentes de Martina" onclick="showScreen(this)">
+    <button class="tab" data-screen="activities" data-title="tab.activities" data-sub="sub.activities" onclick="showScreen(this)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l3 3-8 8-4 1 1-4 8-8z"/><path d="M4 20h16"/></svg>
-      Actividades
+      <span data-i18n="tab.activities"></span>
     </button>
-    <button class="tab" data-screen="events" data-title="Eventos" data-sub="Eventos puntuales y tiempo libre" onclick="showScreen(this)">
+    <button class="tab" data-screen="events" data-title="tab.events" data-sub="sub.events" onclick="showScreen(this)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/></svg>
-      Eventos
+      <span data-i18n="tab.events"></span>
     </button>
-    <button class="tab" data-screen="calendar" data-title="Calendario" data-sub="Actividades en vista día o semana" onclick="showScreen(this)">
+    <button class="tab" data-screen="calendar" data-title="tab.calendar" data-sub="sub.calendar" onclick="showScreen(this)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
-      Calendario
+      <span data-i18n="tab.calendar"></span>
     </button>
-    <button class="tab" data-screen="config" data-title="Configuración" data-sub="Cuentas, horario y categorías" onclick="showScreen(this)">
+    <button class="tab" data-screen="config" data-title="title.config" data-sub="sub.config" onclick="showScreen(this)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></svg>
-      Config
+      <span data-i18n="tab.config"></span>
     </button>
   </nav>
 
@@ -717,24 +1043,956 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  /* ================= IDIOMAS ================= */
+  // Textos de la App en los idiomas disponibles. Lo que escribe el usuario
+  // (nombres de actividades, lugares…) no se traduce.
+  var LANGS = { es:'Español', en:'English', it:'Italiano', fr:'Français', de:'Deutsch' };
+  var LOCALES = { es:'es-ES', en:'en-GB', it:'it-IT', fr:'fr-FR', de:'de-DE' };
+  var KID = 'Martina';
+  var I18N = {
+    es:{
+      'planOf':'plan de {name}',
+      'alert.title':'Carga de trabajo próxima',
+      'alert.body':'{task} · estimado {est} · entrega el {due}',
+      'note.school':'<strong>Horario escolar:</strong> {summary}. Fuera de ese horario la agenda de {name} está libre para actividades, tareas y otros planes.',
+      'act.title':'Actividades recurrentes', 'edit':'Editar', 'noTravel':'En casa (sin traslado)', 'and':' y ',
+      'act.add':'Añadir actividad',
+      'toast.editAct':'La edición de actividades se activa en la fase de datos',
+      'toast.addAct':'Se podrá añadir una actividad nueva en la siguiente fase',
+      'evt.upcoming':'Próximos eventos', 'evt.free':'Tiempo libre', 'evt.add':'Añadir evento o tiempo libre',
+      'toast.editEvt':'La edición de eventos se activa en la siguiente fase',
+      'toast.addEvt':'Se podrá añadir un evento o bloque libre en la siguiente fase',
+      'cfg.language':'Idioma', 'cfg.languageLabel':'Idioma de la App',
+      'cfg.languageHint':'Fechas y horas se muestran en el idioma elegido. Lo que escribes tú (nombres de actividades, lugares…) no se traduce.',
+      'cfg.appearance':'Apariencia de Today', 'cfg.theme':'Tema', 'cfg.themeAria':'Tema de la pantalla Today',
+      'layout.list':'Lista', 'cfg.bg':'Fondo', 'cfg.bgAria':'Fondo claro u oscuro', 'mode.light':'Claro', 'mode.dark':'Oscuro',
+      'cfg.bar':'Barra de tiempo', 'cfg.barAria':'Barra de tiempo de Today', 'bar.dots':'Puntos', 'bar.nina':'Niña soldado',
+      'cfg.viewToday':'Ver Today',
+      'hint.list':'Lista: el próximo evento destacado y el resto del día en fichas.',
+      'hint.postit1':'Post-it 1: un solo protagonista, lo que viene ya; el resto del día espera detrás, como una baraja.',
+      'hint.postit2':'Post-it 2: el próximo evento en una barra y el resto en post-its flotantes; toca uno para traerlo al frente.',
+      'hint.dots':'Puntos del color de cada categoría y una línea vertical en la hora actual.',
+      'hint.nina':'La niña soldado avanza por el camino del día; cada evento es una explosión del color de su categoría.',
+      'hint.range':' Cubre la franja horaria ({range})',
+      'hint.rangeSchool':', con el horario escolar ({school}) comprimido bajo el icono del colegio.',
+      'cfg.accounts':'Cuentas conectadas', 'cfg.google':'Google (Classroom y Gmail)', 'status.off':'No conectado', 'connect':'Conectar',
+      'toast.google':'La conexión con Google se configura en la fase de integraciones',
+      'cfg.window':'Franja horaria', 'cfg.everyDay':'Todos los días',
+      'aria.windowStart':'Inicio de la franja horaria', 'aria.windowEnd':'Fin de la franja horaria',
+      'hint.window':'Horas del día en las que la App puede planificar. Fuera de esta franja no planifica nada.',
+      'cfg.school':'Horario escolar', 'monFri':'Lunes a viernes',
+      'aria.entryWeek':'Entrada de lunes a viernes', 'aria.exitWeek':'Salida de lunes a viernes',
+      'satClasses':'Clases el sábado', 'saturday':'Sábado',
+      'aria.entrySat':'Entrada del sábado', 'aria.exitSat':'Salida del sábado',
+      'hint.school':'En los días de cole se quita el horario escolar de la franja. El resto, también <strong>antes de entrar</strong>, queda libre para tareas y actividades.',
+      'cover.title':'Tiempo que planifica la App', 'cover.sunHol':'Domingo y festivos', 'cover.weekendHol':'Sábado, domingo y festivos', 'cover.none':'Nada',
+      'sum.week':'lunes a viernes, {t}', 'sum.sat':'sábado, {t}',
+      'toast.exitAfter':'La salida tiene que ser después de la entrada',
+      'toast.windowOrder':'La franja tiene que terminar después de empezar',
+      'cfg.schoolCal':'Calendario escolar', 'schoolCal.file':'Archivo del calendario', 'schoolCal.none':'Ningún archivo cargado',
+      'hint.schoolCal':'Se consulta para saber los <strong>festivos y días no lectivos</strong>: la App los trata como un domingo, con toda la franja horaria disponible.',
+      'schoolCal.pick':'Seleccionar archivo',
+      'toast.import':'La importación de archivos se activa en la fase de datos',
+      'cfg.cats':'Categorías y prioridades',
+      'cat.tarea':'Tarea', 'cat.cita':'Cita', 'cat.actividad':'Actividad', 'cat.libre':'Tiempo libre', 'cat.new':'Nueva categoría', 'category':'Categoría',
+      'prio.Alta':'Alta', 'prio.Media':'Media', 'prio.Baja':'Baja',
+      'aria.catColor':'Cambiar color de la categoría', 'aria.catName':'Nombre de la categoría',
+      'aria.catPrio':'Prioridad de la categoría', 'aria.catDelete':'Eliminar categoría', 'cat.add':'Añadir categoría',
+      'toast.prio':'Prioridad de «{name}» actualizada a {p}', 'toast.catDeleted':'Categoría «{name}» eliminada',
+      'gcal.export':'Exportar eventos a Google Calendar',
+      'hint.gcal':'Solo en un sentido: la App crea en tu Google Calendar un calendario propio, <strong>«AHHHHHH · {name}»</strong>, y escribe ahí sus eventos. No importa ni lee el resto de tus calendarios (cumpleaños, trabajo…). Lo verás en el móvil junto a los demás y puedes ocultarlo cuando quieras.',
+      'gcal.what':'Qué se exporta',
+      'hint.gcalTasks':'Las tareas se exportan como un aviso a su hora de entrega, no como un bloque de tiempo.',
+      'gcal.leaveAlert':'Aviso a la hora de salida',
+      'hint.gcalLeave':'Si un evento implica traslado, el móvil avisa a la hora de salir calculada, no a la hora del evento.',
+      'gcal.status':'Estado', 'gcal.needsGoogle':'Requiere conectar Google', 'gcal.create':'Crear calendario en Google',
+      'toast.gcal':'Se usa la misma cuenta de Google de Cuentas conectadas · fase de integraciones',
+      'toast.on':'{label}: activado', 'toast.off':'{label}: desactivado',
+      'cal.week':'Semana', 'cal.day':'Día', 'aria.prevWeek':'Semana anterior', 'aria.nextWeek':'Semana siguiente',
+      'toast.weekNav':'La navegación entre semanas estará disponible con datos reales',
+      'legend.event':'Evento', 'legend.task':'Tarea (deadline)',
+      'tab.activities':'Actividades', 'sub.activities':'Extraescolares recurrentes de {name}',
+      'tab.events':'Eventos', 'sub.events':'Eventos puntuales y tiempo libre',
+      'tab.calendar':'Calendario', 'sub.calendar':'Actividades en vista día o semana',
+      'tab.config':'Config', 'title.config':'Configuración', 'sub.config':'Idioma, aspecto, horarios, enlaces y categorías',
+      'today.soon':'Se acerca · faltan {t}', 'today.later':'Más tarde', 'today.leaves':'{place} · sale {leave} {how}',
+      'how.car':'en coche', 'how.walk':'a pie',
+      'travel.walk':'A pie · {m} min', 'travel.car':'En coche · {m} min', 'short.walk':'A pie {m}′', 'short.car':'Coche {m}′',
+      'today.departure':'Salida {t}', 'today.nowSoon':'Ahora mismo · faltan {t}', 'today.afterToday':'Después, hoy',
+      'today.fanSub':'{dist} · {how} · sal {leave}', 'today.in':'en {t}', 'today.leaveAt':'sal {t}', 'today.leaveAtLong':'Sal a las {t}',
+      'today.now':'AHORA · {t}', 'today.inClass':'{t} · en clase',
+      'aria.front':'Traer al frente', 'aria.travelMode':'Modo de traslado', 'aria.next':'Próximo evento', 'aria.later':'Eventos siguientes',
+      'grp.language':'Idioma',
+      'grp.look':'Aspecto',
+      'grp.hours':'Horarios',
+      'grp.links':'Enlaces',
+      'grp.cats':'Categorías',
+      'grp.gcal':'Google Calendar',
+      'cfg.accountsLabel':'Cuenta de Google',
+      
+      'legend.deadline':'(entrega)',
+      'hint.cats':'Tarea y Actividad vienen de serie: solo se puede cambiar su prioridad. Las demás las creas tú y puedes editarlas o borrarlas (en el ejemplo, Cita y Tiempo libre).',
+      'sum.school':'cole',
+      'sum.links':'{n} de 2 enlazados',
+      'sum.cats':'{n} categorías',
+      'sum.gcalOn':'Exportando',
+      'sum.gcalOff':'Sin exportar',
+      'aria.catEdit':'Editar categoría', 'aria.catDone':'Hecho',
+      'aria.school':'Colegio', 'aria.nav':'Navegación principal'
+    },
+    en:{
+      'planOf':'{name}’s plan',
+      'alert.title':'Upcoming workload',
+      'alert.body':'{task} · est. {est} · due {due}',
+      'note.school':'<strong>School hours:</strong> {summary}. Outside those hours {name}’s schedule is free for activities, homework and other plans.',
+      'act.title':'Recurring activities', 'edit':'Edit', 'noTravel':'At home (no travel)', 'and':' and ',
+      'act.add':'Add activity',
+      'toast.editAct':'Editing activities comes with the data phase',
+      'toast.addAct':'Adding a new activity comes in the next phase',
+      'evt.upcoming':'Upcoming events', 'evt.free':'Free time', 'evt.add':'Add event or free time',
+      'toast.editEvt':'Editing events comes in the next phase',
+      'toast.addEvt':'Adding an event or free block comes in the next phase',
+      'cfg.language':'Language', 'cfg.languageLabel':'App language',
+      'cfg.languageHint':'Dates and times follow the chosen language. What you type yourself (activity names, places…) is not translated.',
+      'cfg.appearance':'Today appearance', 'cfg.theme':'Theme', 'cfg.themeAria':'Today screen theme',
+      'layout.list':'List', 'cfg.bg':'Background', 'cfg.bgAria':'Light or dark background', 'mode.light':'Light', 'mode.dark':'Dark',
+      'cfg.bar':'Time bar', 'cfg.barAria':'Today time bar', 'bar.dots':'Dots', 'bar.nina':'Soldier girl',
+      'cfg.viewToday':'View Today',
+      'hint.list':'List: the next event highlighted and the rest of the day as cards.',
+      'hint.postit1':'Post-it 1: a single star, what’s coming right now; the rest of the day waits behind, like a deck of cards.',
+      'hint.postit2':'Post-it 2: the next event in a bar and the rest as floating post-its; tap one to bring it to the front.',
+      'hint.dots':'Dots in each category’s colour and a vertical line at the current time.',
+      'hint.nina':'The soldier girl walks along the day’s path; each event is a burst in its category’s colour.',
+      'hint.range':' It covers the daily time window ({range})',
+      'hint.rangeSchool':', with school hours ({school}) compressed under the school icon.',
+      'cfg.accounts':'Connected accounts', 'cfg.google':'Google (Classroom and Gmail)', 'status.off':'Not connected', 'connect':'Connect',
+      'toast.google':'The Google connection is set up in the integrations phase',
+      'cfg.window':'Daily time window', 'cfg.everyDay':'Every day',
+      'aria.windowStart':'Time window start', 'aria.windowEnd':'Time window end',
+      'hint.window':'Hours of the day the App can plan. Outside this window it plans nothing.',
+      'cfg.school':'School hours', 'monFri':'Monday to Friday',
+      'aria.entryWeek':'Monday to Friday start', 'aria.exitWeek':'Monday to Friday end',
+      'satClasses':'Saturday classes', 'saturday':'Saturday',
+      'aria.entrySat':'Saturday start', 'aria.exitSat':'Saturday end',
+      'hint.school':'On school days the school hours are taken out of the window. The rest, <strong>before school</strong> too, stays free for homework and activities.',
+      'cover.title':'Time the App plans', 'cover.sunHol':'Sunday and holidays', 'cover.weekendHol':'Saturday, Sunday and holidays', 'cover.none':'Nothing',
+      'sum.week':'Monday to Friday, {t}', 'sum.sat':'Saturday, {t}',
+      'toast.exitAfter':'The end time must be after the start time',
+      'toast.windowOrder':'The window must end after it starts',
+      'cfg.schoolCal':'School calendar', 'schoolCal.file':'Calendar file', 'schoolCal.none':'No file loaded',
+      'hint.schoolCal':'Used to know <strong>holidays and non-school days</strong>: the App treats them like a Sunday, with the whole time window available.',
+      'schoolCal.pick':'Choose file',
+      'toast.import':'File import comes with the data phase',
+      'cfg.cats':'Categories and priorities',
+      'cat.tarea':'Homework', 'cat.cita':'Appointment', 'cat.actividad':'Activity', 'cat.libre':'Free time', 'cat.new':'New category', 'category':'Category',
+      'prio.Alta':'High', 'prio.Media':'Medium', 'prio.Baja':'Low',
+      'aria.catColor':'Change category colour', 'aria.catName':'Category name',
+      'aria.catPrio':'Category priority', 'aria.catDelete':'Delete category', 'cat.add':'Add category',
+      'toast.prio':'“{name}” priority set to {p}', 'toast.catDeleted':'Category “{name}” deleted',
+      'gcal.export':'Export events to Google Calendar',
+      'hint.gcal':'One way only: the App creates its own calendar in your Google Calendar, <strong>“AHHHHHH · {name}”</strong>, and writes its events there. It doesn’t import or read your other calendars (birthdays, work…). You’ll see it on your phone next to the others and can hide it whenever you like.',
+      'gcal.what':'What gets exported',
+      'hint.gcalTasks':'Homework is exported as a reminder at its due time, not as a block of time.',
+      'gcal.leaveAlert':'Alert at departure time',
+      'hint.gcalLeave':'If an event involves travel, your phone alerts you at the calculated departure time, not at the event time.',
+      'gcal.status':'Status', 'gcal.needsGoogle':'Requires connecting Google', 'gcal.create':'Create calendar in Google',
+      'toast.gcal':'Uses the same Google account as Connected accounts · integrations phase',
+      'toast.on':'{label}: on', 'toast.off':'{label}: off',
+      'cal.week':'Week', 'cal.day':'Day', 'aria.prevWeek':'Previous week', 'aria.nextWeek':'Next week',
+      'toast.weekNav':'Moving between weeks will be available with real data',
+      'legend.event':'Event', 'legend.task':'Homework (deadline)',
+      'tab.activities':'Activities', 'sub.activities':'{name}’s recurring after-school activities',
+      'tab.events':'Events', 'sub.events':'One-off events and free time',
+      'tab.calendar':'Calendar', 'sub.calendar':'Activities by day or week',
+      'tab.config':'Settings', 'title.config':'Settings', 'sub.config':'Language, appearance, schedules, connections and categories',
+      'today.soon':'Coming up · in {t}', 'today.later':'Later', 'today.leaves':'{place} · leave {leave} {how}',
+      'how.car':'by car', 'how.walk':'on foot',
+      'travel.walk':'On foot · {m} min', 'travel.car':'By car · {m} min', 'short.walk':'Walk {m}′', 'short.car':'Car {m}′',
+      'today.departure':'Leave {t}', 'today.nowSoon':'Right now · in {t}', 'today.afterToday':'Later today',
+      'today.fanSub':'{dist} · {how} · leave {leave}', 'today.in':'in {t}', 'today.leaveAt':'leave {t}', 'today.leaveAtLong':'Leave at {t}',
+      'today.now':'NOW · {t}', 'today.inClass':'{t} · in class',
+      'aria.front':'Bring to front', 'aria.travelMode':'Travel mode', 'aria.next':'Next event', 'aria.later':'Following events',
+      'grp.language':'Language',
+      'grp.look':'Appearance',
+      'grp.hours':'Schedules',
+      'grp.links':'Connections',
+      'grp.cats':'Categories',
+      'grp.gcal':'Google Calendar',
+      'cfg.accountsLabel':'Google account',
+      
+      'legend.deadline':'(due)',
+      'hint.cats':'Homework and Activity are built in: only their priority can be changed. You create the rest and can edit or delete them (in the example, Cita and Tiempo libre).',
+      'sum.school':'school',
+      'sum.links':'{n} of 2 linked',
+      'sum.cats':'{n} categories',
+      'sum.gcalOn':'Exporting',
+      'sum.gcalOff':'Off',
+      'aria.catEdit':'Edit category', 'aria.catDone':'Done',
+      'aria.school':'School', 'aria.nav':'Main navigation'
+    },
+    it:{
+      'planOf':'piano di {name}',
+      'alert.title':'Carico di lavoro in arrivo',
+      'alert.body':'{task} · stimato {est} · consegna {due}',
+      'note.school':'<strong>Orario scolastico:</strong> {summary}. Fuori da quell’orario l’agenda di {name} è libera per attività, compiti e altri impegni.',
+      'act.title':'Attività ricorrenti', 'edit':'Modifica', 'noTravel':'A casa (nessuno spostamento)', 'and':' e ',
+      'act.add':'Aggiungi attività',
+      'toast.editAct':'La modifica delle attività arriva nella fase dei dati',
+      'toast.addAct':'Si potrà aggiungere una nuova attività nella prossima fase',
+      'evt.upcoming':'Prossimi eventi', 'evt.free':'Tempo libero', 'evt.add':'Aggiungi evento o tempo libero',
+      'toast.editEvt':'La modifica degli eventi arriva nella prossima fase',
+      'toast.addEvt':'Si potrà aggiungere un evento o un blocco libero nella prossima fase',
+      'cfg.language':'Lingua', 'cfg.languageLabel':'Lingua dell’app',
+      'cfg.languageHint':'Date e orari seguono la lingua scelta. Quello che scrivi tu (nomi delle attività, luoghi…) non viene tradotto.',
+      'cfg.appearance':'Aspetto di Today', 'cfg.theme':'Tema', 'cfg.themeAria':'Tema della schermata Today',
+      'layout.list':'Elenco', 'cfg.bg':'Sfondo', 'cfg.bgAria':'Sfondo chiaro o scuro', 'mode.light':'Chiaro', 'mode.dark':'Scuro',
+      'cfg.bar':'Barra del tempo', 'cfg.barAria':'Barra del tempo di Today', 'bar.dots':'Punti', 'bar.nina':'Bimba soldato',
+      'cfg.viewToday':'Vedi Today',
+      'hint.list':'Elenco: il prossimo evento in evidenza e il resto della giornata in schede.',
+      'hint.postit1':'Post-it 1: un solo protagonista, ciò che arriva adesso; il resto della giornata aspetta dietro, come un mazzo di carte.',
+      'hint.postit2':'Post-it 2: il prossimo evento in una barra e il resto in post-it fluttuanti; toccane uno per portarlo davanti.',
+      'hint.dots':'Punti del colore di ogni categoria e una linea verticale sull’ora attuale.',
+      'hint.nina':'La bimba soldato avanza lungo il percorso della giornata; ogni evento è un’esplosione del colore della sua categoria.',
+      'hint.range':' Copre la fascia oraria ({range})',
+      'hint.rangeSchool':', con l’orario scolastico ({school}) compresso sotto l’icona della scuola.',
+      'cfg.accounts':'Account collegati', 'cfg.google':'Google (Classroom e Gmail)', 'status.off':'Non collegato', 'connect':'Collega',
+      'toast.google':'La connessione a Google si configura nella fase delle integrazioni',
+      'cfg.window':'Fascia oraria', 'cfg.everyDay':'Tutti i giorni',
+      'aria.windowStart':'Inizio della fascia oraria', 'aria.windowEnd':'Fine della fascia oraria',
+      'hint.window':'Ore del giorno in cui l’app può pianificare. Fuori da questa fascia non pianifica nulla.',
+      'cfg.school':'Orario scolastico', 'monFri':'Da lunedì a venerdì',
+      'aria.entryWeek':'Entrata da lunedì a venerdì', 'aria.exitWeek':'Uscita da lunedì a venerdì',
+      'satClasses':'Lezioni il sabato', 'saturday':'Sabato',
+      'aria.entrySat':'Entrata del sabato', 'aria.exitSat':'Uscita del sabato',
+      'hint.school':'Nei giorni di scuola l’orario scolastico viene tolto dalla fascia. Il resto, anche <strong>prima di entrare</strong>, resta libero per compiti e attività.',
+      'cover.title':'Tempo che l’app pianifica', 'cover.sunHol':'Domenica e festivi', 'cover.weekendHol':'Sabato, domenica e festivi', 'cover.none':'Niente',
+      'sum.week':'da lunedì a venerdì, {t}', 'sum.sat':'sabato, {t}',
+      'toast.exitAfter':'L’uscita deve essere dopo l’entrata',
+      'toast.windowOrder':'La fascia deve finire dopo l’inizio',
+      'cfg.schoolCal':'Calendario scolastico', 'schoolCal.file':'File del calendario', 'schoolCal.none':'Nessun file caricato',
+      'hint.schoolCal':'Serve a sapere <strong>festivi e giorni senza lezione</strong>: l’app li tratta come una domenica, con tutta la fascia oraria disponibile.',
+      'schoolCal.pick':'Seleziona file',
+      'toast.import':'L’importazione dei file arriva nella fase dei dati',
+      'cfg.cats':'Categorie e priorità',
+      'cat.tarea':'Compito', 'cat.cita':'Appuntamento', 'cat.actividad':'Attività', 'cat.libre':'Tempo libero', 'cat.new':'Nuova categoria', 'category':'Categoria',
+      'prio.Alta':'Alta', 'prio.Media':'Media', 'prio.Baja':'Bassa',
+      'aria.catColor':'Cambia colore della categoria', 'aria.catName':'Nome della categoria',
+      'aria.catPrio':'Priorità della categoria', 'aria.catDelete':'Elimina categoria', 'cat.add':'Aggiungi categoria',
+      'toast.prio':'Priorità di «{name}» aggiornata a {p}', 'toast.catDeleted':'Categoria «{name}» eliminata',
+      'gcal.export':'Esporta eventi su Google Calendar',
+      'hint.gcal':'Solo in un senso: l’app crea nel tuo Google Calendar un calendario proprio, <strong>«AHHHHHH · {name}»</strong>, e ci scrive i suoi eventi. Non importa né legge gli altri tuoi calendari (compleanni, lavoro…). Lo vedrai sul telefono insieme agli altri e potrai nasconderlo quando vuoi.',
+      'gcal.what':'Cosa si esporta',
+      'hint.gcalTasks':'I compiti si esportano come promemoria all’ora di consegna, non come un blocco di tempo.',
+      'gcal.leaveAlert':'Avviso all’ora di partenza',
+      'hint.gcalLeave':'Se un evento richiede uno spostamento, il telefono avvisa all’ora di partenza calcolata, non all’ora dell’evento.',
+      'gcal.status':'Stato', 'gcal.needsGoogle':'Richiede di collegare Google', 'gcal.create':'Crea calendario su Google',
+      'toast.gcal':'Usa lo stesso account Google di Account collegati · fase delle integrazioni',
+      'toast.on':'{label}: attivato', 'toast.off':'{label}: disattivato',
+      'cal.week':'Settimana', 'cal.day':'Giorno', 'aria.prevWeek':'Settimana precedente', 'aria.nextWeek':'Settimana successiva',
+      'toast.weekNav':'La navigazione tra settimane sarà disponibile con dati reali',
+      'legend.event':'Evento', 'legend.task':'Compito (scadenza)',
+      'tab.activities':'Attività', 'sub.activities':'Attività extrascolastiche ricorrenti di {name}',
+      'tab.events':'Eventi', 'sub.events':'Eventi singoli e tempo libero',
+      'tab.calendar':'Calendario', 'sub.calendar':'Attività in vista giorno o settimana',
+      'tab.config':'Opzioni', 'title.config':'Impostazioni', 'sub.config':'Lingua, aspetto, orari, collegamenti e categorie',
+      'today.soon':'Sta arrivando · mancano {t}', 'today.later':'Più tardi', 'today.leaves':'{place} · partenza {leave} {how}',
+      'how.car':'in auto', 'how.walk':'a piedi',
+      'travel.walk':'A piedi · {m} min', 'travel.car':'In auto · {m} min', 'short.walk':'A piedi {m}′', 'short.car':'Auto {m}′',
+      'today.departure':'Partenza {t}', 'today.nowSoon':'Adesso · mancano {t}', 'today.afterToday':'Dopo, oggi',
+      'today.fanSub':'{dist} · {how} · parti {leave}', 'today.in':'tra {t}', 'today.leaveAt':'parti {t}', 'today.leaveAtLong':'Parti alle {t}',
+      'today.now':'ORA · {t}', 'today.inClass':'{t} · in classe',
+      'aria.front':'Porta davanti', 'aria.travelMode':'Modalità di spostamento', 'aria.next':'Prossimo evento', 'aria.later':'Eventi successivi',
+      'grp.language':'Lingua',
+      'grp.look':'Aspetto',
+      'grp.hours':'Orari',
+      'grp.links':'Collegamenti',
+      'grp.cats':'Categorie',
+      'grp.gcal':'Google Calendar',
+      'cfg.accountsLabel':'Account Google',
+      
+      'legend.deadline':'(consegna)',
+      'hint.cats':'Compito e Attività sono predefinite: si può cambiare solo la loro priorità. Le altre le crei tu e puoi modificarle o eliminarle (nell’esempio, Cita e Tiempo libre).',
+      'sum.school':'scuola',
+      'sum.links':'{n} di 2 collegati',
+      'sum.cats':'{n} categorie',
+      'sum.gcalOn':'Attiva',
+      'sum.gcalOff':'Disattivata',
+      'aria.catEdit':'Modifica categoria', 'aria.catDone':'Fatto',
+      'aria.school':'Scuola', 'aria.nav':'Navigazione principale'
+    },
+    fr:{
+      'planOf':'planning de {name}',
+      'alert.title':'Charge de travail à venir',
+      'alert.body':'{task} · estimé {est} · à rendre {due}',
+      'note.school':'<strong>Horaires scolaires :</strong> {summary}. En dehors de ces horaires, l’agenda de {name} est libre pour les activités, les devoirs et d’autres projets.',
+      'act.title':'Activités récurrentes', 'edit':'Modifier', 'noTravel':'À la maison (sans trajet)', 'and':' et ',
+      'act.add':'Ajouter une activité',
+      'toast.editAct':'La modification des activités arrive avec la phase de données',
+      'toast.addAct':'L’ajout d’une activité arrive dans la prochaine phase',
+      'evt.upcoming':'Événements à venir', 'evt.free':'Temps libre', 'evt.add':'Ajouter un événement ou du temps libre',
+      'toast.editEvt':'La modification des événements arrive dans la prochaine phase',
+      'toast.addEvt':'L’ajout d’un événement ou d’un créneau libre arrive dans la prochaine phase',
+      'cfg.language':'Langue', 'cfg.languageLabel':'Langue de l’app',
+      'cfg.languageHint':'Les dates et les heures suivent la langue choisie. Ce que vous saisissez (noms d’activités, lieux…) n’est pas traduit.',
+      'cfg.appearance':'Apparence de Today', 'cfg.theme':'Thème', 'cfg.themeAria':'Thème de l’écran Today',
+      'layout.list':'Liste', 'cfg.bg':'Fond', 'cfg.bgAria':'Fond clair ou sombre', 'mode.light':'Clair', 'mode.dark':'Sombre',
+      'cfg.bar':'Barre de temps', 'cfg.barAria':'Barre de temps de Today', 'bar.dots':'Points', 'bar.nina':'Petite soldate',
+      'cfg.viewToday':'Voir Today',
+      'hint.list':'Liste : le prochain événement mis en avant et le reste de la journée en fiches.',
+      'hint.postit1':'Post-it 1 : une seule vedette, ce qui arrive maintenant ; le reste de la journée attend derrière, comme un jeu de cartes.',
+      'hint.postit2':'Post-it 2 : le prochain événement dans une barre et le reste en post-it flottants ; touchez-en un pour le mettre devant.',
+      'hint.dots':'Des points de la couleur de chaque catégorie et une ligne verticale à l’heure actuelle.',
+      'hint.nina':'La petite soldate avance sur le chemin de la journée ; chaque événement est une explosion de la couleur de sa catégorie.',
+      'hint.range':' Elle couvre la plage horaire ({range})',
+      'hint.rangeSchool':', avec les horaires scolaires ({school}) compressés sous l’icône de l’école.',
+      'cfg.accounts':'Comptes connectés', 'cfg.google':'Google (Classroom et Gmail)', 'status.off':'Non connecté', 'connect':'Connecter',
+      'toast.google':'La connexion à Google se configure dans la phase d’intégrations',
+      'cfg.window':'Plage horaire', 'cfg.everyDay':'Tous les jours',
+      'aria.windowStart':'Début de la plage horaire', 'aria.windowEnd':'Fin de la plage horaire',
+      'hint.window':'Heures de la journée où l’app peut planifier. En dehors de cette plage, elle ne planifie rien.',
+      'cfg.school':'Horaires scolaires', 'monFri':'Du lundi au vendredi',
+      'aria.entryWeek':'Entrée du lundi au vendredi', 'aria.exitWeek':'Sortie du lundi au vendredi',
+      'satClasses':'Cours le samedi', 'saturday':'Samedi',
+      'aria.entrySat':'Entrée du samedi', 'aria.exitSat':'Sortie du samedi',
+      'hint.school':'Les jours d’école, les horaires scolaires sont retirés de la plage. Le reste, y compris <strong>avant l’école</strong>, reste libre pour les devoirs et les activités.',
+      'cover.title':'Temps planifié par l’app', 'cover.sunHol':'Dimanche et jours fériés', 'cover.weekendHol':'Samedi, dimanche et jours fériés', 'cover.none':'Rien',
+      'sum.week':'du lundi au vendredi, {t}', 'sum.sat':'samedi, {t}',
+      'toast.exitAfter':'La sortie doit être après l’entrée',
+      'toast.windowOrder':'La plage doit se terminer après son début',
+      'cfg.schoolCal':'Calendrier scolaire', 'schoolCal.file':'Fichier du calendrier', 'schoolCal.none':'Aucun fichier chargé',
+      'hint.schoolCal':'Il sert à connaître les <strong>jours fériés et jours sans école</strong> : l’app les traite comme un dimanche, avec toute la plage horaire disponible.',
+      'schoolCal.pick':'Choisir un fichier',
+      'toast.import':'L’import de fichiers arrive avec la phase de données',
+      'cfg.cats':'Catégories et priorités',
+      'cat.tarea':'Devoir', 'cat.cita':'Rendez-vous', 'cat.actividad':'Activité', 'cat.libre':'Temps libre', 'cat.new':'Nouvelle catégorie', 'category':'Catégorie',
+      'prio.Alta':'Haute', 'prio.Media':'Moyenne', 'prio.Baja':'Basse',
+      'aria.catColor':'Changer la couleur de la catégorie', 'aria.catName':'Nom de la catégorie',
+      'aria.catPrio':'Priorité de la catégorie', 'aria.catDelete':'Supprimer la catégorie', 'cat.add':'Ajouter une catégorie',
+      'toast.prio':'Priorité de « {name} » réglée sur {p}', 'toast.catDeleted':'Catégorie « {name} » supprimée',
+      'gcal.export':'Exporter les événements vers Google Calendar',
+      'hint.gcal':'Dans un seul sens : l’app crée dans votre Google Calendar un calendrier à elle, <strong>« AHHHHHH · {name} »</strong>, et y écrit ses événements. Elle n’importe ni ne lit vos autres calendriers (anniversaires, travail…). Vous le verrez sur votre téléphone à côté des autres et pourrez le masquer quand vous voudrez.',
+      'gcal.what':'Ce qui est exporté',
+      'hint.gcalTasks':'Les devoirs sont exportés comme un rappel à l’heure de remise, pas comme un bloc de temps.',
+      'gcal.leaveAlert':'Alerte à l’heure de départ',
+      'hint.gcalLeave':'Si un événement implique un trajet, le téléphone vous alerte à l’heure de départ calculée, pas à l’heure de l’événement.',
+      'gcal.status':'État', 'gcal.needsGoogle':'Nécessite de connecter Google', 'gcal.create':'Créer le calendrier dans Google',
+      'toast.gcal':'Utilise le même compte Google que Comptes connectés · phase d’intégrations',
+      'toast.on':'{label} : activé', 'toast.off':'{label} : désactivé',
+      'cal.week':'Semaine', 'cal.day':'Jour', 'aria.prevWeek':'Semaine précédente', 'aria.nextWeek':'Semaine suivante',
+      'toast.weekNav':'La navigation entre semaines sera disponible avec de vraies données',
+      'legend.event':'Événement', 'legend.task':'Devoir (échéance)',
+      'tab.activities':'Activités', 'sub.activities':'Activités extrascolaires récurrentes de {name}',
+      'tab.events':'Événements', 'sub.events':'Événements ponctuels et temps libre',
+      'tab.calendar':'Calendrier', 'sub.calendar':'Activités en vue jour ou semaine',
+      'tab.config':'Réglages', 'title.config':'Réglages', 'sub.config':'Langue, apparence, horaires, liens et catégories',
+      'today.soon':'Bientôt · dans {t}', 'today.later':'Plus tard', 'today.leaves':'{place} · départ {leave} {how}',
+      'how.car':'en voiture', 'how.walk':'à pied',
+      'travel.walk':'À pied · {m} min', 'travel.car':'En voiture · {m} min', 'short.walk':'À pied {m}′', 'short.car':'Voiture {m}′',
+      'today.departure':'Départ {t}', 'today.nowSoon':'Maintenant · dans {t}', 'today.afterToday':'Ensuite, aujourd’hui',
+      'today.fanSub':'{dist} · {how} · départ {leave}', 'today.in':'dans {t}', 'today.leaveAt':'départ {t}', 'today.leaveAtLong':'Départ à {t}',
+      'today.now':'MAINTENANT · {t}', 'today.inClass':'{t} · en classe',
+      'aria.front':'Mettre devant', 'aria.travelMode':'Mode de trajet', 'aria.next':'Prochain événement', 'aria.later':'Événements suivants',
+      'grp.language':'Langue',
+      'grp.look':'Apparence',
+      'grp.hours':'Horaires',
+      'grp.links':'Liens',
+      'grp.cats':'Catégories',
+      'grp.gcal':'Google Calendar',
+      'cfg.accountsLabel':'Compte Google',
+      
+      'legend.deadline':'(à rendre)',
+      'hint.cats':'Devoir et Activité sont fournies par défaut : seule leur priorité peut être modifiée. Les autres, c’est vous qui les créez et pouvez les modifier ou les supprimer (dans l’exemple, Cita et Tiempo libre).',
+      'sum.school':'école',
+      'sum.links':'{n} sur 2 liés',
+      'sum.cats':'{n} catégories',
+      'sum.gcalOn':'Active',
+      'sum.gcalOff':'Désactivée',
+      'aria.catEdit':'Modifier la catégorie', 'aria.catDone':'Terminé',
+      'aria.school':'École', 'aria.nav':'Navigation principale'
+    },
+    de:{
+      'planOf':'Plan von {name}',
+      'alert.title':'Anstehende Arbeitslast',
+      'alert.body':'{task} · geschätzt {est} · Abgabe {due}',
+      'note.school':'<strong>Schulzeiten:</strong> {summary}. Außerhalb dieser Zeiten ist {name}s Kalender frei für Aktivitäten, Hausaufgaben und andere Pläne.',
+      'act.title':'Wiederkehrende Aktivitäten', 'edit':'Bearbeiten', 'noTravel':'Zu Hause (keine Fahrt)', 'and':' und ',
+      'act.add':'Aktivität hinzufügen',
+      'toast.editAct':'Aktivitäten bearbeiten kommt in der Datenphase',
+      'toast.addAct':'Neue Aktivitäten kommen in der nächsten Phase',
+      'evt.upcoming':'Anstehende Termine', 'evt.free':'Freizeit', 'evt.add':'Termin oder Freizeit hinzufügen',
+      'toast.editEvt':'Termine bearbeiten kommt in der nächsten Phase',
+      'toast.addEvt':'Termine oder freie Blöcke kommen in der nächsten Phase',
+      'cfg.language':'Sprache', 'cfg.languageLabel':'App-Sprache',
+      'cfg.languageHint':'Datum und Uhrzeit folgen der gewählten Sprache. Was du selbst eingibst (Namen von Aktivitäten, Orte …), wird nicht übersetzt.',
+      'cfg.appearance':'Darstellung von Today', 'cfg.theme':'Design', 'cfg.themeAria':'Design des Today-Bildschirms',
+      'layout.list':'Liste', 'cfg.bg':'Hintergrund', 'cfg.bgAria':'Heller oder dunkler Hintergrund', 'mode.light':'Hell', 'mode.dark':'Dunkel',
+      'cfg.bar':'Zeitleiste', 'cfg.barAria':'Zeitleiste von Today', 'bar.dots':'Punkte', 'bar.nina':'Soldatenmädchen',
+      'cfg.viewToday':'Today ansehen',
+      'hint.list':'Liste: der nächste Termin hervorgehoben, der Rest des Tages als Karten.',
+      'hint.postit1':'Post-it 1: ein einziger Star, das, was gleich kommt; der Rest des Tages wartet dahinter wie ein Kartenstapel.',
+      'hint.postit2':'Post-it 2: der nächste Termin in einer Leiste, der Rest als schwebende Post-its; tippe einen an, um ihn nach vorne zu holen.',
+      'hint.dots':'Punkte in der Farbe jeder Kategorie und eine senkrechte Linie bei der aktuellen Uhrzeit.',
+      'hint.nina':'Das Soldatenmädchen läuft den Weg des Tages entlang; jeder Termin ist eine Explosion in der Farbe seiner Kategorie.',
+      'hint.range':' Sie deckt das Zeitfenster ab ({range})',
+      'hint.rangeSchool':', mit den Schulzeiten ({school}) verkleinert unter dem Schul-Symbol.',
+      'cfg.accounts':'Verbundene Konten', 'cfg.google':'Google (Classroom und Gmail)', 'status.off':'Nicht verbunden', 'connect':'Verbinden',
+      'toast.google':'Die Google-Verbindung wird in der Integrationsphase eingerichtet',
+      'cfg.window':'Zeitfenster', 'cfg.everyDay':'Jeden Tag',
+      'aria.windowStart':'Beginn des Zeitfensters', 'aria.windowEnd':'Ende des Zeitfensters',
+      'hint.window':'Tageszeiten, in denen die App planen kann. Außerhalb dieses Fensters plant sie nichts.',
+      'cfg.school':'Schulzeiten', 'monFri':'Montag bis Freitag',
+      'aria.entryWeek':'Schulbeginn Montag bis Freitag', 'aria.exitWeek':'Schulende Montag bis Freitag',
+      'satClasses':'Unterricht am Samstag', 'saturday':'Samstag',
+      'aria.entrySat':'Schulbeginn Samstag', 'aria.exitSat':'Schulende Samstag',
+      'hint.school':'An Schultagen werden die Schulzeiten aus dem Fenster herausgenommen. Der Rest, auch <strong>vor der Schule</strong>, bleibt frei für Hausaufgaben und Aktivitäten.',
+      'cover.title':'Von der App geplante Zeit', 'cover.sunHol':'Sonntag und Feiertage', 'cover.weekendHol':'Samstag, Sonntag und Feiertage', 'cover.none':'Nichts',
+      'sum.week':'Montag bis Freitag, {t}', 'sum.sat':'Samstag, {t}',
+      'toast.exitAfter':'Das Ende muss nach dem Beginn liegen',
+      'toast.windowOrder':'Das Zeitfenster muss nach seinem Beginn enden',
+      'cfg.schoolCal':'Schulkalender', 'schoolCal.file':'Kalenderdatei', 'schoolCal.none':'Keine Datei geladen',
+      'hint.schoolCal':'Daraus ergeben sich <strong>Feiertage und schulfreie Tage</strong>: Die App behandelt sie wie einen Sonntag, mit dem ganzen Zeitfenster.',
+      'schoolCal.pick':'Datei auswählen',
+      'toast.import':'Der Dateiimport kommt in der Datenphase',
+      'cfg.cats':'Kategorien und Prioritäten',
+      'cat.tarea':'Hausaufgabe', 'cat.cita':'Termin', 'cat.actividad':'Aktivität', 'cat.libre':'Freizeit', 'cat.new':'Neue Kategorie', 'category':'Kategorie',
+      'prio.Alta':'Hoch', 'prio.Media':'Mittel', 'prio.Baja':'Niedrig',
+      'aria.catColor':'Farbe der Kategorie ändern', 'aria.catName':'Name der Kategorie',
+      'aria.catPrio':'Priorität der Kategorie', 'aria.catDelete':'Kategorie löschen', 'cat.add':'Kategorie hinzufügen',
+      'toast.prio':'Priorität von „{name}“ auf {p} gesetzt', 'toast.catDeleted':'Kategorie „{name}“ gelöscht',
+      'gcal.export':'Termine in Google Calendar exportieren',
+      'hint.gcal':'Nur in eine Richtung: Die App legt in deinem Google Calendar einen eigenen Kalender an, <strong>„AHHHHHH · {name}“</strong>, und trägt dort ihre Termine ein. Deine anderen Kalender (Geburtstage, Arbeit …) werden weder importiert noch gelesen. Du siehst ihn auf dem Handy neben den anderen und kannst ihn jederzeit ausblenden.',
+      'gcal.what':'Was exportiert wird',
+      'hint.gcalTasks':'Hausaufgaben werden als Erinnerung zur Abgabezeit exportiert, nicht als Zeitblock.',
+      'gcal.leaveAlert':'Erinnerung zur Abfahrtszeit',
+      'hint.gcalLeave':'Wenn ein Termin eine Fahrt erfordert, erinnert das Handy zur berechneten Abfahrtszeit, nicht zur Terminzeit.',
+      'gcal.status':'Status', 'gcal.needsGoogle':'Google-Verbindung nötig', 'gcal.create':'Kalender in Google anlegen',
+      'toast.gcal':'Nutzt dasselbe Google-Konto wie Verbundene Konten · Integrationsphase',
+      'toast.on':'{label}: an', 'toast.off':'{label}: aus',
+      'cal.week':'Woche', 'cal.day':'Tag', 'aria.prevWeek':'Vorherige Woche', 'aria.nextWeek':'Nächste Woche',
+      'toast.weekNav':'Das Blättern zwischen Wochen kommt mit echten Daten',
+      'legend.event':'Veranstaltung', 'legend.task':'Hausaufgabe (Abgabe)',
+      'tab.activities':'Aktivitäten', 'sub.activities':'{name}s wiederkehrende Freizeitaktivitäten',
+      'tab.events':'Termine', 'sub.events':'Einzeltermine und Freizeit',
+      'tab.calendar':'Kalender', 'sub.calendar':'Aktivitäten in Tages- oder Wochenansicht',
+      'tab.config':'Optionen', 'title.config':'Einstellungen', 'sub.config':'Sprache, Darstellung, Zeiten, Verknüpfungen und Kategorien',
+      'today.soon':'Gleich · in {t}', 'today.later':'Später', 'today.leaves':'{place} · Abfahrt {leave} {how}',
+      'how.car':'mit dem Auto', 'how.walk':'zu Fuß',
+      'travel.walk':'Zu Fuß · {m} Min.', 'travel.car':'Mit dem Auto · {m} Min.', 'short.walk':'Zu Fuß {m}′', 'short.car':'Auto {m}′',
+      'today.departure':'Abfahrt {t}', 'today.nowSoon':'Jetzt gleich · in {t}', 'today.afterToday':'Danach, heute',
+      'today.fanSub':'{dist} · {how} · los {leave}', 'today.in':'in {t}', 'today.leaveAt':'los {t}', 'today.leaveAtLong':'Los um {t}',
+      'today.now':'JETZT · {t}', 'today.inClass':'{t} · im Unterricht',
+      'aria.front':'Nach vorne holen', 'aria.travelMode':'Verkehrsmittel', 'aria.next':'Nächster Termin', 'aria.later':'Folgende Termine',
+      'grp.language':'Sprache',
+      'grp.look':'Darstellung',
+      'grp.hours':'Zeiten',
+      'grp.links':'Verknüpfungen',
+      'grp.cats':'Kategorien',
+      'grp.gcal':'Google Calendar',
+      'cfg.accountsLabel':'Google-Konto',
+      
+      'legend.deadline':'(Abgabe)',
+      'hint.cats':'Hausaufgabe und Aktivität sind vorgegeben: Nur ihre Priorität lässt sich ändern. Die übrigen legst du selbst an und kannst sie bearbeiten oder löschen (im Beispiel Cita und Tiempo libre).',
+      'sum.school':'Schule',
+      'sum.links':'{n} von 2 verknüpft',
+      'sum.cats':'{n} Kategorien',
+      'sum.gcalOn':'Aktiv',
+      'sum.gcalOff':'Aus',
+      'aria.catEdit':'Kategorie bearbeiten', 'aria.catDone':'Fertig',
+      'aria.school':'Schule', 'aria.nav':'Hauptnavigation'
+    }
+  };
+  var LANG = 'es';
+
+  function t(key, vars){
+    var s = I18N[LANG][key];
+    if(s == null){ s = I18N.es[key]; }
+    if(s == null){ return key; }
+    vars = vars || {};
+    if(vars.name == null){ vars.name = KID; }
+    return s.replace(/\{(\w+)\}/g, function(m, k){ return vars[k] != null ? vars[k] : m; });
+  }
+  function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+  function fmtDate(d, opts){ return new Intl.DateTimeFormat(LOCALES[LANG], opts).format(d); }
+  function isoDate(iso){ var p = iso.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function ddmm(d){ return (d.getDate() < 10 ? '0' : '') + d.getDate() + '/' + (d.getMonth() < 9 ? '0' : '') + (d.getMonth() + 1); }
+  // Nombre del día de la semana (lunes = 0); el 7/9/2026 es lunes
+  function weekdayName(i, style){ return fmtDate(new Date(2026, 8, 7 + i), { weekday: style || 'long' }); }
+  var TODAY_DATE = new Date(2026, 8, 11);
+  function todaySubtitle(){
+    return cap(fmtDate(TODAY_DATE, { weekday:'long', day:'numeric', month:'long' })) + ' · ' + t('planOf');
+  }
+
+  function loadLanguage(){
+    try{ var l = localStorage.getItem('app-language'); if(l && I18N[l]){ LANG = l; } }catch(e){}
+  }
+  function setLanguage(l){
+    if(!I18N[l]){ return; }
+    LANG = l;
+    try{ localStorage.setItem('app-language', l); }catch(e){}
+    applyI18n();
+  }
+
+  // Aplica el idioma a todo lo que está en el HTML y vuelve a dibujar lo generado
+  function applyI18n(){
+    document.documentElement.lang = LANG;
+    var sel = document.getElementById('lang-select');
+    if(sel){ sel.value = LANG; }
+    document.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-html]').forEach(function(el){ el.innerHTML = t(el.dataset.i18nHtml); });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function(el){ el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+    document.querySelectorAll('[data-i18n-title]').forEach(function(el){ el.setAttribute('title', t(el.dataset.i18nTitle)); });
+    document.querySelectorAll('.priority-select option').forEach(function(o){ o.textContent = t('prio.' + o.value); });
+    // Días de la semana y fechas de los datos de ejemplo
+    document.querySelectorAll('[data-days]').forEach(function(el){
+      el.textContent = cap(el.dataset.days.split(',').map(function(d){ return weekdayName(+d); }).join(t('and')));
+    });
+    document.querySelectorAll('[data-date]').forEach(function(el){
+      var d = isoDate(el.dataset.date);
+      el.textContent = cap(fmtDate(d, { weekday:'short' }).replace('.', '')) + ' ' + ddmm(d);
+    });
+    var due = isoDate('2026-09-14');
+    document.getElementById('alert-body').textContent = t('alert.body', {
+      task:'Trabajo de Ciencias Naturales', est:'2 h', due: fmtDate(due, { weekday:'long' }) + ' ' + ddmm(due) });
+    var active = document.querySelector('.tab.is-active');
+    if(active){ setScreenHeading(active); }
+    document.getElementById('cal-range').textContent = calRangeText(calView);
+    renderExportCats();
+    onScheduleChanged();
+    applyAppearance();
+  }
+
   function showScreen(btn){
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('is-active'));
     btn.classList.add('is-active');
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById('screen-'+btn.dataset.screen).classList.add('active');
-    document.getElementById('screen-heading').textContent = btn.dataset.title;
-    document.getElementById('screen-subheading').textContent = btn.dataset.sub;
+    setScreenHeading(btn);
   }
 
-  function setTravelMode(btn, mode){
-    document.querySelectorAll('.toggle-btn[data-walk]').forEach(b=>b.classList.remove('is-active'));
-    btn.classList.add('is-active');
-    var note = document.getElementById('clara-departure');
-    if(mode === 'walk'){
-      note.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Salida 19:20';
-    } else {
-      note.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Salida 19:25';
+  function setScreenHeading(btn){
+    var today = btn.dataset.screen === 'today';
+    document.getElementById('screen-heading').textContent = today ? 'Today' : t(btn.dataset.title);
+    document.getElementById('screen-subheading').textContent = today ? todaySubtitle() : t(btn.dataset.sub);
+  }
+
+
+  /* ================= TODAY ================= */
+  /* Datos de ejemplo: viernes 11/09 a las 17:15 */
+  var TODAY_DAY = 4;          // lunes = 0
+  var NOW = 17.25;
+  // Nombre de una categoría tal como está en Configuración (o el de fábrica traducido)
+  function catName(cat){
+    var row = document.querySelector('#category-list .cat-row[data-cat="' + cat + '"]');
+    return row ? rowName(row) : t('cat.' + cat);
+  }
+  function rowName(row){
+    var input = row.querySelector('.cat-name-input');
+    return input ? (input.value || t('category')) : t('cat.' + row.dataset.cat);
+  }
+  var TODAY_NEXT = { t:18, cat:'actividad', title:'Natación',
+    place:'Piscina Municipal Las Rozas', dist:'3,5 km', leave:'17:35', how:'car' };
+  var TODAY_LATER = [
+    { id:'clara', t:19.5, cat:'libre', title:'Merienda con Clara', place:'Casa de Clara', dist:'600 m',
+      travel:{ mode:'walk',
+        walk:{ min:10, leave:'19:20' },
+        car: { min:5,  leave:'19:25' } } },
+    { id:'abuela', t:20.5, cat:'cita', title:'Videollamada con la abuela', place:'En casa', dist:'20 min' },
+    { id:'lengua', t:22, cat:'tarea', title:'Entrega de Lengua', place:'Classroom', dist:'redacción' }
+  ];
+
+  /* ---- Apariencia (Configuración) ---- */
+  var APPEARANCE = { layout:'list', mode:'light', bar:'dots' };
+  function loadAppearance(){
+    try{
+      var saved = JSON.parse(localStorage.getItem('today-appearance') || 'null');
+      if(saved){ Object.keys(APPEARANCE).forEach(function(k){ if(saved[k]){ APPEARANCE[k] = saved[k]; } }); }
+    }catch(e){}
+  }
+
+  function setAppearance(key, value){
+    APPEARANCE[key] = value;
+    try{ localStorage.setItem('today-appearance', JSON.stringify(APPEARANCE)); }catch(e){}
+    applyAppearance();
+  }
+
+  function applyAppearance(){
+    document.documentElement.setAttribute('data-theme', APPEARANCE.mode === 'dark' ? 'dark' : 'light');
+    document.querySelectorAll('[data-appearance]').forEach(function(b){
+      var on = APPEARANCE[b.dataset.appearance] === b.dataset.value;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    document.getElementById('layout-hint').textContent = t('hint.' + APPEARANCE.layout);
+    if(typeof updateConfigSummaries === 'function'){ updateConfigSummaries(); }
+    renderToday();
+  }
+
+  /* ---- Utilidades ---- */
+  function catColor(cat){ return 'var(--cat-' + cat + ')'; }
+  function catVars(cat){ return '--c:var(--cat-' + cat + ');--c-ink:var(--cat-' + cat + '-ink);--deep:var(--cat-' + cat + '-deep)'; }
+  // «45 min», «2 h», «10 h 30 min»
+  function untilText(t){
+    var m = Math.max(0, Math.round((t - NOW) * 60)), h = Math.floor(m / 60), r = m % 60;
+    return h ? h + ' h' + (r ? ' ' + r + ' min' : '') : r + ' min';
+  }
+  function travelOf(item){ return item.travel ? item.travel[item.travel.mode] : null; }
+  var CLOCK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
+  var CAR_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14l-1.5-5.5A2 2 0 0 0 15.6 10H8.4a2 2 0 0 0-1.9 1.5Z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>';
+
+  // Escala de la barra: toda la franja horaria de hoy. En días de cole, el horario
+  // escolar se dibuja como un tramo comprimido (SCHOOL_SHARE del ancho) y el resto
+  // del ancho se reparte en proporción al tiempo fuera del cole.
+  var SCHOOL_SHARE = 0.12;
+  function todayScale(){
+    var b = dayBounds(), sc = schoolFor(TODAY_DAY);
+    var start = toHours(b.start), end = toHours(b.end), school = null;
+    var segs = [{ from:start, to:end }];
+    if(sc.on){
+      var a = Math.max(toHours(sc.entry), start), z = Math.min(toHours(sc.exit), end);
+      if(a < z){
+        school = { from:a, to:z };
+        segs = [{ from:start, to:a }, { from:a, to:z, school:true }, { from:z, to:end }]
+          .filter(function(g){ return g.to > g.from; });
+      }
     }
+    var outside = segs.reduce(function(sum, g){ return sum + (g.school ? 0 : g.to - g.from); }, 0);
+    var x = 0;
+    segs.forEach(function(g){
+      g.w = g.school ? (outside ? SCHOOL_SHARE : 1) : (1 - (school ? SCHOOL_SHARE : 0)) * (g.to - g.from) / outside;
+      g.x = x; x += g.w;
+    });
+    function pos(t){
+      if(t <= start){ return 0; }
+      if(t >= end){ return 1; }
+      for(var i = 0; i < segs.length; i++){
+        var g = segs[i];
+        if(t <= g.to){ return g.x + g.w * (t - g.from) / (g.to - g.from); }
+      }
+      return 1;
+    }
+    if(school){ school.x0 = pos(school.from); school.x1 = pos(school.to); }
+    return { start:start, end:end, school:school, pos:pos };
+  }
+
+  function todayEvents(){
+    return [ {t:TODAY_NEXT.t, cat:TODAY_NEXT.cat, next:true} ].concat(TODAY_LATER.map(function(e){ return {t:e.t, cat:e.cat}; }))
+      .sort(function(a, b){ return a.t - b.t; });
+  }
+
+  function renderToday(){
+    var screen = document.getElementById('screen-today');
+    screen.setAttribute('data-layout', APPEARANCE.layout);
+    var r = todayScale();
+    var bar = document.getElementById('today-bar');
+    if(APPEARANCE.bar === 'nina'){ renderNinaBar(bar, r); } else { renderDotsBar(bar, r); }
+    var layout = document.getElementById('today-layout');
+    if(APPEARANCE.layout === 'postit1'){ renderPostit1(layout); }
+    else if(APPEARANCE.layout === 'postit2'){ renderPostit2(layout); }
+    else { renderList(layout); }
+    var hint = document.getElementById('bar-hint');
+    if(hint){
+      hint.textContent = t('hint.' + APPEARANCE.bar) + t('hint.range', { range: fmtHour(r.start) + '–' + fmtHour(r.end) }) +
+        (r.school ? t('hint.rangeSchool', { school: fmtHour(r.school.from) + '–' + fmtHour(r.school.to) }) : '.');
+    }
+  }
+
+  /* ---- Icono del colegio: edificio rojo con tejados grises, torre con reloj y cartel ---- */
+  // Dibujo de 64 x 52 unidades con el origen en el centro del suelo.
+  function schoolIcon(){
+    var RED = '#d9453b', RED_2 = '#e5574a', ROOF = '#4d535c', GLASS = '#a9dcf0', INK = 'var(--ink)';
+    function win(x, y){ return '<rect x="' + x + '" y="' + y + '" width="5.5" height="7" rx=".6" fill="' + GLASS + '" stroke="' + INK + '" stroke-width=".8"/>' +
+      '<line x1="' + (x + 2.75) + '" y1="' + y + '" x2="' + (x + 2.75) + '" y2="' + (y + 7) + '" stroke="' + INK + '" stroke-width=".5"/>'; }
+    return '<g stroke-linejoin="round">' +
+      // alas laterales y sus tejados
+      '<rect x="-30" y="-25" width="20" height="25" fill="' + RED + '" stroke="' + INK + '" stroke-width="1.1"/>' +
+      '<rect x="10" y="-25" width="20" height="25" fill="' + RED + '" stroke="' + INK + '" stroke-width="1.1"/>' +
+      '<polygon points="-32,-24 -10,-24 -10,-37 -25,-34" fill="' + ROOF + '" stroke="' + INK + '" stroke-width="1.1"/>' +
+      '<polygon points="32,-24 10,-24 10,-37 25,-34" fill="' + ROOF + '" stroke="' + INK + '" stroke-width="1.1"/>' +
+      win(-27, -19) + win(-18.5, -19) + win(12.5, -19) + win(21, -19) +
+      // torre central con tejado a dos aguas
+      '<rect x="-11" y="-35" width="22" height="35" fill="' + RED_2 + '" stroke="' + INK + '" stroke-width="1.1"/>' +
+      '<polygon points="-15,-33 0,-51 15,-33" fill="' + ROOF + '" stroke="' + INK + '" stroke-width="1.1"/>' +
+      '<polygon points="-10,-34 0,-46 10,-34" fill="' + RED_2 + '" stroke="' + INK + '" stroke-width=".8"/>' +
+      // reloj
+      '<circle cx="0" cy="-38.5" r="4.3" fill="#fff" stroke="' + INK + '" stroke-width=".9"/>' +
+      '<path d="M0 -41.5 V-38.5 L2.2 -37.4" fill="none" stroke="' + INK + '" stroke-width=".8" stroke-linecap="round"/>' +
+      // cartel
+      '<rect x="-9" y="-29" width="18" height="6.4" rx=".8" fill="#fff8ec" stroke="' + INK + '" stroke-width=".8"/>' +
+      '<text x="0" y="-24.2" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="4" font-weight="700" fill="#2B2925" letter-spacing=".15">SCHOOL</text>' +
+      // puerta
+      '<rect x="-5.5" y="-15" width="11" height="15" fill="' + GLASS + '" stroke="' + INK + '" stroke-width=".9"/>' +
+      '<line x1="0" y1="-15" x2="0" y2="0" stroke="' + INK + '" stroke-width=".7"/>' +
+    '</g>';
+  }
+
+  /* ---- Barra «Puntos» ---- */
+  function renderDotsBar(host, r){
+    function pct(t){ return r.pos(t) * 100; }
+    var html = '<div class="day-strip"><div class="bar"></div>';
+    if(r.school){
+      var gw = (r.school.x1 - r.school.x0) * 100;
+      html += '<div class="school-gap" style="left:' + (r.school.x0 * 100) + '%; width:' + gw + '%;"></div>' +
+        '<svg class="school-icon" viewBox="-33 -53 66 54" aria-label="' + t('aria.school') + '" role="img" style="left:' + ((r.school.x0 + r.school.x1) * 50) + '%; width:max(' + gw + '%, 44px);">' + schoolIcon() + '</svg>';
+    }
+    todayEvents().forEach(function(e){
+      var p = pct(e.t), end = p > 97 ? ' at-end' : '';
+      if(e.next){
+        html += '<div class="marker pulse-amber' + end + '" style="left:' + p + '%; top:18px; width:16px; height:16px; background:var(--warn-bg);"></div>' +
+                '<div class="stem' + end + '" style="left:' + p + '%; top:44px; height:14px; width:2px; background:var(--warn-bg);"></div>';
+      } else {
+        html += '<div class="marker' + end + '" style="left:' + p + '%; top:28px; width:9px; height:9px; background:' + catColor(e.cat) + ';"></div>' +
+                '<div class="stem' + end + '" style="left:' + p + '%; top:44px; height:12px; background:' + catColor(e.cat) + ';"></div>';
+      }
+    });
+    var n = pct(NOW), edge = n < 12 ? ' at-start' : (n > 88 ? ' at-end' : '');
+    html += '<div class="now-line" style="left:' + n + '%; height:56px;"></div>' +
+            '<div class="now-dot" style="left:' + n + '%; top:52px; width:12px; height:12px;"></div>' +
+            '<div class="now-label' + edge + '" style="left:' + n + '%; top:66px;">' + t('today.now', { t: fmtHour(NOW) }) + '</div>' +
+            '</div><div class="day-strip-scale"><span>' + fmtHour(r.start) + '</span>' +
+            (r.school ? '<span class="scale-school" style="left:max(calc(' + ((r.school.x0 + r.school.x1) * 50) + '% - 29px), 36px)">' + fmtHour(r.school.from) + '–' + fmtHour(r.school.to) + '</span>' : '') +
+            '<span>' + fmtHour(r.end) + '</span></div>';
+    host.innerHTML = html;
+  }
+
+  /* ---- Barra «Niña soldado» (de boceto-today.html) ---- */
+  var TL_X0 = 20, TL_X1 = 304, TL_Y = 58;
+
+  function seeded(seed){
+    var v = seed;
+    return function(){ v = (v * 9301 + 49297) % 233280; return v / 233280; };
+  }
+
+  function boomPoints(seed, rOut, rIn, spikes){
+    var rnd = seeded(seed), pts = [];
+    for(var k = 0; k < spikes * 2; k++){
+      var a = (k + (rnd() - .5) * .5) * Math.PI / spikes - Math.PI / 2;
+      var rad = k % 2 ? rIn * (.85 + rnd() * .3) : rOut * (.72 + rnd() * .5);
+      pts.push((Math.cos(a) * rad).toFixed(2) + ',' + (Math.sin(a) * rad).toFixed(2));
+    }
+    return pts.join(' ');
+  }
+
+  function explosion(e, i, x){
+    var big = !!e.next, color = catColor(e.cat), sparks = '';
+    if(big){
+      for(var k = 0; k < 6; k++){
+        var a = k / 6 * Math.PI * 2 + .3;
+        sparks += '<g class="spark" style="--sx:' + (Math.cos(a) * 17).toFixed(1) + 'px;--sy:' + (Math.sin(a) * 17).toFixed(1) + 'px">' +
+          '<circle r="' + (k % 2 ? 1.1 : 1.6) + '" fill="' + (k % 2 ? '#ffe066' : color) + '" stroke="var(--ink)" stroke-width=".6"/></g>';
+      }
+    }
+    return '<g transform="translate(' + x.toFixed(1) + ' ' + TL_Y + ')">' + sparks +
+      '<g class="boom' + (big ? ' is-next' : '') + '" style="--dur:' + (2.6 + i * .45) + 's;--delay:' + (-i * .7) + 's">' +
+        '<polygon points="' + boomPoints(7 + i * 13, big ? 18 : 14.5, 7.5, 11) + '" fill="' + color + '" stroke="var(--ink)" stroke-width="1.3" stroke-linejoin="round"/>' +
+        '<polygon points="' + boomPoints(3 + i * 29, big ? 9.5 : 7.5, 4.4, 9) + '" fill="' + (big ? '#ffe066' : '#fff4c2') + '" stroke="var(--ink)" stroke-width=".9" stroke-linejoin="round"/>' +
+      '</g></g>';
+  }
+
+  // Extremidad articulada en (x, y) que oscila entre `from` y `to` grados.
+  function limb(x, y, len, w, color, from, to, tip){
+    return '<g transform="translate(' + x + ' ' + y + ')"><g>' +
+      '<animateTransform attributeName="transform" type="rotate" values="' + from + ';' + to + ';' + from + '" dur="0.9s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".45 0 .55 1;.45 0 .55 1"/>' +
+      '<line x1="0" y1="0" x2="0" y2="' + len + '" stroke="var(--ink)" stroke-width="' + (w + 1.8) + '" stroke-linecap="round"/>' +
+      '<line x1="0" y1="0" x2="0" y2="' + len + '" stroke="' + color + '" stroke-width="' + w + '" stroke-linecap="round"/>' +
+      tip + '</g></g>';
+  }
+
+  function soldierGirl(){
+    var OLIVE = '#6f7d3c', OLIVE_DARK = '#56622d', KHAKI = '#7d8a45', SKIN = '#f2c7a0', HAIR = '#6b3b1f';
+    var boot = '<path d="M-2 9.3 h4.6 a1.7 1.7 0 0 1 0 3.4 h-4.6 z" fill="var(--ink)"/>';
+    var hand = '<circle cx="0" cy="8.1" r="1.5" fill="' + SKIN + '" stroke="var(--ink)" stroke-width=".8"/>';
+    return '<g class="w-bob">' +
+      limb(-0.8, -12, 10.5, 3.2, OLIVE_DARK, 24, -24, boot) +
+      limb(0, -21.5, 7.5, 2.6, OLIVE_DARK, -30, 30, hand) +
+      '<rect x="-8.6" y="-24" width="6" height="10.5" rx="2" fill="' + OLIVE_DARK + '" stroke="var(--ink)" stroke-width="1.2"/>' +
+      '<rect x="-3.4" y="-24.5" width="7.2" height="13" rx="2.8" fill="' + KHAKI + '" stroke="var(--ink)" stroke-width="1.3"/>' +
+      '<rect x="-3.4" y="-14.6" width="7.2" height="2" fill="var(--ink)"/>' +
+      '<rect x="0.2" y="-14.4" width="1.6" height="1.6" fill="#e8b839"/>' +
+      '<ellipse class="ponytail" cx="-5.6" cy="-28.4" rx="3" ry="1.7" fill="' + HAIR + '" stroke="var(--ink)" stroke-width="1"/>' +
+      '<circle cx="1" cy="-29.5" r="4.6" fill="' + SKIN + '" stroke="var(--ink)" stroke-width="1.3"/>' +
+      '<ellipse cx="3.1" cy="-29.6" rx=".75" ry="1" fill="var(--ink)"/>' +
+      '<circle cx="3.4" cy="-27.6" r="1" fill="#ea8f8f" opacity=".8"/>' +
+      '<path d="M2.2 -26.3 q1 .8 2.1 0" fill="none" stroke="var(--ink)" stroke-width=".8" stroke-linecap="round"/>' +
+      '<path d="M-3.6 -29.8 q.6 4.6 4.4 5.2" fill="none" stroke="var(--ink)" stroke-width=".8"/>' +
+      '<path d="M-4.9 -30.6 C-4.9 -37.6 7.1 -37.6 7.1 -30.6 Z" fill="' + OLIVE + '" stroke="var(--ink)" stroke-width="1.3" stroke-linejoin="round"/>' +
+      '<circle cx="3.8" cy="-33.1" r="1" fill="' + OLIVE_DARK + '"/>' +
+      '<circle cx="-1.4" cy="-32.5" r=".8" fill="' + OLIVE_DARK + '"/>' +
+      '<path d="M-2.2 -34.1 q2.4 -1.8 5 -.8" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".9" stroke-linecap="round"/>' +
+      '<rect x="-6.2" y="-31.4" width="14.6" height="2" rx="1" fill="' + OLIVE_DARK + '" stroke="var(--ink)" stroke-width="1.1"/>' +
+      limb(0.8, -12, 10.5, 3.2, OLIVE, -24, 24, boot) +
+      limb(0.6, -21.5, 7.5, 2.6, KHAKI, 30, -30, hand) +
+    '</g>';
+  }
+
+  function renderNinaBar(host, r){
+    function xAt(t){ return TL_X0 + r.pos(t) * (TL_X1 - TL_X0); }
+    var nowX = xAt(NOW), events = todayEvents();
+    var inSchool = r.school && NOW > r.school.from && NOW < r.school.to;
+    var track = 'M20 52 H316 V44 L338 58 L316 72 V64 H20 A6 6 0 0 1 20 52 Z';
+    // Etiqueta de «ahora» a la izquierda de la niña; si no cabe, encima de ella.
+    var nowLabel = inSchool
+      ? '<text class="tl-label is-now" x="' + nowX.toFixed(1) + '" y="18" text-anchor="middle">' + t('today.inClass', { t: fmtHour(NOW) }) + '</text>'
+      : nowX - 18 > 48 && !(r.school && NOW >= r.school.to && nowX - 50 < xAt(r.school.to))
+      ? '<text class="tl-label is-now" x="' + (nowX - 18).toFixed(1) + '" y="42" text-anchor="end">' + fmtHour(NOW) + '</text>'
+      : '<text class="tl-label is-now" x="' + nowX.toFixed(1) + '" y="-10" text-anchor="middle">' + fmtHour(NOW) + '</text>';
+    var svg =
+      '<svg viewBox="0 -22 350 116" role="img" aria-label="Ahora ' + fmtHour(NOW) + '; próximos: ' + events.map(function(e){ return fmtHour(e.t); }).join(', ') + '">' +
+      '<defs>' +
+        '<clipPath id="trackClip"><path d="' + track + '"/></clipPath>' +
+        '<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+          '<rect width="6" height="6" fill="var(--accent-soft)"/>' +
+          '<line x1="0" y1="0" x2="0" y2="6" stroke="var(--accent)" stroke-opacity=".45" stroke-width="2"/>' +
+        '</pattern>' +
+      '</defs>' +
+      '<path d="' + track + '" fill="var(--surface)"/>' +
+      '<rect x="0" y="40" width="' + nowX + '" height="40" fill="url(#hatch)" clip-path="url(#trackClip)"/>' +
+      '<path d="' + track + '" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/>';
+    // El cole se dibuja sobre el camino: la niña entra al empezar y sale al terminar
+    if(r.school){
+      var tx0 = xAt(r.school.from), tx1 = xAt(r.school.to), tw = tx1 - tx0;
+      var sk = Math.max(tw, 48) / 64;
+      svg += '<g transform="translate(' + ((tx0 + tx1) / 2).toFixed(1) + ' 68) scale(' + sk.toFixed(3) + ')">' + schoolIcon() + '</g>' +
+        '<text class="tl-label is-muted" x="' + Math.max(tx0 + tw / 2 - 30, 56).toFixed(1) + '" y="88" text-anchor="start">' + fmtHour(r.school.from) + '–' + fmtHour(r.school.to) + '</text>';
+    }
+    // Horas alternas abajo y arriba del camino, empezando abajo por la más próxima
+    // (así, cerca de la niña, la etiqueta no se cruza con el dibujo).
+    var ahead = 0;
+    events.forEach(function(e, i){
+      var x = xAt(e.t), below = e.t < NOW || ahead++ % 2 === 0;
+      svg += explosion(e, i, x) + '<text class="tl-label" x="' + x.toFixed(1) + '" y="' + (below ? 88 : 30) + '" text-anchor="middle">' + fmtHour(e.t) + '</text>';
+    });
+    if(xAt(events[0].t) - TL_X0 > 40){
+      svg += '<text class="tl-label is-muted" x="20" y="88" text-anchor="start">' + fmtHour(r.start) + '</text>';
+    }
+    svg += '<polygon points="' + (nowX - 4) + ',72 ' + (nowX + 4) + ',72 ' + nowX + ',66" fill="var(--ink)"/>' + nowLabel +
+      (inSchool ? '' : '<g transform="translate(' + nowX.toFixed(1) + ' 52) scale(1.5)">' + soldierGirl() + '</g>') + '</svg>';
+    host.innerHTML = '<div class="timeline">' + svg + '</div>';
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){ host.querySelector('svg').pauseAnimations(); }
+  }
+
+  /* ---- Tema «Lista» ---- */
+  function renderList(host){
+    var n = TODAY_NEXT;
+    var chips = TODAY_LATER.map(function(e, i){
+      var html = '<div class="later-chip" style="' + catVars(e.cat) + '">' +
+        '<div class="later-time">' + fmtHour(e.t) + '</div>' +
+        '<div class="later-title">' + e.title + '</div>' +
+        '<div class="later-sub">' + e.place + ' · ' + e.dist + '</div>';
+      if(e.travel){
+        html += '<div class="toggle-row" role="group" aria-label="' + t('aria.travelMode') + ': ' + e.title + '">' +
+          ['walk','car'].map(function(m){
+            return '<button type="button" class="toggle-btn' + (e.travel.mode === m ? ' is-active' : '') + '" data-item="' + i + '" data-mode="' + m + '">' + t('travel.' + m, { m: e.travel[m].min }) + '</button>';
+          }).join('') + '</div>' +
+          '<div class="travel-note">' + CLOCK_SVG + ' ' + t('today.departure', { t: travelOf(e).leave }) + '</div>';
+      }
+      return html + '</div>';
+    }).join('');
+    host.innerHTML =
+      '<div><div class="section-eyebrow" style="color:var(--warn-ink)">' + t('today.soon', { t: untilText(n.t) }) + '</div>' +
+      '<div class="up-next-card"><div style="display:flex; align-items:baseline; gap:10px;">' +
+        '<span class="up-next-time">' + fmtHour(n.t) + '</span><span class="up-next-title">' + n.title + '</span></div>' +
+        '<div class="up-next-sub">' + t('today.leaves', { place: n.place, leave: n.leave, how: t('how.' + n.how) }) + '</div></div></div>' +
+      '<div><div class="section-eyebrow" style="color:var(--text-muted)">' + t('today.later') + '</div><div class="later-row">' + chips + '</div></div>';
+    host.querySelectorAll('.toggle-btn[data-mode]').forEach(function(b){
+      b.onclick = function(){ TODAY_LATER[+b.dataset.item].travel.mode = b.dataset.mode; renderToday(); };
+    });
+  }
+
+  /* ---- Tema «Post-it 1» (Design.html · Siguiente ahora) ---- */
+  function renderPostit1(host){
+    var n = TODAY_NEXT;
+    var cards = TODAY_LATER.map(function(e, i){
+      var tr = travelOf(e);
+      return '<div class="fan-card" style="' + catVars(e.cat) + ';z-index:' + (i + 1) + '">' +
+        '<div class="fan-time">' + fmtHour(e.t) + '</div>' +
+        '<div class="fan-title">' + e.title + '</div>' +
+        '<div class="fan-sub">' + (tr ? t('today.fanSub', { dist: e.dist, how: t('how.' + e.travel.mode), leave: tr.leave }) : e.place + ' · ' + e.dist) + '</div></div>';
+    }).join('');
+    host.innerHTML =
+      '<div><div class="hero-eyebrow">' + t('today.nowSoon', { t: untilText(n.t) }) + '</div>' +
+      '<div class="hero-card"><div class="hero-time">' + fmtHour(n.t) + '</div>' +
+        '<div class="hero-title">' + n.title + '</div>' +
+        '<div class="hero-place">' + n.place + ' · ' + n.dist + '</div>' +
+        '<span class="hero-leave">' + t('today.departure', { t: n.leave }) + ' · ' + t('how.' + n.how) + '</span></div></div>' +
+      '<div><div class="section-eyebrow" style="color:var(--text-muted)">' + t('today.afterToday') + '</div><div class="fan">' + cards + '</div></div>';
+  }
+
+  /* ---- Tema «Post-it 2» (boceto-today.html) ---- */
+  var NOTE_SLOTS = [ { x:'2%', y:14, rot:-15 }, { x:'28%', y:108, rot:-6 }, { x:'45%', y:200, rot:9 } ];
+  var NOTE_FLOAT = [
+    { dur:'5.6s', delay:'-0.8s', sway:'1.4deg' },
+    { dur:'6.8s', delay:'-3.1s', sway:'-1.2deg' },
+    { dur:'6.1s', delay:'-1.9s', sway:'1.8deg' }
+  ];
+  var noteOrder = TODAY_LATER.map(function(e){ return e.id; });
+
+  function renderPostit2(host){
+    var n = TODAY_NEXT;
+    host.innerHTML =
+      '<div class="pi-next" role="group" aria-label="' + t('aria.next') + '">' +
+        '<span class="pi-next-time">' + fmtHour(n.t) + '</span>' +
+        '<span class="pi-next-title">' + n.title + '</span>' +
+        '<span class="pi-next-side"><span class="pi-next-when">' + t('today.in', { t: untilText(n.t) }) + '</span>' +
+        '<span class="pi-next-leave">' + CAR_SVG + ' ' + t('today.leaveAt', { t: n.leave }) + '</span></span></div>' +
+      '<div class="board" aria-label="' + t('aria.later') + '"></div>';
+    var board = host.querySelector('.board'), els = {};
+    TODAY_LATER.forEach(function(item, i){
+      var f = NOTE_FLOAT[i % NOTE_FLOAT.length];
+      var note = document.createElement('div');
+      note.className = 'note';
+      note.tabIndex = 0;
+      note.setAttribute('role', 'button');
+      note.setAttribute('aria-label', fmtHour(item.t) + ' ' + item.title + '. ' + t('aria.front'));
+      note.setAttribute('style', catVars(item.cat) + ';--dur:' + f.dur + ';--delay:' + f.delay + ';--sway:' + f.sway + ';--in-delay:' + (0.15 + i * 0.18) + 's');
+      var travel = '';
+      if(item.travel){
+        travel = '<div class="n-travel" role="group" aria-label="' + t('aria.travelMode') + '">' +
+          ['walk','car'].map(function(m){
+            return '<button type="button" class="n-pill' + (item.travel.mode === m ? ' is-on' : '') + '" data-mode="' + m + '">' + t('short.' + m, { m: item.travel[m].min }) + '</button>';
+          }).join('') + '</div>' +
+          '<div class="n-leave">' + CLOCK_SVG + t('today.leaveAtLong', { t: '<span class="n-leave-time">' + travelOf(item).leave + '</span>' }) + '</div>';
+      }
+      note.innerHTML = '<div class="note-shadow"></div><div class="note-card">' +
+        '<div class="n-head"><span class="n-time">' + fmtHour(item.t) + '</span><span class="n-cat">' + catName(item.cat) + '</span></div>' +
+        '<div class="n-title">' + item.title + '</div>' +
+        '<div class="n-meta">' + item.place + ' · ' + item.dist + '</div>' + travel + '</div>';
+      note.querySelectorAll('.n-pill').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          e.stopPropagation();
+          item.travel.mode = btn.dataset.mode;
+          note.querySelectorAll('.n-pill').forEach(function(b){ b.classList.toggle('is-on', b === btn); });
+          note.querySelector('.n-leave-time').textContent = travelOf(item).leave;
+        });
+      });
+      function front(){
+        var k = noteOrder.indexOf(item.id);
+        if(k > 0){ noteOrder.splice(k, 1); noteOrder.unshift(item.id); placeNotes(els); }
+      }
+      note.addEventListener('click', front);
+      note.addEventListener('keydown', function(e){
+        if(e.target === note && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); front(); }
+      });
+      els[item.id] = note;
+      board.appendChild(note);
+    });
+    placeNotes(els);
+  }
+
+  function placeNotes(els){
+    noteOrder.forEach(function(id, slot){
+      var sl = NOTE_SLOTS[slot] || NOTE_SLOTS[NOTE_SLOTS.length - 1], el = els[id];
+      el.style.setProperty('--x', sl.x);
+      el.style.setProperty('--y', sl.y + 'px');
+      el.style.setProperty('--rot', sl.rot + 'deg');
+      el.style.setProperty('--z', String(10 - slot));
+    });
+    // El tablero crece si algún post-it tiene más texto (pantallas estrechas)
+    var board = els[noteOrder[0]].parentNode, h = 0;
+    noteOrder.forEach(function(id, slot){
+      var sl = NOTE_SLOTS[slot] || NOTE_SLOTS[NOTE_SLOTS.length - 1];
+      h = Math.max(h, sl.y + els[id].offsetHeight);
+    });
+    board.style.height = (h + 40) + 'px';
   }
 
   var toastTimer;
@@ -756,9 +2014,11 @@
       if(hexToRgb(CAT_PALETTE[i]) === current){ idx = i; break; }
     }
     var next = CAT_PALETTE[(idx+1) % CAT_PALETTE.length];
+    if(!btn.closest('.cat-row').classList.contains('is-editing')){ return; }
     btn.style.background = next;
     var select = btn.closest('.cat-row').querySelector('.priority-select');
     if(select){ select.style.background = next; }
+    renderExportCats();
   }
 
   function hexToRgb(hex){
@@ -767,15 +2027,16 @@
   }
 
   function onPriorityChange(select){
-    var name = select.closest('.cat-row').querySelector('.cat-name-input').value || 'Categoría';
-    toast('Prioridad de "' + name + '" actualizada a ' + select.value);
+    var name = rowName(select.closest('.cat-row'));
+    toast(t('toast.prio', { name: name, p: select.options[select.selectedIndex].text }));
   }
 
   function removeCategory(btn){
     var row = btn.closest('.cat-row');
-    var name = row.querySelector('.cat-name-input').value || 'Categoría';
+    var name = rowName(row);
     row.remove();
-    toast('Categoría "' + name + '" eliminada');
+    renderExportCats();
+    toast(t('toast.catDeleted', { name: name }));
   }
 
   function addCategory(){
@@ -784,28 +2045,204 @@
     var row = document.createElement('div');
     row.className = 'row cat-row';
     row.innerHTML =
-      '<button class="row-bar swatch" style="background:' + color + '" onclick="cycleColor(this)" aria-label="Cambiar color de categoría" title="Cambiar color"></button>' +
-      '<div class="row-body"><input class="cat-name-input" value="Nueva categoría" aria-label="Nombre de la categoría"></div>' +
-      '<select class="priority-select" style="background:' + color + '" onchange="onPriorityChange(this)" aria-label="Prioridad de la nueva categoría">' +
-        '<option value="Alta">Alta</option><option value="Media" selected>Media</option><option value="Baja">Baja</option>' +
-      '</select>' +
-      '<button class="row-delete" onclick="removeCategory(this)" aria-label="Eliminar categoría">×</button>';
+      '<button class="row-bar swatch" style="background:' + color + '" onclick="cycleColor(this)" aria-label="' + t('aria.catColor') + '" title="' + t('aria.catColor') + '"></button>' +
+      '<div class="row-body"><input class="cat-name-input" value="' + t('cat.new') + '" readonly aria-label="' + t('aria.catName') + '" onkeydown="if(event.key===\'Enter\'){ editCategory(this); }"></div>' +
+      '<button class="row-edit" onclick="editCategory(this)" aria-label="' + t('aria.catEdit') + '" title="' + t('aria.catEdit') + '"></button>' +
+      '<button class="row-delete" onclick="removeCategory(this)" aria-label="' + t('aria.catDelete') + '" title="' + t('aria.catDelete') + '">×</button>' +
+      '<select class="priority-select" style="background:' + color + '" onchange="onPriorityChange(this)" aria-label="' + t('aria.catPrio') + '">' +
+        '<option value="Alta">' + t('prio.Alta') + '</option><option value="Media" selected>' + t('prio.Media') + '</option><option value="Baja">' + t('prio.Baja') + '</option>' +
+      '</select>';
+    row.querySelector('.row-edit').innerHTML = PENCIL_SVG;
     list.appendChild(row);
-    row.querySelector('.cat-name-input').focus();
-    row.querySelector('.cat-name-input').select();
+    renderExportCats();
+    editCategory(row.querySelector('.row-edit'));   // la nueva categoría empieza en modo edición
   }
 
+  // Lápiz: activa la edición del nombre y del color; el mismo botón (✓) o Intro la terminan
+  var PENCIL_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+  var CHECK_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  function editCategory(el){
+    var row = el.closest('.cat-row'), input = row.querySelector('.cat-name-input'), btn = row.querySelector('.row-edit');
+    var editing = !row.classList.contains('is-editing');
+    // Solo una categoría en edición a la vez
+    if(editing){ document.querySelectorAll('.cat-row.is-editing').forEach(function(r){ editCategory(r.querySelector('.row-edit')); }); }
+    row.classList.toggle('is-editing', editing);
+    input.readOnly = !editing;
+    btn.innerHTML = editing ? CHECK_SVG : PENCIL_SVG;
+    btn.setAttribute('aria-label', t(editing ? 'aria.catDone' : 'aria.catEdit'));
+    btn.setAttribute('title', t(editing ? 'aria.catDone' : 'aria.catEdit'));
+    if(editing){ input.focus(); input.select(); }
+    else { if(!input.value.trim()){ input.value = t('cat.new'); } renderExportCats(); }
+  }
+
+  /* ---- Franja horaria y horario escolar ---- */
+  var SCHOOL = {
+    week: {entry:'09:00', exit:'17:00'},            // lunes a viernes
+    sat:  {on:false, entry:'09:00', exit:'13:00'}   // clases el sábado (opcional)
+  };
+  var DEFAULT_BOUNDS = {'day-start':'07:30', 'day-end':'23:00'};
+  var TIME_RE = /^\d{2}:\d{2}$/;
+
+  function toHours(t){ var p = t.split(':'); return +p[0] + (+p[1]) / 60; }
+  function dayBounds(){
+    return { start: document.getElementById('day-start').value || DEFAULT_BOUNDS['day-start'],
+             end:   document.getElementById('day-end').value   || DEFAULT_BOUNDS['day-end'] };
+  }
+
+  // Horario del cole para un día de la semana (lunes = 0). Domingos y
+  // festivos/no lectivos del calendario escolar: sin cole.
+  function schoolFor(day){
+    if(day < 5){ return {on:true, entry:SCHOOL.week.entry, exit:SCHOOL.week.exit}; }
+    if(day === 5){ return SCHOOL.sat; }
+    return {on:false};
+  }
+
+  // Franja horaria menos el horario escolar
+  function coveredRanges(d){
+    var b = dayBounds();
+    if(!d.on){ return [[b.start, b.end]]; }
+    var r = [];
+    if(b.start < d.entry){ r.push([b.start, d.entry < b.end ? d.entry : b.end]); }
+    if(d.exit < b.end){ r.push([d.exit > b.start ? d.exit : b.start, b.end]); }
+    return r;
+  }
+
+  function rangesText(d){
+    var r = coveredRanges(d);
+    return r.length ? r.map(function(x){ return '<span style="white-space:nowrap">' + x[0] + '–' + x[1] + '</span>'; }).join(t('and')) : t('cover.none');
+  }
+
+  function renderCover(){
+    var rows = [[t('monFri'), schoolFor(0)]];
+    if(SCHOOL.sat.on){ rows.push([t('saturday'), SCHOOL.sat]); }
+    rows.push([SCHOOL.sat.on ? t('cover.sunHol') : t('cover.weekendHol'), {on:false}]);
+    var list = document.getElementById('cover-list');
+    list.innerHTML = '';
+    rows.forEach(function(r){
+      var line = document.createElement('div');
+      line.className = 'config-line';
+      line.innerHTML = '<span class="config-label">' + r[0] + '</span><span class="config-value">' + rangesText(r[1]) + '</span>';
+      list.appendChild(line);
+    });
+  }
+
+  function onSchoolTime(which, field, input){
+    var d = SCHOOL[which], v = input.value;
+    var entry = field === 'entry' ? v : d.entry, exit = field === 'exit' ? v : d.exit;
+    if(!TIME_RE.test(v) || entry >= exit){
+      input.value = d[field];
+      toast(t('toast.exitAfter'));
+      return;
+    }
+    d[field] = v;
+    onScheduleChanged();
+  }
+
+  function toggleSaturday(btn){
+    SCHOOL.sat.on = !SCHOOL.sat.on;
+    btn.setAttribute('aria-checked', String(SCHOOL.sat.on));
+    document.getElementById('sat-times').hidden = !SCHOOL.sat.on;
+    onScheduleChanged();
+  }
+
+  function onBoundsChange(input){
+    var b = dayBounds();
+    if(!TIME_RE.test(input.value) || b.start >= b.end){
+      input.value = DEFAULT_BOUNDS[input.id];
+      toast(t('toast.windowOrder'));
+    }
+    onScheduleChanged();
+  }
+
+  function scheduleSummary(){
+    var txt = t('sum.week', { t: SCHOOL.week.entry + '–' + SCHOOL.week.exit });
+    if(SCHOOL.sat.on){ txt += ' · ' + t('sum.sat', { t: SCHOOL.sat.entry + '–' + SCHOOL.sat.exit }); }
+    return txt;
+  }
+
+  function onScheduleChanged(){
+    var summary = scheduleSummary();
+    document.querySelectorAll('.school-note').forEach(function(el){ el.innerHTML = t('note.school', { summary: summary }); });
+    renderCover();
+    var b = dayBounds();
+    CAL_START = Math.floor(toHours(b.start));
+    CAL_END = Math.ceil(toHours(b.end));
+    renderCalendar(calView);
+    updateConfigSummaries();
+    if(typeof renderToday === 'function' && document.getElementById('layout-hint').textContent){ renderToday(); }
+  }
+
+  /* ---- Exportación a Google Calendar ---- */
+  function toggleSwitch(btn, label){
+    var on = btn.getAttribute('aria-checked') !== 'true';
+    btn.setAttribute('aria-checked', String(on));
+    toast(t(on ? 'toast.on' : 'toast.off', { label: label }));
+  }
+
+  function toggleExport(btn){
+    var on = btn.getAttribute('aria-checked') !== 'true';
+    btn.setAttribute('aria-checked', String(on));
+    document.getElementById('export-options').hidden = !on;
+    updateConfigSummaries();
+    if(on){ renderExportCats(); }
+  }
+
+  // Una casilla por categoría definida arriba (se mantiene al renombrar o añadir)
+  function renderExportCats(){
+    var box = document.getElementById('export-cats');
+    var prev = [];
+    box.querySelectorAll('input').forEach(function(i){ prev.push(i.checked); });
+    box.innerHTML = '';
+    document.querySelectorAll('#category-list .cat-row').forEach(function(row, idx){
+      var label = document.createElement('label');
+      label.className = 'check-row';
+      var input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = idx < prev.length ? prev[idx] : true;
+      var dot = document.createElement('span');
+      dot.className = 'dot';
+      dot.style.background = row.querySelector('.row-bar').style.background;
+      var name = document.createElement('span');
+      name.textContent = rowName(row);
+      label.appendChild(input); label.appendChild(dot); label.appendChild(name);
+      box.appendChild(label);
+    });
+    document.querySelectorAll('[data-cat-name]').forEach(function(el){ el.textContent = catName(el.dataset.catName) + (el.dataset.suffix ? ' ' + t(el.dataset.suffix) : ''); });
+    updateConfigSummaries();
+  }
+  document.getElementById('category-list').addEventListener('input', renderExportCats);
+
+  // Acordeón: abrir un bloque de Configuración cierra el que estuviera abierto
+  document.querySelectorAll('.cfg-group').forEach(function(g){
+    g.addEventListener('toggle', function(){
+      if(!g.open){ return; }
+      document.querySelectorAll('.cfg-group[open]').forEach(function(o){ if(o !== g){ o.open = false; } });
+    });
+  });
+
+  // Resumen del valor actual en la cabecera de cada bloque plegado
+  function updateConfigSummaries(){
+    function put(id, text){ var el = document.getElementById('sum-' + id); if(el){ el.textContent = text; } }
+    put('language', LANGS[LANG]);
+    put('look', [t(APPEARANCE.layout === 'list' ? 'layout.list' : (APPEARANCE.layout === 'postit1' ? 'Post-it 1' : 'Post-it 2')),
+                 t('mode.' + APPEARANCE.mode), t('bar.' + APPEARANCE.bar)].join(' · '));
+    var b = dayBounds();
+    put('hours', b.start + '–' + b.end + ' · ' + t('sum.school') + '\u00a0' + SCHOOL.week.entry + '\u2011' + SCHOOL.week.exit);
+    put('links', t('sum.links', { n: 0 }));
+    put('cats', t('sum.cats', { n: document.querySelectorAll('#category-list .cat-row').length }));
+    put('gcal', t(document.getElementById('export-switch').getAttribute('aria-checked') === 'true' ? 'sum.gcalOn' : 'sum.gcalOff'));
+  }
+
+
   /* ---- Calendario (vista día / semana) ---- */
-  var CAL_START = 8, CAL_END = 22, CAL_HOUR_PX = 36;
-  var WEEK_DAYS = [
-    {label:'L', date:'7',  full:'Lunes 7 sept'},
-    {label:'M', date:'8',  full:'Martes 8 sept'},
-    {label:'X', date:'9',  full:'Miércoles 9 sept'},
-    {label:'J', date:'10', full:'Jueves 10 sept'},
-    {label:'V', date:'11', full:'Viernes 11 sept', isToday:true},
-    {label:'S', date:'12', full:'Sábado 12 sept'},
-    {label:'D', date:'13', full:'Domingo 13 sept'}
-  ];
+  var CAL_START = 7, CAL_END = 23, CAL_HOUR_PX = 36;   // sigue la franja horaria de Config
+  // Semana del 7 al 13 de septiembre de 2026; los nombres salen del idioma elegido
+  var WEEK_DAYS = [0,1,2,3,4,5,6].map(function(i){ return { d:new Date(2026, 8, 7 + i), isToday: i === 4 }; });
+  function calRangeText(view){
+    return view === 'week'
+      ? '7–13 ' + fmtDate(WEEK_DAYS[0].d, { month:'long' })
+      : cap(fmtDate(TODAY_DATE, { weekday:'long', day:'numeric', month:'long' }));
+  }
   var CAL_EVENTS = [
     {day:0, title:'Natación', start:18, end:19, cat:'actividad'},
     {day:1, title:'Inglés', start:17, end:18, cat:'actividad'},
@@ -817,7 +2254,7 @@
   var CAL_DEADLINES = [
     {day:4, title:'Entrega Lengua', time:22, cat:'tarea'}
   ];
-  var CAL_SCHOOL_DAYS = [0,1,2,3,4];
+  var calView = 'week';
 
   function calPct(hour){ return ((hour - CAL_START) / (CAL_END - CAL_START)) * 100; }
 
@@ -844,8 +2281,8 @@
       var h = document.createElement('div');
       h.className = 'cal-daylabel' + (d.isToday ? ' is-today' : '');
       h.innerHTML = isWeek
-        ? '<span class="dl-name">' + d.label + '</span><span class="dl-date">' + d.date + '</span>'
-        : '<span class="dl-full">' + d.full + '</span>';
+        ? '<span class="dl-name">' + cap(fmtDate(d.d, { weekday:'narrow' })) + '</span><span class="dl-date">' + d.d.getDate() + '</span>'
+        : '<span class="dl-full">' + cap(fmtDate(d.d, { weekday:'long', day:'numeric', month:'short' })) + '</span>';
       grid.appendChild(h);
     });
 
@@ -867,12 +2304,14 @@
       col.className = 'cal-daycol' + (d.isToday ? ' is-today' : '');
       col.style.height = colHeight + 'px';
 
-      if(CAL_SCHOOL_DAYS.indexOf(realDay) !== -1){
+      var sd = schoolFor(realDay);
+      if(sd.on){
+        var bStart = Math.max(toHours(sd.entry), CAL_START), bEnd = Math.min(toHours(sd.exit), CAL_END);
         var band = document.createElement('div');
         band.className = 'school-band';
-        band.style.top = calPct(9) + '%';
-        band.style.height = (calPct(17) - calPct(9)) + '%';
-        if(!isWeek){ band.textContent = 'Horario escolar'; }
+        band.style.top = calPct(bStart) + '%';
+        band.style.height = Math.max(calPct(bEnd) - calPct(bStart), 0) + '%';
+        if(!isWeek){ band.textContent = t('cfg.school'); }
         col.appendChild(band);
       }
 
@@ -900,14 +2339,16 @@
   }
 
   function setCalView(btn){
-    document.querySelectorAll('.seg-btn').forEach(function(b){ b.classList.remove('is-active'); });
+    document.querySelectorAll('.seg-btn[data-view]').forEach(function(b){ b.classList.remove('is-active'); });
     btn.classList.add('is-active');
-    var view = btn.dataset.view;
-    document.getElementById('cal-range').textContent = view === 'week' ? '7–13 septiembre' : 'Viernes 11 septiembre';
+    var view = calView = btn.dataset.view;
+    document.getElementById('cal-range').textContent = calRangeText(view);
     renderCalendar(view);
   }
 
-  renderCalendar('week');
+  loadAppearance();
+  loadLanguage();
+  applyI18n();
 </script>
 </body>
 </html>

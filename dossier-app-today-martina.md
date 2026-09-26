@@ -20,10 +20,40 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
 ## 2. Pantallas y contenido
 
 ### 2.1 Configuración
+Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, al abrir uno, se cierra el que estuviera abierto, para no tener que hacer scroll), cada uno con un resumen de su valor actual en la cabecera. Orden:
+1. **Idioma**
+2. **Aspecto** (tema de Today, fondo claro/oscuro, barra de tiempo)
+3. **Horarios** (franja horaria de planificación y horario escolar)
+4. **Enlaces** (cuenta de Google para Classroom/Gmail y archivo del calendario escolar)
+5. **Categorías**: solo dos de serie, **Tarea** (prioridad alta por defecto) y **Actividad** (media): no se pueden borrar ni renombrar, solo cambiar su prioridad. Las demás las crea el usuario; cada una lleva un botón de lápiz (editar nombre y color) y una X (borrar) justo a la izquierda de la prioridad, que queda alineada con la de las categorías de serie.
+6. **Google Calendar** (exportación)
+
 - Inserción de credenciales / conexión de cuentas externas (Google, y las que se necesiten).
-- Definición del horario escolar.
-- Localización del archivo con el calendario escolar (para importarlo).
-- Definición de categorías de eventos (tarea, actividad, cita, etc.), cada una con un nivel de prioridad asignado.
+- **Apariencia de Today** (selecciones independientes; se guardan en el dispositivo):
+  - **Tema**: el dibujo principal de la pantalla. De momento *Lista*, *Post-it 1* (opción B «Siguiente ahora» de `Design.html`: el próximo evento como protagonista y el resto como una baraja) y *Post-it 2* (post-its flotantes de `boceto-today.html`). Se podrán añadir más.
+  - **Fondo claro u oscuro** (el oscuro usa la paleta de `Design.html`); se aplica a toda la App.
+  - **Barra de tiempo**: *Puntos* (puntos del color de cada categoría y línea vertical en la hora actual) o *Niña soldado* (el camino con explosiones por evento y la niña con casco en la hora actual). Se podrán añadir más.
+  - La barra cubre siempre toda la franja horaria del día. En días de cole, el horario escolar aparece como un tramo **comprimido y rayado** con el **icono del colegio** (edificio rojo con torre, reloj y cartel «SCHOOL»); en la barra de la niña, ella entra en el colegio y sale al terminar las clases, de modo que por la mañana también se ve todo lo que viene por la tarde. Días sin cole: toda la franja, sin hueco.
+  - En la barra de la niña, las horas de los eventos se alternan abajo y arriba del camino, empezando abajo por el más próximo, para que no se solapen ni se crucen con el dibujo.
+- **Idioma de la App**: español, inglés, italiano, francés y alemán (número limitado de idiomas, con textos traducidos y revisados; se pueden añadir más generando un archivo de traducción).
+  - Fechas y días de la semana se formatean automáticamente en el idioma elegido.
+  - Lo que escribe el usuario (nombres de actividades, lugares, categorías renombradas) no se traduce; las categorías de fábrica sí, mientras no se hayan cambiado.
+  - Lo que la IA extrae de Classroom y Gmail se pedirá directamente en el idioma de la App.
+- **Franja horaria** definida por el usuario (ej.: 07:30–23:00): horas del día en las que la App puede planificar. Fuera de ella no planifica nada.
+- **Horario escolar**: una sola hora de entrada y salida para lunes a viernes, y opción de **clases el sábado** (con su propio horario) si las hubiera.
+  - La App solo gestiona el tiempo fuera del cole: en los días de cole se quita el horario escolar de la franja horaria. Tiempo planificable = [inicio franja → entrada] + [salida → fin franja].
+  - El tramo antes de entrar al cole también cuenta, así se pueden planificar tareas por la mañana si se quiere.
+  - Domingos (y sábados sin clase) = toda la franja horaria disponible.
+  - Este horario alimenta la banda "Horario escolar" del Calendario y las notas de contexto de Actividades y Eventos; el Calendario muestra las horas de la franja horaria.
+- Localización del archivo con el calendario escolar (para importarlo). Se usa para consultar **festivos y días no lectivos**, que la App trata igual que un domingo (toda la franja horaria disponible).
+- Definición de categorías de eventos, cada una con un nivel de prioridad asignado: Tarea y Actividad de serie; el resto (cita, tiempo libre…) las define el usuario.
+- **Exportación a Google Calendar (solo en un sentido: App → Google Calendar).**
+  - La App **no importa** eventos del calendario: solo lleva actividades, tareas y eventos que inciden en el tiempo disponible de Martina, y muchos eventos del calendario personal no interesan (cumpleaños, trabajo…).
+  - La App crea en Google Calendar un **calendario propio y separado** ("AHHHHHH · Martina") y escribe ahí sus eventos; se ve en el móvil junto a los demás y se puede ocultar o borrar sin tocar el resto.
+  - Usa la misma cuenta de Google conectada para Classroom y Gmail.
+  - Se elige qué categorías se exportan (una casilla por categoría definida).
+  - Las tareas se exportan como aviso a su hora de entrega, no como bloque de tiempo.
+  - Opción de aviso a la **hora de salida** calculada cuando el evento implica traslado.
 
 ### 2.2 Actividades extraescolares
 - Insertadas manualmente por el usuario.
@@ -66,6 +96,7 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
 | Gmail API | Mismo proyecto de Google Cloud, API activada, mismo OAuth | Se usa tanto para leer contenido relevante como para la extracción con IA |
 | Geolocalización del dispositivo | Ninguna cuenta ni API — función estándar del navegador con permiso del usuario | Trivial |
 | Google Maps Platform (cálculo de traslados reales) | Clave de API de Google Maps — **requiere asociar una tarjeta de crédito a la cuenta de Google Cloud**, aunque el uso se mantenga dentro del nivel gratuito | Alternativa sin tarjeta: estimación en línea recta con velocidad media (menos realista) — decisión pendiente de confirmar antes de implementar esta parte |
+| Google Calendar API (exportación) | Mismo proyecto de Google Cloud y mismo OAuth; API de Google Calendar activada. Permiso limitado `calendar.app.created` (solo puede gestionar calendarios creados por la App, no lee los demás) | Decidido: exportar a Google Calendar. Solo escritura en el calendario propio de la App |
 | Extracción de contenido con IA (Claude API) | Clave de API propia de Anthropic una vez la app esté fuera de Claude.ai | Coste mínimo para volumen familiar, pero no es gratuito como dentro de este chat |
 
 ---
