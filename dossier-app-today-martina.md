@@ -20,6 +20,14 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
 ## 2. Pantallas y contenido
 
 ### 2.1 Configuración
+Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar), cada uno con un resumen de su valor actual en la cabecera. Orden:
+1. **Idioma**
+2. **Aspecto** (tema de Today, fondo claro/oscuro, barra de tiempo)
+3. **Horarios** (franja horaria de planificación y horario escolar)
+4. **Enlaces** (cuenta de Google para Classroom/Gmail y archivo del calendario escolar)
+5. **Categorías**: solo dos de serie, **Tarea** y **Actividad** (no se pueden borrar, sí renombrar y cambiar color/prioridad); las demás las crea el usuario.
+6. **Google Calendar** (exportación)
+
 - Inserción de credenciales / conexión de cuentas externas (Google, y las que se necesiten).
 - **Apariencia de Today** (selecciones independientes; se guardan en el dispositivo):
   - **Tema**: el dibujo principal de la pantalla. De momento *Lista*, *Post-it 1* (opción B «Siguiente ahora» de `Design.html`: el próximo evento como protagonista y el resto como una baraja) y *Post-it 2* (post-its flotantes de `boceto-today.html`). Se podrán añadir más.
@@ -38,7 +46,7 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
   - Domingos (y sábados sin clase) = toda la franja horaria disponible.
   - Este horario alimenta la banda "Horario escolar" del Calendario y las notas de contexto de Actividades y Eventos; el Calendario muestra las horas de la franja horaria.
 - Localización del archivo con el calendario escolar (para importarlo). Se usa para consultar **festivos y días no lectivos**, que la App trata igual que un domingo (toda la franja horaria disponible).
-- Definición de categorías de eventos (tarea, actividad, cita, etc.), cada una con un nivel de prioridad asignado.
+- Definición de categorías de eventos, cada una con un nivel de prioridad asignado: Tarea y Actividad de serie; el resto (cita, tiempo libre…) las define el usuario.
 - **Exportación a Google Calendar (solo en un sentido: App → Google Calendar).**
   - La App **no importa** eventos del calendario: solo lleva actividades, tareas y eventos que inciden en el tiempo disponible de Martina, y muchos eventos del calendario personal no interesan (cumpleaños, trabajo…).
   - La App crea en Google Calendar un **calendario propio y separado** ("AHHHHHH · Martina") y escribe ahí sus eventos; se ve en el móvil junto a los demás y se puede ocultar o borrar sin tocar el resto.

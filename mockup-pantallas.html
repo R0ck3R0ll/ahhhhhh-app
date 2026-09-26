@@ -474,6 +474,31 @@
   .check-row{ display:flex; align-items:center; gap:9px; font-size:13.5px; padding:5px 0; cursor:pointer; }
   .check-row input{ width:16px; height:16px; margin:0; accent-color:var(--accent); flex:none; }
   .check-row .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  /* ---- Configuración: bloques plegables ---- */
+  .cfg-groups{ display:flex; flex-direction:column; gap:10px; }
+  .cfg-group{ border:1px solid var(--border); border-radius:14px; background:var(--surface-alt); }
+  .cfg-group > summary{
+    list-style:none; display:flex; align-items:center; gap:10px;
+    padding:14px; cursor:pointer; border-radius:14px;
+  }
+  .cfg-group > summary::-webkit-details-marker{ display:none; }
+  .cfg-group > summary:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .cfg-group-title{ flex:none; font-family:var(--font-display); font-weight:600; font-size:16px; }
+  .cfg-group-sum{ flex:1; min-width:0; text-align:right; font-size:12px; line-height:1.3; color:var(--text-muted); }
+  .cfg-group .chev{ flex:none; color:var(--text-muted); transition:transform .2s ease; }
+  .cfg-group[open] .chev{ transform:rotate(180deg); }
+  .cfg-group[open] > summary{ border-bottom:1px solid var(--border); border-radius:14px 14px 0 0; }
+  .cfg-group-body{ padding:14px; display:flex; flex-direction:column; gap:14px; }
+  /* Dentro de un bloque, las tarjetas pierden su marco */
+  .cfg-group .config-card{ border:none; background:none; padding:0; }
+  .cfg-sub{ display:flex; flex-direction:column; gap:10px; }
+  .cfg-sub + .cfg-sub{ border-top:1px solid var(--border); padding-top:14px; }
+  .cfg-sub-title{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--accent-strong); }
+  .builtin-chip{
+    flex:none; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--text-muted); border:1px solid var(--border); border-radius:999px; padding:2px 7px;
+  }
+  @media (prefers-reduced-motion: reduce){ .cfg-group .chev{ transition:none; } }
   .lang-select{
     font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--text);
     background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:6px 8px;
@@ -742,8 +767,10 @@
     <!-- ============ CONFIGURACIÓN ============ -->
     <section class="screen" id="screen-config" aria-labelledby="screen-heading">
 
-      <div>
-        <h2 class="section-title" data-i18n="cfg.language"></h2>
+      <div class="cfg-groups">
+      <details class="cfg-group" data-group="language">
+        <summary><span class="cfg-group-title" data-i18n="grp.language"></span><span class="cfg-group-sum" id="sum-language"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
         <div class="config-card">
           <div class="config-line">
             <label class="config-label" for="lang-select" data-i18n="cfg.languageLabel"></label>
@@ -757,10 +784,11 @@
           </div>
           <p class="card-hint" data-i18n="cfg.languageHint"></p>
         </div>
-      </div>
-
-      <div>
-        <h2 class="section-title" data-i18n="cfg.appearance"></h2>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="look">
+        <summary><span class="cfg-group-title" data-i18n="grp.look"></span><span class="cfg-group-sum" id="sum-look"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
         <div class="config-card">
           <div class="field-label" data-i18n="cfg.theme"></div>
           <div class="seg-control" role="group" data-i18n-aria="cfg.themeAria">
@@ -787,21 +815,13 @@
           </div>
           <button class="btn-ghost" style="align-self:flex-start" onclick="document.querySelector('.tab[data-screen=today]').click()" data-i18n="cfg.viewToday"></button>
         </div>
-      </div>
-
-      <div>
-        <h2 class="section-title" data-i18n="cfg.accounts"></h2>
-        <div class="config-card">
-          <div class="config-line">
-            <span class="config-label" data-i18n="cfg.google"></span>
-            <span class="status-chip off" data-i18n="status.off"></span>
-          </div>
-          <button class="btn-primary" style="align-self:flex-start" onclick="toast(t('toast.google'))" data-i18n="connect"></button>
         </div>
-      </div>
-
-      <div>
-        <h2 class="section-title" data-i18n="cfg.window"></h2>
+      </details>
+      <details class="cfg-group" data-group="hours">
+        <summary><span class="cfg-group-title" data-i18n="grp.hours"></span><span class="cfg-group-sum" id="sum-hours"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="cfg-sub">
+          <div class="cfg-sub-title" data-i18n="cfg.window"></div>
         <div class="config-card">
           <div class="config-line time-line">
             <span class="config-label" data-i18n="cfg.everyDay"></span>
@@ -813,10 +833,9 @@
           </div>
           <p class="card-hint" data-i18n="hint.window"></p>
         </div>
-      </div>
-
-      <div>
-        <h2 class="section-title" data-i18n="cfg.school"></h2>
+        </div>
+        <div class="cfg-sub">
+          <div class="cfg-sub-title" data-i18n="cfg.school"></div>
         <div class="config-card">
           <div class="config-line time-line">
             <span class="config-label" data-i18n="monFri"></span>
@@ -844,10 +863,24 @@
             <div class="cover-list" id="cover-list"></div>
           </div>
         </div>
-      </div>
-
-      <div>
-        <h2 class="section-title" data-i18n="cfg.schoolCal"></h2>
+        </div>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="links">
+        <summary><span class="cfg-group-title" data-i18n="grp.links"></span><span class="cfg-group-sum" id="sum-links"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="cfg-sub">
+          <div class="cfg-sub-title" data-i18n="cfg.google"></div>
+        <div class="config-card">
+          <div class="config-line">
+            <span class="config-label" data-i18n="cfg.accountsLabel"></span>
+            <span class="status-chip off" data-i18n="status.off"></span>
+          </div>
+          <button class="btn-primary" style="align-self:flex-start" onclick="toast(t('toast.google'))" data-i18n="connect"></button>
+        </div>
+        </div>
+        <div class="cfg-sub">
+          <div class="cfg-sub-title" data-i18n="cfg.schoolCal"></div>
         <div class="config-card">
           <div class="config-line">
             <span class="config-label" data-i18n="schoolCal.file"></span>
@@ -856,12 +889,15 @@
           <p class="card-hint" data-i18n-html="hint.schoolCal"></p>
           <button class="btn-ghost" style="align-self:flex-start" onclick="toast(t('toast.import'))" data-i18n="schoolCal.pick"></button>
         </div>
-      </div>
-
-      <div>
-        <h2 class="section-title" data-i18n="cfg.cats"></h2>
+        </div>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="cats">
+        <summary><span class="cfg-group-title" data-i18n="grp.cats"></span><span class="cfg-group-sum" id="sum-cats"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <p class="card-hint" data-i18n="hint.cats"></p>
         <div class="row-list" id="category-list">
-          <div class="row cat-row" data-cat="tarea">
+          <div class="row cat-row" data-default="1" data-cat="tarea">
             <button class="row-bar swatch" style="background:var(--cat-tarea)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
             <div class="row-body"><input class="cat-name-input" value="Tarea" data-i18n-aria="aria.catName"></div>
             <select class="priority-select" style="background:var(--cat-tarea)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
@@ -869,7 +905,17 @@
               <option value="Media">Media</option>
               <option value="Baja">Baja</option>
             </select>
-            <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
+            <span class="builtin-chip" data-i18n="cat.builtin"></span>
+          </div>
+          <div class="row cat-row" data-default="1" data-cat="actividad">
+            <button class="row-bar swatch" style="background:var(--cat-actividad)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
+            <div class="row-body"><input class="cat-name-input" value="Actividad" data-i18n-aria="aria.catName"></div>
+            <select class="priority-select" style="background:var(--cat-actividad)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
+              <option value="Alta">Alta</option>
+              <option value="Media" selected>Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+            <span class="builtin-chip" data-i18n="cat.builtin"></span>
           </div>
           <div class="row cat-row" data-cat="cita">
             <button class="row-bar swatch" style="background:var(--cat-cita)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
@@ -877,16 +923,6 @@
             <select class="priority-select" style="background:var(--cat-cita)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
               <option value="Alta" selected>Alta</option>
               <option value="Media">Media</option>
-              <option value="Baja">Baja</option>
-            </select>
-            <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
-          </div>
-          <div class="row cat-row" data-cat="actividad">
-            <button class="row-bar swatch" style="background:var(--cat-actividad)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
-            <div class="row-body"><input class="cat-name-input" value="Actividad" data-i18n-aria="aria.catName"></div>
-            <select class="priority-select" style="background:var(--cat-actividad)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
-              <option value="Alta">Alta</option>
-              <option value="Media" selected>Media</option>
               <option value="Baja">Baja</option>
             </select>
             <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
@@ -906,10 +942,11 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
           <span data-i18n="cat.add"></span>
         </button>
-      </div>
-
-      <div>
-        <h2 class="section-title">Google Calendar</h2>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="gcal">
+        <summary><span class="cfg-group-title" data-i18n="grp.gcal"></span><span class="cfg-group-sum" id="sum-gcal"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
         <div class="config-card">
           <div class="config-line">
             <span class="config-label" data-i18n="gcal.export"></span>
@@ -933,6 +970,8 @@
             <button class="btn-primary" style="align-self:flex-start" onclick="toast(t('toast.gcal'))" data-i18n="gcal.create"></button>
           </div>
         </div>
+        </div>
+      </details>
       </div>
 
     </section>
@@ -955,10 +994,10 @@
       </div>
 
       <div class="cal-legend">
-        <span><i style="background:var(--cat-actividad)"></i><span data-i18n="cat.actividad"></span></span>
-        <span><i style="background:var(--cat-cita)"></i><span data-i18n="cat.cita"></span></span>
-        <span><i style="background:var(--cat-libre)"></i><span data-i18n="legend.event"></span></span>
-        <span><i style="background:var(--cat-tarea)"></i><span data-i18n="legend.task"></span></span>
+        <span><i style="background:var(--cat-actividad)"></i><span data-cat-name="actividad"></span></span>
+        <span><i style="background:var(--cat-cita)"></i><span data-cat-name="cita"></span></span>
+        <span><i style="background:var(--cat-libre)"></i><span data-cat-name="libre"></span></span>
+        <span><i style="background:var(--cat-tarea)"></i><span data-cat-name="tarea" data-suffix="legend.deadline"></span></span>
       </div>
     </section>
 
@@ -1064,7 +1103,7 @@
       'tab.activities':'Actividades', 'sub.activities':'Extraescolares recurrentes de {name}',
       'tab.events':'Eventos', 'sub.events':'Eventos puntuales y tiempo libre',
       'tab.calendar':'Calendario', 'sub.calendar':'Actividades en vista día o semana',
-      'tab.config':'Config', 'title.config':'Configuración', 'sub.config':'Idioma, apariencia, horario, cuentas y calendario',
+      'tab.config':'Config', 'title.config':'Configuración', 'sub.config':'Idioma, aspecto, horarios, enlaces y categorías',
       'today.soon':'Se acerca · faltan {t}', 'today.later':'Más tarde', 'today.leaves':'{place} · sale {leave} {how}',
       'how.car':'en coche', 'how.walk':'a pie',
       'travel.walk':'A pie · {m} min', 'travel.car':'En coche · {m} min', 'short.walk':'A pie {m}′', 'short.car':'Coche {m}′',
@@ -1072,6 +1111,21 @@
       'today.fanSub':'{dist} · {how} · sal {leave}', 'today.in':'en {t}', 'today.leaveAt':'sal {t}', 'today.leaveAtLong':'Sal a las {t}',
       'today.now':'AHORA · {t}', 'today.inClass':'{t} · en clase',
       'aria.front':'Traer al frente', 'aria.travelMode':'Modo de traslado', 'aria.next':'Próximo evento', 'aria.later':'Eventos siguientes',
+      'grp.language':'Idioma',
+      'grp.look':'Aspecto',
+      'grp.hours':'Horarios',
+      'grp.links':'Enlaces',
+      'grp.cats':'Categorías',
+      'grp.gcal':'Google Calendar',
+      'cfg.accountsLabel':'Cuenta de Google',
+      'cat.builtin':'De serie',
+      'legend.deadline':'(entrega)',
+      'hint.cats':'Tarea y Actividad vienen de serie. Las demás las creas tú (en el ejemplo, Cita y Tiempo libre).',
+      'sum.school':'cole',
+      'sum.links':'{n} de 2 enlazados',
+      'sum.cats':'{n} categorías',
+      'sum.gcalOn':'Exportando',
+      'sum.gcalOff':'Sin exportar',
       'aria.school':'Colegio', 'aria.nav':'Navegación principal'
     },
     en:{
@@ -1138,7 +1192,7 @@
       'tab.activities':'Activities', 'sub.activities':'{name}’s recurring after-school activities',
       'tab.events':'Events', 'sub.events':'One-off events and free time',
       'tab.calendar':'Calendar', 'sub.calendar':'Activities by day or week',
-      'tab.config':'Settings', 'title.config':'Settings', 'sub.config':'Language, appearance, schedule, accounts and calendar',
+      'tab.config':'Settings', 'title.config':'Settings', 'sub.config':'Language, appearance, schedules, connections and categories',
       'today.soon':'Coming up · in {t}', 'today.later':'Later', 'today.leaves':'{place} · leave {leave} {how}',
       'how.car':'by car', 'how.walk':'on foot',
       'travel.walk':'On foot · {m} min', 'travel.car':'By car · {m} min', 'short.walk':'Walk {m}′', 'short.car':'Car {m}′',
@@ -1146,6 +1200,21 @@
       'today.fanSub':'{dist} · {how} · leave {leave}', 'today.in':'in {t}', 'today.leaveAt':'leave {t}', 'today.leaveAtLong':'Leave at {t}',
       'today.now':'NOW · {t}', 'today.inClass':'{t} · in class',
       'aria.front':'Bring to front', 'aria.travelMode':'Travel mode', 'aria.next':'Next event', 'aria.later':'Following events',
+      'grp.language':'Language',
+      'grp.look':'Appearance',
+      'grp.hours':'Schedules',
+      'grp.links':'Connections',
+      'grp.cats':'Categories',
+      'grp.gcal':'Google Calendar',
+      'cfg.accountsLabel':'Google account',
+      'cat.builtin':'Built-in',
+      'legend.deadline':'(due)',
+      'hint.cats':'Homework and Activity are built in. You create the rest (in the example, Cita and Tiempo libre).',
+      'sum.school':'school',
+      'sum.links':'{n} of 2 linked',
+      'sum.cats':'{n} categories',
+      'sum.gcalOn':'Exporting',
+      'sum.gcalOff':'Off',
       'aria.school':'School', 'aria.nav':'Main navigation'
     },
     it:{
@@ -1212,7 +1281,7 @@
       'tab.activities':'Attività', 'sub.activities':'Attività extrascolastiche ricorrenti di {name}',
       'tab.events':'Eventi', 'sub.events':'Eventi singoli e tempo libero',
       'tab.calendar':'Calendario', 'sub.calendar':'Attività in vista giorno o settimana',
-      'tab.config':'Opzioni', 'title.config':'Impostazioni', 'sub.config':'Lingua, aspetto, orari, account e calendario',
+      'tab.config':'Opzioni', 'title.config':'Impostazioni', 'sub.config':'Lingua, aspetto, orari, collegamenti e categorie',
       'today.soon':'Sta arrivando · mancano {t}', 'today.later':'Più tardi', 'today.leaves':'{place} · partenza {leave} {how}',
       'how.car':'in auto', 'how.walk':'a piedi',
       'travel.walk':'A piedi · {m} min', 'travel.car':'In auto · {m} min', 'short.walk':'A piedi {m}′', 'short.car':'Auto {m}′',
@@ -1220,6 +1289,21 @@
       'today.fanSub':'{dist} · {how} · parti {leave}', 'today.in':'tra {t}', 'today.leaveAt':'parti {t}', 'today.leaveAtLong':'Parti alle {t}',
       'today.now':'ORA · {t}', 'today.inClass':'{t} · in classe',
       'aria.front':'Porta davanti', 'aria.travelMode':'Modalità di spostamento', 'aria.next':'Prossimo evento', 'aria.later':'Eventi successivi',
+      'grp.language':'Lingua',
+      'grp.look':'Aspetto',
+      'grp.hours':'Orari',
+      'grp.links':'Collegamenti',
+      'grp.cats':'Categorie',
+      'grp.gcal':'Google Calendar',
+      'cfg.accountsLabel':'Account Google',
+      'cat.builtin':'Predefinita',
+      'legend.deadline':'(consegna)',
+      'hint.cats':'Compito e Attività sono predefinite. Le altre le crei tu (nell’esempio, Cita e Tiempo libre).',
+      'sum.school':'scuola',
+      'sum.links':'{n} di 2 collegati',
+      'sum.cats':'{n} categorie',
+      'sum.gcalOn':'Attiva',
+      'sum.gcalOff':'Disattivata',
       'aria.school':'Scuola', 'aria.nav':'Navigazione principale'
     },
     fr:{
@@ -1286,7 +1370,7 @@
       'tab.activities':'Activités', 'sub.activities':'Activités extrascolaires récurrentes de {name}',
       'tab.events':'Événements', 'sub.events':'Événements ponctuels et temps libre',
       'tab.calendar':'Calendrier', 'sub.calendar':'Activités en vue jour ou semaine',
-      'tab.config':'Réglages', 'title.config':'Réglages', 'sub.config':'Langue, apparence, horaires, comptes et calendrier',
+      'tab.config':'Réglages', 'title.config':'Réglages', 'sub.config':'Langue, apparence, horaires, liens et catégories',
       'today.soon':'Bientôt · dans {t}', 'today.later':'Plus tard', 'today.leaves':'{place} · départ {leave} {how}',
       'how.car':'en voiture', 'how.walk':'à pied',
       'travel.walk':'À pied · {m} min', 'travel.car':'En voiture · {m} min', 'short.walk':'À pied {m}′', 'short.car':'Voiture {m}′',
@@ -1294,6 +1378,21 @@
       'today.fanSub':'{dist} · {how} · départ {leave}', 'today.in':'dans {t}', 'today.leaveAt':'départ {t}', 'today.leaveAtLong':'Départ à {t}',
       'today.now':'MAINTENANT · {t}', 'today.inClass':'{t} · en classe',
       'aria.front':'Mettre devant', 'aria.travelMode':'Mode de trajet', 'aria.next':'Prochain événement', 'aria.later':'Événements suivants',
+      'grp.language':'Langue',
+      'grp.look':'Apparence',
+      'grp.hours':'Horaires',
+      'grp.links':'Liens',
+      'grp.cats':'Catégories',
+      'grp.gcal':'Google Calendar',
+      'cfg.accountsLabel':'Compte Google',
+      'cat.builtin':'Par défaut',
+      'legend.deadline':'(à rendre)',
+      'hint.cats':'Devoir et Activité sont fournies par défaut. Les autres, c’est vous qui les créez (dans l’exemple, Cita et Tiempo libre).',
+      'sum.school':'école',
+      'sum.links':'{n} sur 2 liés',
+      'sum.cats':'{n} catégories',
+      'sum.gcalOn':'Active',
+      'sum.gcalOff':'Désactivée',
       'aria.school':'École', 'aria.nav':'Navigation principale'
     },
     de:{
@@ -1360,7 +1459,7 @@
       'tab.activities':'Aktivitäten', 'sub.activities':'{name}s wiederkehrende Freizeitaktivitäten',
       'tab.events':'Termine', 'sub.events':'Einzeltermine und Freizeit',
       'tab.calendar':'Kalender', 'sub.calendar':'Aktivitäten in Tages- oder Wochenansicht',
-      'tab.config':'Optionen', 'title.config':'Einstellungen', 'sub.config':'Sprache, Darstellung, Zeiten, Konten und Kalender',
+      'tab.config':'Optionen', 'title.config':'Einstellungen', 'sub.config':'Sprache, Darstellung, Zeiten, Verknüpfungen und Kategorien',
       'today.soon':'Gleich · in {t}', 'today.later':'Später', 'today.leaves':'{place} · Abfahrt {leave} {how}',
       'how.car':'mit dem Auto', 'how.walk':'zu Fuß',
       'travel.walk':'Zu Fuß · {m} Min.', 'travel.car':'Mit dem Auto · {m} Min.', 'short.walk':'Zu Fuß {m}′', 'short.car':'Auto {m}′',
@@ -1368,6 +1467,21 @@
       'today.fanSub':'{dist} · {how} · los {leave}', 'today.in':'in {t}', 'today.leaveAt':'los {t}', 'today.leaveAtLong':'Los um {t}',
       'today.now':'JETZT · {t}', 'today.inClass':'{t} · im Unterricht',
       'aria.front':'Nach vorne holen', 'aria.travelMode':'Verkehrsmittel', 'aria.next':'Nächster Termin', 'aria.later':'Folgende Termine',
+      'grp.language':'Sprache',
+      'grp.look':'Darstellung',
+      'grp.hours':'Zeiten',
+      'grp.links':'Verknüpfungen',
+      'grp.cats':'Kategorien',
+      'grp.gcal':'Google Calendar',
+      'cfg.accountsLabel':'Google-Konto',
+      'cat.builtin':'Standard',
+      'legend.deadline':'(Abgabe)',
+      'hint.cats':'Hausaufgabe und Aktivität sind vorgegeben. Die übrigen legst du selbst an (im Beispiel Cita und Tiempo libre).',
+      'sum.school':'Schule',
+      'sum.links':'{n} von 2 verknüpft',
+      'sum.cats':'{n} Kategorien',
+      'sum.gcalOn':'Aktiv',
+      'sum.gcalOff':'Aus',
       'aria.school':'Schule', 'aria.nav':'Hauptnavigation'
     }
   };
@@ -1413,7 +1527,7 @@
     document.querySelectorAll('[data-i18n-title]').forEach(function(el){ el.setAttribute('title', t(el.dataset.i18nTitle)); });
     document.querySelectorAll('.priority-select option').forEach(function(o){ o.textContent = t('prio.' + o.value); });
     // Categorías de fábrica: si el nombre no se ha cambiado, se traduce
-    document.querySelectorAll('#category-list .cat-row[data-cat]').forEach(function(row){
+    document.querySelectorAll('#category-list .cat-row[data-default]').forEach(function(row){
       var input = row.querySelector('.cat-name-input'), key = 'cat.' + row.dataset.cat;
       var isDefault = Object.keys(I18N).some(function(l){ return I18N[l][key] === input.value; });
       if(isDefault){ input.value = t(key); }
@@ -1495,6 +1609,7 @@
       b.setAttribute('aria-pressed', String(on));
     });
     document.getElementById('layout-hint').textContent = t('hint.' + APPEARANCE.layout);
+    if(typeof updateConfigSummaries === 'function'){ updateConfigSummaries(); }
     renderToday();
   }
 
@@ -2020,6 +2135,7 @@
     CAL_START = Math.floor(toHours(b.start));
     CAL_END = Math.ceil(toHours(b.end));
     renderCalendar(calView);
+    updateConfigSummaries();
     if(typeof renderToday === 'function' && document.getElementById('layout-hint').textContent){ renderToday(); }
   }
 
@@ -2034,6 +2150,7 @@
     var on = btn.getAttribute('aria-checked') !== 'true';
     btn.setAttribute('aria-checked', String(on));
     document.getElementById('export-options').hidden = !on;
+    updateConfigSummaries();
     if(on){ renderExportCats(); }
   }
 
@@ -2057,8 +2174,24 @@
       label.appendChild(input); label.appendChild(dot); label.appendChild(name);
       box.appendChild(label);
     });
+    document.querySelectorAll('[data-cat-name]').forEach(function(el){ el.textContent = catName(el.dataset.catName) + (el.dataset.suffix ? ' ' + t(el.dataset.suffix) : ''); });
+    updateConfigSummaries();
   }
   document.getElementById('category-list').addEventListener('input', renderExportCats);
+
+  // Resumen del valor actual en la cabecera de cada bloque plegado
+  function updateConfigSummaries(){
+    function put(id, text){ var el = document.getElementById('sum-' + id); if(el){ el.textContent = text; } }
+    put('language', LANGS[LANG]);
+    put('look', [t(APPEARANCE.layout === 'list' ? 'layout.list' : (APPEARANCE.layout === 'postit1' ? 'Post-it 1' : 'Post-it 2')),
+                 t('mode.' + APPEARANCE.mode), t('bar.' + APPEARANCE.bar)].join(' · '));
+    var b = dayBounds();
+    put('hours', b.start + '–' + b.end + ' · ' + t('sum.school') + '\u00a0' + SCHOOL.week.entry + '\u2011' + SCHOOL.week.exit);
+    put('links', t('sum.links', { n: 0 }));
+    put('cats', t('sum.cats', { n: document.querySelectorAll('#category-list .cat-row').length }));
+    put('gcal', t(document.getElementById('export-switch').getAttribute('aria-checked') === 'true' ? 'sum.gcalOn' : 'sum.gcalOff'));
+  }
+
 
   /* ---- Calendario (vista día / semana) ---- */
   var CAL_START = 7, CAL_END = 23, CAL_HOUR_PX = 36;   // sigue la franja horaria de Config
