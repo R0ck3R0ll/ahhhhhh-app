@@ -115,7 +115,11 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - Si un evento implica desplazamiento, se muestran **dos datos**: el deadline en sí, y la hora de salida calculada según el tiempo de traslado (Google Maps).
   - Distancias menores de 1 km: preguntar al usuario si se va andando.
   - Resto de distancias: calcular en coche.
-- Aviso destacado en la pantalla: cualquier tarea de los próximos 5 días con tiempo estimado de ejecución superior a 1,5 horas genera una alerta visible en "Today".
+- Tarjeta **«Próximos días»** (sustituye a «Carga de trabajo»): recoge **todas las tareas de los siguientes 5 días con tiempo estimado de 1,5 h o más**, ordenadas por entrega.
+  - Cada tarea: **nombre**; debajo, **tiempo estimado** (sin la palabra «estimado») y **«antes de» fecha y hora** de entrega. Puede tener varias líneas.
+  - Va **abajo del todo, fija justo encima de la barra de pestañas** (se ve aunque el resto se desplace).
+  - Marco naranja pastel, fondo amarillo pastel y el texto de cada tarea del color de su categoría.
+  - Si no hay ninguna tarea que cumpla la condición, la tarjeta no aparece.
 
 ---
 

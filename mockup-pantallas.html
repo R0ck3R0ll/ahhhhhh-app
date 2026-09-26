@@ -139,26 +139,26 @@
     margin:0 0 10px;
   }
 
-  /* ---- Alert banner ---- */
-  .alert{
-    background:var(--alert-bg);
-    border:1px solid var(--alert-border);
-    color:var(--alert-text);
-    border-radius:14px;
-    padding:12px 14px;
-    display:flex;
-    gap:10px;
-    align-items:flex-start;
-  }
-  .alert svg{ flex:none; margin-top:2px; }
-  .alert .alert-title{ font-weight:600; font-size:13.5px; }
-  .alert .alert-body{ font-size:13px; margin-top:2px; line-height:1.4; color:var(--alert-body-text); }
-
   /* ---- Today: estructura común ---- */
   .today-more{ margin:0; font-size:12.5px; color:var(--text-muted); text-align:center; }
   #screen-today.active{ min-height:100%; }
-  #screen-today .alert{ margin-top:auto; }
-  #screen-today[data-layout="postit2"] .alert{ border:2px solid var(--ink); box-shadow:0 3px 0 var(--ink); }
+  /* Próximos días: abajo del todo, pegada a la barra de pestañas aunque el resto se desplace */
+  :root{ --load-border:#f2b27a; --load-bg:#fff4c7; --load-title:#8a4b12; }
+  .load-card{
+    margin-top:auto; position:sticky; bottom:0; z-index:5;
+    background:var(--load-bg); border:2px solid var(--load-border); border-radius:14px;
+    padding:10px 14px; box-shadow:0 -6px 16px rgba(0,0,0,.08);
+    /* los colores de categoría del modo claro, legibles sobre el amarillo pastel también en modo oscuro */
+    --cat-tarea-ink:#0e8077; --cat-cita-ink:#6a4aa8; --cat-actividad-ink:#557b3d; --cat-libre-ink:#3e6899;
+  }
+  .load-card[hidden]{ display:none; }
+  .load-title{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--load-title); margin-bottom:4px; }
+  .load-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px; }
+  /* Cada tarea: nombre (se recorta si no cabe) y debajo tiempo · antes de fecha y hora */
+  .load-list li{ display:flex; flex-direction:column; line-height:1.25; }
+  .load-list .load-name{ font-size:13px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .load-list .load-meta{ font-size:12px; font-weight:500; font-variant-numeric:tabular-nums; }
+  .load-list .load-est{ font-weight:700; }
   .today-layout{ display:flex; flex-direction:column; gap:20px; }
   .section-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
 
@@ -830,12 +830,10 @@
       <div id="today-bar"></div>
       <div class="today-layout" id="today-layout"></div>
 
-      <div class="alert" role="status">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
-        <div>
-          <div class="alert-title" data-i18n="alert.title"></div>
-          <div class="alert-body" id="alert-body"></div>
-        </div>
+      <!-- Próximos días: tareas de los siguientes 5 días con 1,5 h o más; fija justo encima de la barra de pestañas -->
+      <div class="load-card" role="status" aria-labelledby="load-title">
+        <div class="load-title" id="load-title" data-i18n="load.title"></div>
+        <ul class="load-list" id="load-list"></ul>
       </div>
 
     </section>
@@ -1413,8 +1411,7 @@
   var I18N = {
     es:{
       'planOf':'plan de {name}',
-      'alert.title':'Carga de trabajo próxima',
-      'alert.body':'{task} · estimado {est} · entrega el {due}',
+      'load.title':'Próximos días', 'load.before':'antes de {t}',
       'note.school':'<strong>Horario escolar:</strong> {summary}. Fuera de ese horario la agenda de {name} está libre para actividades, tareas y otros planes.',
       'act.title':'Actividades recurrentes', 'edit':'Editar', 'noTravel':'En casa (sin traslado)', 'and':' y ',
       'act.add':'Añadir actividad',
@@ -1532,8 +1529,7 @@
     },
     en:{
       'planOf':'{name}’s plan',
-      'alert.title':'Upcoming workload',
-      'alert.body':'{task} · est. {est} · due {due}',
+      'load.title':'Coming days', 'load.before':'before {t}',
       'note.school':'<strong>School hours:</strong> {summary}. Outside those hours {name}’s schedule is free for activities, homework and other plans.',
       'act.title':'Recurring activities', 'edit':'Edit', 'noTravel':'At home (no travel)', 'and':' and ',
       'act.add':'Add activity',
@@ -1651,8 +1647,7 @@
     },
     it:{
       'planOf':'piano di {name}',
-      'alert.title':'Carico di lavoro in arrivo',
-      'alert.body':'{task} · stimato {est} · consegna {due}',
+      'load.title':'Prossimi giorni', 'load.before':'entro {t}',
       'note.school':'<strong>Orario scolastico:</strong> {summary}. Fuori da quell’orario l’agenda di {name} è libera per attività, compiti e altri impegni.',
       'act.title':'Attività ricorrenti', 'edit':'Modifica', 'noTravel':'A casa (nessuno spostamento)', 'and':' e ',
       'act.add':'Aggiungi attività',
@@ -1770,8 +1765,7 @@
     },
     fr:{
       'planOf':'planning de {name}',
-      'alert.title':'Charge de travail à venir',
-      'alert.body':'{task} · estimé {est} · à rendre {due}',
+      'load.title':'Prochains jours', 'load.before':'avant {t}',
       'note.school':'<strong>Horaires scolaires :</strong> {summary}. En dehors de ces horaires, l’agenda de {name} est libre pour les activités, les devoirs et d’autres projets.',
       'act.title':'Activités récurrentes', 'edit':'Modifier', 'noTravel':'À la maison (sans trajet)', 'and':' et ',
       'act.add':'Ajouter une activité',
@@ -1889,8 +1883,7 @@
     },
     de:{
       'planOf':'Plan von {name}',
-      'alert.title':'Anstehende Arbeitslast',
-      'alert.body':'{task} · geschätzt {est} · Abgabe {due}',
+      'load.title':'Nächste Tage', 'load.before':'bis {t}',
       'note.school':'<strong>Schulzeiten:</strong> {summary}. Außerhalb dieser Zeiten ist {name}s Kalender frei für Aktivitäten, Hausaufgaben und andere Pläne.',
       'act.title':'Wiederkehrende Aktivitäten', 'edit':'Bearbeiten', 'noTravel':'Zu Hause (keine Fahrt)', 'and':' und ',
       'act.add':'Aktivität hinzufügen',
@@ -2057,9 +2050,7 @@
       var d = isoDate(el.dataset.date);
       el.textContent = cap(fmtDate(d, { weekday:'short' }).replace('.', '')) + ' ' + ddmm(d);
     });
-    var due = isoDate('2026-09-14');
-    document.getElementById('alert-body').textContent = t('alert.body', {
-      task:'Trabajo de Ciencias Naturales', est:'2 h', due: fmtDate(due, { weekday:'long' }) + ' ' + ddmm(due) });
+    renderLoad();
     var active = document.querySelector('.tab.is-active');
     if(active){ setScreenHeading(active); }
     document.getElementById('cal-range').textContent = calRangeText(calView);
@@ -2158,6 +2149,33 @@
   }
   function nextState(t){ var m = (t - NOW) * 60; return m > 60 ? 'st-calm' : m > 30 ? 'st-soon' : 'st-urgent'; }
   function nextCardAttrs(n){ return ' next-card ' + nextState(n.t) + '" style="' + catVars(n.cat); }
+  /* ---- Próximos días: tareas de los siguientes LOAD_DAYS días con LOAD_MIN_EST minutos o más ----
+     (datos de ejemplo de la maqueta; al conectar los datos reales se filtran todas las tareas igual) */
+  var LOAD_DAYS = 5, LOAD_MIN_EST = 90;
+  var LOAD_TASKS = [
+    { name:'Trabajo de Ciencias Naturales', cat:'tarea', est:120, date:'2026-09-14', time:'09:00' },
+    { name:'Estudiar examen de Inglés', cat:'tarea', est:90, date:'2026-09-15', time:'10:00' },
+    { name:'Ensayar pieza para la audición', cat:'actividad', est:150, date:'2026-09-16', time:'17:30' },
+    { name:'Lectura de Lengua', cat:'tarea', est:45, date:'2026-09-14', time:'09:00' },          // < 1,5 h: no sale
+    { name:'Maqueta de Tecnología', cat:'tarea', est:180, date:'2026-09-21', time:'09:00' }      // fuera de 5 días
+  ];
+  function upcomingLoad(){
+    var now = new Date(TODAY_DATE.getTime()); now.setMinutes(Math.round(NOW * 60));
+    var limit = new Date(TODAY_DATE.getFullYear(), TODAY_DATE.getMonth(), TODAY_DATE.getDate() + LOAD_DAYS + 1);
+    return LOAD_TASKS.map(function(x){ var d = isoDate(x.date); d.setMinutes(Math.round(toHours(x.time) * 60)); return { x:x, due:d }; })
+      .filter(function(it){ return it.x.est >= LOAD_MIN_EST && it.due > now && it.due < limit; })
+      .sort(function(a, b){ return a.due - b.due; });
+  }
+  function inkOf(cat){ return /^(tarea|cita|actividad|libre)$/.test(cat) ? 'var(--cat-' + cat + '-ink)' : 'color-mix(in srgb, ' + catColor(cat) + ' 55%, #000)'; }
+  function renderLoad(){
+    var items = upcomingLoad(), card = document.querySelector('.load-card');
+    card.hidden = !items.length;
+    el('load-list').innerHTML = items.map(function(it){
+      return '<li style="color:' + inkOf(it.x.cat) + '" title="' + esc(it.x.name) + '"><span class="load-name">' + esc(it.x.name) + '</span>' +
+        '<span class="load-meta"><span class="load-est">' + fmtEst(it.x.est) + '</span> · ' +
+        t('load.before', { t: fmtDay(it.x.date) + ' ' + it.x.time }) + '</span></li>';
+    }).join('');
+  }
   function travelOf(item){ return item.travel ? item.travel[item.travel.mode] : null; }
   var CLOCK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
   var CAR_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14l-1.5-5.5A2 2 0 0 0 15.6 10H8.4a2 2 0 0 0-1.9 1.5Z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>';
