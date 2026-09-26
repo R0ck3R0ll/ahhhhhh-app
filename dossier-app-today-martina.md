@@ -99,6 +99,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - **Eventos**: su duración (campo obligatorio), con el color de su categoría.
   - **Entregas de tareas**: un bloque estándar de **media hora que termina en la deadline** (entrega a las 18:00 → se ve de 17:30 a 18:00), con un borde inferior que marca el momento de la entrega.
 - Si varios bloques se solapan, se reparten el ancho de la columna. La leyenda muestra las categorías que aparecen en la vista.
+- **Pulsar un bloque del Calendario** (actividad, evento o entrega de tarea) abre ese elemento en su pantalla, igual que al pulsarlo allí (ficha con Editar y Eliminar), con un botón **«‹ Volver al Calendario»**. Si se edita, la ficha sigue ofreciendo volver al Calendario; si se elimina, se vuelve al Calendario.
 
 ### 2.4 Pantalla principal — "Today"
 - Nombre de la pantalla **en el idioma de la App**: Hoy (es), Today (en), Oggi (it), Aujourd’hui (fr), Heute (de); en la pestaña, en el título y en los textos que la mencionan.

@@ -808,6 +808,8 @@
   .cal-bar .bar-time{ font-size:9.5px; opacity:.85; font-variant-numeric:tabular-nums; }
   .cal-bar.cat-actividad{ background:var(--cat-actividad); }
   .cal-bar.cat-libre{ background:var(--cat-libre); }
+  .cal-bar.is-open{ cursor:pointer; }
+  .cal-bar.is-open:focus-visible{ outline:2px solid var(--text); outline-offset:1px; z-index:3; }
   .cal-bar.cat-cita, .cal-bar.cat-evento{ background:var(--cat-cita); }
   /* Entrega de tarea: bloque estándar de 30 min que termina en la deadline (solo visual) */
   .cal-bar.cat-tarea{ background:var(--cat-tarea); border-bottom:2px solid var(--cat-tarea-ink); }
@@ -1542,6 +1544,7 @@
       'task.ownPrio':'{p} · propia de la tarea',
       'btn.back':'Volver', 'tasks.add':'Añadir tarea', 'task.newTitle':'Nueva tarea', 'task.fromManual':'Añadida a mano', 'd.when':'Cuándo', 'd.task':'Tarea asociada', 'd.origin':'Origen', 'd.prioOwn':'(propia)', 'd.prioDefault':'(la de la categoría)',
       'tab.today':'Hoy', 'today.more1':'Y 1 más hoy: la ves en la barra de tiempo.', 'today.more':'Y {n} más hoy: los ves en la barra de tiempo.',
+      'btn.backCal':'Volver al Calendario',
       'btn.backToday':'Volver a Hoy', 'd.leave':'Salida', 'toast.demoItem':'Es un dato de ejemplo: se podrá editar cuando «Hoy» use los datos reales',
       'tab.calendar':'Calendario', 'sub.calendar':'Actividades en vista día o semana',
       'tab.config':'Config', 'title.config':'Configuración', 'sub.config':'Idioma, aspecto, horarios, enlaces y categorías',
@@ -1662,6 +1665,7 @@
       'task.ownPrio':'{p} · set for this task',
       'btn.back':'Back', 'tasks.add':'Add task', 'task.newTitle':'New task', 'task.fromManual':'Added by hand', 'd.when':'When', 'd.task':'Linked task', 'd.origin':'Source', 'd.prioOwn':'(own)', 'd.prioDefault':'(the category’s)',
       'tab.today':'Today', 'today.more1':'And 1 more today: see it on the time bar.', 'today.more':'And {n} more today: see them on the time bar.',
+      'btn.backCal':'Back to Calendar',
       'btn.backToday':'Back to Today', 'd.leave':'Departure', 'toast.demoItem':'This is sample data: it can be edited once Today uses real data',
       'tab.calendar':'Calendar', 'sub.calendar':'Activities by day or week',
       'tab.config':'Settings', 'title.config':'Settings', 'sub.config':'Language, appearance, schedules, connections and categories',
@@ -1782,6 +1786,7 @@
       'task.ownPrio':'{p} · propria del compito',
       'btn.back':'Indietro', 'tasks.add':'Aggiungi compito', 'task.newTitle':'Nuovo compito', 'task.fromManual':'Aggiunto a mano', 'd.when':'Quando', 'd.task':'Compito associato', 'd.origin':'Origine', 'd.prioOwn':'(propria)', 'd.prioDefault':'(quella della categoria)',
       'tab.today':'Oggi', 'today.more1':'E 1 altro oggi: lo vedi nella barra del tempo.', 'today.more':'E altri {n} oggi: li vedi nella barra del tempo.',
+      'btn.backCal':'Torna al Calendario',
       'btn.backToday':'Torna a Oggi', 'd.leave':'Partenza', 'toast.demoItem':'È un dato di esempio: si potrà modificare quando «Oggi» userà i dati reali',
       'tab.calendar':'Calendario', 'sub.calendar':'Attività in vista giorno o settimana',
       'tab.config':'Opzioni', 'title.config':'Impostazioni', 'sub.config':'Lingua, aspetto, orari, collegamenti e categorie',
@@ -1902,6 +1907,7 @@
       'task.ownPrio':'{p} · propre à la tâche',
       'btn.back':'Retour', 'tasks.add':'Ajouter une tâche', 'task.newTitle':'Nouvelle tâche', 'task.fromManual':'Ajoutée à la main', 'd.when':'Quand', 'd.task':'Tâche associée', 'd.origin':'Origine', 'd.prioOwn':'(propre)', 'd.prioDefault':'(celle de la catégorie)',
       'tab.today':'Aujourd’hui', 'today.more1':'Et 1 de plus aujourd’hui : voyez-le sur la barre de temps.', 'today.more':'Et {n} de plus aujourd’hui : voyez-les sur la barre de temps.',
+      'btn.backCal':'Retour au Calendrier',
       'btn.backToday':'Retour à Aujourd’hui', 'd.leave':'Départ', 'toast.demoItem':'C’est une donnée d’exemple : elle pourra être modifiée quand « Aujourd’hui » utilisera les données réelles',
       'tab.calendar':'Calendrier', 'sub.calendar':'Activités en vue jour ou semaine',
       'tab.config':'Réglages', 'title.config':'Réglages', 'sub.config':'Langue, apparence, horaires, liens et catégories',
@@ -2022,6 +2028,7 @@
       'task.ownPrio':'{p} · eigene der Aufgabe',
       'btn.back':'Zurück', 'tasks.add':'Aufgabe hinzufügen', 'task.newTitle':'Neue Aufgabe', 'task.fromManual':'Von Hand hinzugefügt', 'd.when':'Wann', 'd.task':'Zugehörige Aufgabe', 'd.origin':'Herkunft', 'd.prioOwn':'(eigene)', 'd.prioDefault':'(die der Kategorie)',
       'tab.today':'Heute', 'today.more1':'Und 1 weiterer heute: siehe Zeitleiste.', 'today.more':'Und {n} weitere heute: siehe Zeitleiste.',
+      'btn.backCal':'Zurück zum Kalender',
       'btn.backToday':'Zurück zu Heute', 'd.leave':'Abfahrt', 'toast.demoItem':'Das sind Beispieldaten: Bearbeiten geht, sobald „Heute“ echte Daten nutzt',
       'tab.calendar':'Kalender', 'sub.calendar':'Aktivitäten in Tages- oder Wochenansicht',
       'tab.config':'Optionen', 'title.config':'Einstellungen', 'sub.config':'Sprache, Darstellung, Zeiten, Verknüpfungen und Kategorien',
@@ -2122,6 +2129,7 @@
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById('screen-'+btn.dataset.screen).classList.add('active');
     setScreenHeading(btn);
+    DETAIL_BACK = null;   // al cambiar de pestaña, las fichas vuelven a su lista
     // «Hoy» lleva la cabecera compacta (sin la marca y con la fecha en la misma línea)
     document.querySelector('.app-shell').classList.toggle('is-today', btn.dataset.screen === 'today');
     if(btn.dataset.screen === 'calendar'){ fitCalendar(); }
@@ -2274,6 +2282,16 @@
       delLabel: t(item.kind === 'activity' ? 'act.cancel' : item.kind === 'event' ? 'evt.cancel' : 'task.delete'),
       back: { label: t('btn.backToday'), fn: "backToToday('" + sc[1] + "')" }
     });
+  }
+  function openFromCalendar(kind, id){
+    var sc = KIND_SCREEN[kind];
+    document.querySelector('.tab[data-screen="' + sc[0] + '"]').click();
+    DETAIL_BACK = { label: t('btn.backCal'), fn: "backToCalendar('" + sc[1] + "')", go: function(){ backToCalendar(sc[1]); } };
+    if(kind === 'activity'){ openActivity(id); } else if(kind === 'event'){ openEvent(id); } else { openTask(id); }
+  }
+  function backToCalendar(f){
+    showView(f, 'list');
+    document.querySelector('.tab[data-screen="calendar"]').click();
   }
   function backToToday(f){
     showView(f, 'list');
@@ -2950,7 +2968,12 @@
 
   /* ---- Lista → ficha de consulta → formulario (Actividades, Eventos, Tareas) ---- */
   // Pulsar un elemento abre su ficha solo para consultar; desde la ficha se edita o se elimina.
+  // Ficha abierta desde otra pantalla (Calendario): su botón de volver lleva allí
+  var DETAIL_BACK = null;
+  // Tras eliminar desde una ficha: a la pantalla de origen si se abrió desde otra, si no a la lista
+  function afterDelete(f){ if(DETAIL_BACK && DETAIL_BACK.go){ DETAIL_BACK.go(); } else { showView(f, 'list'); } }
   function showView(f, view){
+    if(view === 'list'){ DETAIL_BACK = null; }
     el(f + '-list-view').hidden = view !== 'list';
     el(f + '-detail').hidden = view !== 'detail';
     el(f + '-form').hidden = view !== 'form';
@@ -2960,7 +2983,7 @@
   // d: {title, prio, rows:[[etiqueta, html]], edit:'fn()', del:'fn(this)', delLabel}
   function renderDetail(f, d){
     el(f + '-detail').innerHTML =
-      '<button type="button" class="detail-back" onclick="' + (d.back ? d.back.fn : 'showView(\'' + f + '\', \'list\')') + '">' + BACK_SVG + (d.back ? d.back.label : t('btn.back')) + '</button>' +
+      '<button type="button" class="detail-back" onclick="' + ((d.back = d.back || DETAIL_BACK) ? d.back.fn : 'showView(\'' + f + '\', \'list\')') + '">' + BACK_SVG + (d.back ? d.back.label : t('btn.back')) + '</button>' +
       '<div class="detail-card">' +
         '<div class="detail-head"><h3>' + esc(d.title) + '</h3><span class="prio-chip prio-' + d.prio + '">' + t('prio.' + d.prio) + '</span></div>' +
         '<dl class="detail-list">' + d.rows.filter(function(r){ return r[1]; }).map(function(r){
@@ -3259,7 +3282,7 @@
     USER_EVENTS.splice(USER_EVENTS.indexOf(e), 1);
     storeEvents();
     editingEvent = null;
-    showView('evt', 'list');
+    afterDelete('evt');
     renderEvents();
     renderTasks();
     renderCalendar(calView);
@@ -3275,12 +3298,13 @@
     return USER_EVENTS.map(function(e){
       var h = toHours(e.time), c = eventCategory(e);
       return { day: weekDayIndex(e.date), title: e.name, start: h, end: Math.min(h + (e.dur || 60) / 60, CAL_END),
-               color: c ? c.color : null, catLabel: c ? c.name : '' };
+               color: c ? c.color : null, catLabel: c ? c.name : '', ref: { kind:'event', id:e.id } };
     }).filter(function(e){ return e.day >= 0; });
   }
   function weekUserTasks(){
-    return USER_EVENTS.filter(function(e){ return e.task; }).map(function(e){ return e.task; }).concat(OWN_TASKS).map(function(tk){
-      return { day: weekDayIndex(tk.date), title: tk.name, time: toHours(tk.time), cat: 'tarea' };
+    return USER_EVENTS.filter(function(e){ return e.task; }).map(function(e){ return { tk:e.task, key:'e:' + e.id }; })
+      .concat(OWN_TASKS.map(function(tk){ return { tk:tk, key:'s:' + tk.id }; })).map(function(x){
+      return { day: weekDayIndex(x.tk.date), title: x.tk.name, time: toHours(x.tk.time), cat: 'tarea', ref: { kind:'task', id:x.key } };
     }).filter(function(e){ return e.day >= 0; });
   }
 
@@ -3501,7 +3525,7 @@
     USER_ACTS.splice(USER_ACTS.indexOf(a), 1);
     storeActivities();
     editingAct = null;
-    showView('act', 'list');
+    afterDelete('act');
     renderActivities();
     renderTasks();
     renderCalendar(calView);
@@ -3515,7 +3539,7 @@
     USER_ACTS.forEach(function(a){
       var c = eventCategory(a);
       a.sessions.forEach(function(x){
-        out.push({ day: x.day, title: a.name, start: toHours(x.start), end: toHours(x.end), color: c ? c.color : null, catLabel: c ? c.name : '' });
+        out.push({ day: x.day, title: a.name, start: toHours(x.start), end: toHours(x.end), color: c ? c.color : null, catLabel: c ? c.name : '', ref: { kind:'activity', id:a.id } });
       });
     });
     return out;
@@ -3524,7 +3548,7 @@
     var out = [];
     USER_ACTS.forEach(function(a){
       if(!a.task){ return; }
-      a.sessions.forEach(function(x){ out.push({ day: x.day, title: a.task.name, time: toHours(x.start), cat: 'tarea' }); });
+      a.sessions.forEach(function(x){ out.push({ day: x.day, title: a.task.name, time: toHours(x.start), cat: 'tarea', ref: { kind:'task', id:'a:' + a.id } }); });
     });
     return out;
   }
@@ -3704,7 +3728,7 @@
     if(x.parent){ x.parent.task = null; } else { OWN_TASKS.splice(OWN_TASKS.indexOf(x.ref), 1); }
     storeTasks(); storeEvents(); storeActivities();
     editingTask = null;
-    showView('task', 'list');
+    afterDelete('task');
     renderTasks(); renderEvents(); renderActivities(); renderCalendar(calView);
     toast(t('toast.taskDeleted', { name: x.name }));
   }
@@ -3864,7 +3888,7 @@
       // estándar de TASK_VIEW_H que termina en la deadline (solo visual: avisos y barra
       // de tiempo usan la deadline). Los bloques que se solapan se reparten el ancho.
       var items = CAL_EVENTS.concat(weekUserActs(), weekUserEvents()).concat(CAL_DEADLINES.concat(weekUserTasks(), weekActTasks()).map(function(e){
-        return { day:e.day, title:e.title, start:Math.max(e.time - TASK_VIEW_H, CAL_START), end:e.time, cat:'tarea', due:true };
+        return { day:e.day, title:e.title, start:Math.max(e.time - TASK_VIEW_H, CAL_START), end:e.time, cat:'tarea', due:true, ref:e.ref };
       })).filter(function(e){ return e.day === realDay; });
       layoutLanes(items);
       items.forEach(function(e){
@@ -3877,6 +3901,14 @@
         bar.style.right = 'calc(' + ((e.lanes - e.lane - 1) / e.lanes * 100) + '% + 2px)';
         var when = e.due ? t('cal.due', { t: fmtHour(e.end) }) : fmtHour(e.start) + '–' + fmtHour(e.end);
         bar.title = e.title + ' · ' + when;
+        // Pulsar un bloque abre el elemento en su pantalla, con botón para volver al Calendario
+        if(e.ref){
+          bar.classList.add('is-open');
+          bar.setAttribute('role', 'button'); bar.tabIndex = 0;
+          bar.setAttribute('aria-label', e.title + ' · ' + when);
+          bar.setAttribute('onclick', "openFromCalendar('" + e.ref.kind + "', '" + e.ref.id + "')");
+          bar.setAttribute('onkeydown', "if(event.key==='Enter'||event.key===' '){ event.preventDefault(); openFromCalendar('" + e.ref.kind + "', '" + e.ref.id + "'); }");
+        }
         // Bloques bajos (p. ej. la media hora de una entrega): título y hora en una sola línea
         var h = pos(e.end) - pos(e.start);
         bar.innerHTML = isWeek ? '<span class="bar-title">' + esc(e.title) + '</span>'
