@@ -665,6 +665,25 @@
   .plan-handle:focus-visible{ outline:2px solid var(--accent); border-radius:4px; }
   .plan-scale{ display:flex; justify-content:space-between; font-size:10.5px; color:var(--text-muted); font-variant-numeric:tabular-nums; }
   .plan-empty{ font-size:13px; color:var(--text-muted); text-align:center; margin:4px 0; }
+  /* ---- Progreso y fin de bloque ---- */
+  .progress-line{ display:flex; align-items:center; gap:8px; margin-top:4px; width:100%; }
+  .detail-list .progress-line{ margin-top:2px; }
+  .block-line{ display:block; flex-basis:100%; }
+  .detail-list dd .progress-line{ flex-basis:100%; }
+  .detail-list dd .progress i{ height:100%; border-radius:999px; flex:none; }
+  .progress{ flex:1 1 120px; min-width:80px; max-width:180px; height:8px; border-radius:999px; background:var(--surface-alt); border:1px solid var(--border); overflow:hidden; }
+  .progress i{ display:block; height:100%; background-color:var(--cat-tarea); border-radius:999px; }
+  .progress-text{ font-size:12px; color:var(--text-muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .end-task{ display:flex; flex-direction:column; gap:2px; }
+  .end-task strong{ font-size:15px; color:var(--text); }
+  .end-value{ font-family:var(--font-display); font-size:30px; font-weight:700; text-align:center; margin:6px 0 2px; color:var(--cat-tarea-ink); font-variant-numeric:tabular-nums; }
+  .end-range{ width:100%; accent-color:var(--cat-tarea-ink); height:28px; }
+  .end-scale{ display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); font-variant-numeric:tabular-nums; }
+  .end-prog{ margin-top:10px; }
+  .end-prog .progress{ max-width:none; }
+  #end-step1[hidden], #end-step2[hidden]{ display:none; }
+  #end-step1 .field-label{ display:block; margin-top:6px; }
+
   /* ---- Pulsación larga ---- */
   #cal-grid, #today-bar{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
   .press-hint{ margin:6px 0 0; font-size:11px; color:var(--text-muted); }
@@ -1534,6 +1553,7 @@
           <strong id="plan-task"></strong>
           <span id="plan-due"></span>
           <span class="plan-sum" id="plan-sum"></span>
+          <span id="plan-prog"></span>
         </div>
         <p class="card-hint" id="plan-hint" hidden></p>
         <div class="plan-list" id="plan-list"></div>
@@ -1644,6 +1664,30 @@
   <div class="press-tasks" id="press-tasks" hidden></div>
   <div class="form-actions">
     <button type="button" class="btn-ghost" onclick="closePress()" data-i18n="btn.cancel"></button>
+  </div>
+</dialog>
+
+<!-- Fin de un bloque de trabajo: cuánto se ha trabajado -->
+<dialog class="confirm-dialog end-dialog" id="end-dialog" aria-labelledby="end-title">
+  <h2 id="end-title" data-i18n="end.title"></h2>
+  <p class="end-task"><strong id="end-task"></strong><span id="end-when"></span></p>
+  <div id="end-step1">
+    <label class="field-label" for="end-range" data-i18n="end.q"></label>
+    <div class="end-value" id="end-value"></div>
+    <input type="range" class="end-range" id="end-range" min="0" step="5" oninput="endInput()">
+    <div class="end-scale"><span>0 min</span><span id="end-max"></span></div>
+    <div class="end-prog" id="end-prog"></div>
+    <div class="form-actions">
+      <button type="button" class="btn-ghost" onclick="endLater()" data-i18n="end.later"></button>
+      <button type="button" class="btn-primary" id="end-ok" onclick="endConfirm()"></button>
+    </div>
+  </div>
+  <div id="end-step2" hidden>
+    <p id="end-q2"></p>
+    <div class="form-actions">
+      <button type="button" class="btn-ghost" onclick="endFinish(false)" data-i18n="end.notYet"></button>
+      <button type="button" class="btn-primary" onclick="endFinish(true)" data-i18n="end.yesDone"></button>
+    </div>
   </div>
 </dialog>
 
@@ -1758,7 +1802,7 @@
       'task.deleteConfirmLinked':'Confirmar: se quita la tarea de «{name}»', 'toast.taskSaved':'Tarea «{name}» guardada', 'toast.taskDeleted':'Tarea «{name}» eliminada',
       'task.ownPrio':'{p} · propia de la tarea',
       'btn.back':'Volver', 'tasks.add':'Añadir tarea', 'task.newTitle':'Nueva tarea', 'task.fromManual':'Añadida a mano', 'd.when':'Cuándo', 'd.task':'Tarea asociada', 'd.origin':'Origen', 'd.prioOwn':'(propia)', 'd.prioDefault':'(la de la categoría)',
-      'tab.today':'Hoy', 'task.plan':'Planificar', 'plan.title':'Planificar', 'plan.sum':'Estimado {est} · planificado {plan} · falta {left}', 'plan.sumFull':'Estimado {est} · planificado {plan} ✓', 'plan.sumNoEst':'Sin tiempo estimado · planificado {plan}', 'plan.noEst':'Esta tarea no tiene tiempo estimado: cada bloque nuevo es de 30 min.', 'plan.add':'Añadir bloque', 'plan.save':'Guardar', 'plan.none':'No hay huecos libres antes de la entrega.', 'plan.empty':'Sin bloques. Pulsa «Añadir bloque» para reservar tiempo.', 'plan.prevGap':'Hueco anterior', 'plan.nextGap':'Hueco siguiente', 'plan.remove':'Quitar bloque', 'plan.gap':'Hueco libre {a}–{b}', 'plan.move':'Mover el bloque', 'plan.startH':'Inicio del bloque', 'plan.endH':'Fin del bloque', 'toast.planSaved':'Planificación de «{name}» guardada', 'd.blocks':'Bloques de trabajo', 'block.label':'Bloque de trabajo', 'legend.block':'Bloque de trabajo', 'tut.title':'Bloques de trabajo', 'tut.1':'La App te propone bloques en los huecos libres antes de la entrega.', 'tut.2':'Arrastra el bloque para moverlo, o sus extremos para alargarlo o acortarlo: nunca sale del hueco libre.', 'tut.3':'Con ‹ › lo pasas al hueco anterior o siguiente; con la papelera lo quitas.', 'tut.ok':'Entendido', 'press.hint':'Mantén pulsado un hueco libre para añadir un evento o un bloque de trabajo.', 'press.q':'¿Quieres añadir un evento o trabajar en una tarea?', 'press.event':'Añadir evento', 'press.eventSub':'De {a} a {b} (hasta lo siguiente)', 'press.task':'Trabajar en una tarea', 'press.taskSub':'Un bloque de trabajo que empieza aquí', 'press.pick':'¿En qué tarea?', 'press.left':'faltan {t}', 'press.allPlanned':'todo planificado', 'press.noTasks':'No hay tareas pendientes con entrega posterior.', 'press.past':'Ese momento ya ha pasado.', 'press.busy':'Ahí ya hay algo: mantén pulsado un hueco libre.', 'tut.4':'También puedes mantener pulsado un hueco libre en la barra de tiempo o en el Calendario.', 'today.empty':'No queda nada más para hoy.', 'today.more1':'Y 1 más hoy: la ves en la barra de tiempo.', 'today.more':'Y {n} más hoy: los ves en la barra de tiempo.',
+      'tab.today':'Hoy', 'task.plan':'Planificar', 'plan.title':'Planificar', 'plan.noEst':'Esta tarea no tiene tiempo estimado: cada bloque nuevo es de 30 min.', 'plan.add':'Añadir bloque', 'plan.save':'Guardar', 'plan.none':'No hay huecos libres antes de la entrega.', 'plan.empty':'Sin bloques. Pulsa «Añadir bloque» para reservar tiempo.', 'plan.prevGap':'Hueco anterior', 'plan.nextGap':'Hueco siguiente', 'plan.remove':'Quitar bloque', 'plan.gap':'Hueco libre {a}–{b}', 'plan.move':'Mover el bloque', 'plan.startH':'Inicio del bloque', 'plan.endH':'Fin del bloque', 'toast.planSaved':'Planificación de «{name}» guardada', 'd.blocks':'Bloques de trabajo', 'block.label':'Bloque de trabajo', 'legend.block':'Bloque de trabajo', 'tut.title':'Bloques de trabajo', 'tut.1':'La App te propone bloques en los huecos libres antes de la entrega.', 'tut.2':'Arrastra el bloque para moverlo, o sus extremos para alargarlo o acortarlo: nunca sale del hueco libre.', 'tut.3':'Con ‹ › lo pasas al hueco anterior o siguiente; con la papelera lo quitas.', 'tut.ok':'Entendido', 'press.hint':'Mantén pulsado un hueco libre para añadir un evento o un bloque de trabajo.', 'press.q':'¿Quieres añadir un evento o trabajar en una tarea?', 'press.event':'Añadir evento', 'press.eventSub':'De {a} a {b} (hasta lo siguiente, máx. 2 h)', 'press.task':'Trabajar en una tarea', 'press.taskSub':'Un bloque de trabajo que empieza aquí', 'press.pick':'¿En qué tarea?', 'press.left':'faltan {t}', 'press.allPlanned':'todo planificado', 'press.noTasks':'No hay tareas pendientes con entrega posterior.', 'press.past':'Ese momento ya ha pasado.', 'press.busy':'Ahí ya hay algo: mantén pulsado un hueco libre.', 'tut.4':'También puedes mantener pulsado un hueco libre en la barra de tiempo o en el Calendario.', 'd.progress':'Progreso', 'prog.of':'{done} de {est}', 'prog.done':'{done} hechos', 'prog.logged':'{t} hechos', 'plan.pEst':'Estimado {t}', 'plan.pNoEst':'Sin tiempo estimado', 'plan.pDone':'hecho {t}', 'plan.pPlan':'planificado {t}', 'plan.pLeft':'falta {t}', 'plan.pFull':'todo planificado ✓', 'end.title':'Bloque terminado', 'end.q':'¿Cuánto has trabajado?', 'end.later':'Ahora no', 'end.next':'Siguiente', 'end.q2':'Con esto llegas al tiempo estimado. ¿Has terminado «{name}»?', 'end.notYet':'Todavía no', 'end.yesDone':'Sí, está hecha', 'end.saved':'Anotado: {t} en «{name}»', 'end.notif':'Ha terminado tu bloque de «{name}». ¿Cuánto has trabajado?', 'today.empty':'No queda nada más para hoy.', 'today.more1':'Y 1 más hoy: la ves en la barra de tiempo.', 'today.more':'Y {n} más hoy: los ves en la barra de tiempo.',
       'btn.backCal':'Volver al Calendario',
       'btn.backToday':'Volver a Hoy', 'd.leave':'Salida',
       'task.markDone':'Marcar como hecha', 'task.reopen':'Reabrir', 'tasks.overdue':'Atrasadas',
@@ -1885,7 +1929,7 @@
       'task.deleteConfirmLinked':'Confirm: the task is removed from “{name}”', 'toast.taskSaved':'Task “{name}” saved', 'toast.taskDeleted':'Task “{name}” deleted',
       'task.ownPrio':'{p} · set for this task',
       'btn.back':'Back', 'tasks.add':'Add task', 'task.newTitle':'New task', 'task.fromManual':'Added by hand', 'd.when':'When', 'd.task':'Linked task', 'd.origin':'Source', 'd.prioOwn':'(own)', 'd.prioDefault':'(the category’s)',
-      'tab.today':'Today', 'task.plan':'Plan', 'plan.title':'Plan', 'plan.sum':'Estimated {est} · planned {plan} · {left} left', 'plan.sumFull':'Estimated {est} · planned {plan} ✓', 'plan.sumNoEst':'No estimated time · planned {plan}', 'plan.noEst':'This task has no estimated time: each new block is 30 min.', 'plan.add':'Add block', 'plan.save':'Save', 'plan.none':'There are no free slots before the deadline.', 'plan.empty':'No blocks. Tap “Add block” to set time aside.', 'plan.prevGap':'Previous slot', 'plan.nextGap':'Next slot', 'plan.remove':'Remove block', 'plan.gap':'Free slot {a}–{b}', 'plan.move':'Move the block', 'plan.startH':'Block start', 'plan.endH':'Block end', 'toast.planSaved':'Plan for “{name}” saved', 'd.blocks':'Work blocks', 'block.label':'Work block', 'legend.block':'Work block', 'tut.title':'Work blocks', 'tut.1':'The app suggests blocks in the free slots before the deadline.', 'tut.2':'Drag the block to move it, or its ends to make it longer or shorter: it never leaves the free slot.', 'tut.3':'Use ‹ › to move it to the previous or next slot; the bin removes it.', 'tut.ok':'Got it', 'press.hint':'Press and hold a free slot to add an event or a work block.', 'press.q':'Do you want to add an event or work on a task?', 'press.event':'Add event', 'press.eventSub':'From {a} to {b} (until the next item)', 'press.task':'Work on a task', 'press.taskSub':'A work block starting here', 'press.pick':'Which task?', 'press.left':'{t} left', 'press.allPlanned':'all planned', 'press.noTasks':'No pending tasks due after this time.', 'press.past':'That time has already passed.', 'press.busy':'Something is already there: press and hold a free slot.', 'tut.4':'You can also press and hold a free slot on the time bar or in the Calendar.', 'today.empty':'Nothing else for today.', 'today.more1':'And 1 more today: see it on the time bar.', 'today.more':'And {n} more today: see them on the time bar.',
+      'tab.today':'Today', 'task.plan':'Plan', 'plan.title':'Plan', 'plan.noEst':'This task has no estimated time: each new block is 30 min.', 'plan.add':'Add block', 'plan.save':'Save', 'plan.none':'There are no free slots before the deadline.', 'plan.empty':'No blocks. Tap “Add block” to set time aside.', 'plan.prevGap':'Previous slot', 'plan.nextGap':'Next slot', 'plan.remove':'Remove block', 'plan.gap':'Free slot {a}–{b}', 'plan.move':'Move the block', 'plan.startH':'Block start', 'plan.endH':'Block end', 'toast.planSaved':'Plan for “{name}” saved', 'd.blocks':'Work blocks', 'block.label':'Work block', 'legend.block':'Work block', 'tut.title':'Work blocks', 'tut.1':'The app suggests blocks in the free slots before the deadline.', 'tut.2':'Drag the block to move it, or its ends to make it longer or shorter: it never leaves the free slot.', 'tut.3':'Use ‹ › to move it to the previous or next slot; the bin removes it.', 'tut.ok':'Got it', 'press.hint':'Press and hold a free slot to add an event or a work block.', 'press.q':'Do you want to add an event or work on a task?', 'press.event':'Add event', 'press.eventSub':'From {a} to {b} (until the next item, max 2 h)', 'press.task':'Work on a task', 'press.taskSub':'A work block starting here', 'press.pick':'Which task?', 'press.left':'{t} left', 'press.allPlanned':'all planned', 'press.noTasks':'No pending tasks due after this time.', 'press.past':'That time has already passed.', 'press.busy':'Something is already there: press and hold a free slot.', 'tut.4':'You can also press and hold a free slot on the time bar or in the Calendar.', 'd.progress':'Progress', 'prog.of':'{done} of {est}', 'prog.done':'{done} done', 'prog.logged':'{t} done', 'plan.pEst':'Estimated {t}', 'plan.pNoEst':'No estimated time', 'plan.pDone':'done {t}', 'plan.pPlan':'planned {t}', 'plan.pLeft':'{t} left', 'plan.pFull':'all planned ✓', 'end.title':'Block finished', 'end.q':'How long did you work?', 'end.later':'Not now', 'end.next':'Next', 'end.q2':'That reaches the estimated time. Have you finished “{name}”?', 'end.notYet':'Not yet', 'end.yesDone':'Yes, it’s done', 'end.saved':'Logged: {t} on “{name}”', 'end.notif':'Your block for “{name}” has ended. How long did you work?', 'today.empty':'Nothing else for today.', 'today.more1':'And 1 more today: see it on the time bar.', 'today.more':'And {n} more today: see them on the time bar.',
       'btn.backCal':'Back to Calendar',
       'btn.backToday':'Back to Today', 'd.leave':'Departure',
       'task.markDone':'Mark as done', 'task.reopen':'Reopen', 'tasks.overdue':'Overdue',
@@ -2012,7 +2056,7 @@
       'task.deleteConfirmLinked':'Conferma: il compito viene tolto da «{name}»', 'toast.taskSaved':'Compito «{name}» salvato', 'toast.taskDeleted':'Compito «{name}» eliminato',
       'task.ownPrio':'{p} · propria del compito',
       'btn.back':'Indietro', 'tasks.add':'Aggiungi compito', 'task.newTitle':'Nuovo compito', 'task.fromManual':'Aggiunto a mano', 'd.when':'Quando', 'd.task':'Compito associato', 'd.origin':'Origine', 'd.prioOwn':'(propria)', 'd.prioDefault':'(quella della categoria)',
-      'tab.today':'Oggi', 'task.plan':'Pianifica', 'plan.title':'Pianifica', 'plan.sum':'Stimato {est} · pianificato {plan} · mancano {left}', 'plan.sumFull':'Stimato {est} · pianificato {plan} ✓', 'plan.sumNoEst':'Senza tempo stimato · pianificato {plan}', 'plan.noEst':'Questo compito non ha tempo stimato: ogni nuovo blocco è di 30 min.', 'plan.add':'Aggiungi blocco', 'plan.save':'Salva', 'plan.none':'Non ci sono spazi liberi prima della consegna.', 'plan.empty':'Nessun blocco. Tocca «Aggiungi blocco» per riservare tempo.', 'plan.prevGap':'Spazio precedente', 'plan.nextGap':'Spazio successivo', 'plan.remove':'Togli blocco', 'plan.gap':'Spazio libero {a}–{b}', 'plan.move':'Sposta il blocco', 'plan.startH':'Inizio del blocco', 'plan.endH':'Fine del blocco', 'toast.planSaved':'Pianificazione di «{name}» salvata', 'd.blocks':'Blocchi di lavoro', 'block.label':'Blocco di lavoro', 'legend.block':'Blocco di lavoro', 'tut.title':'Blocchi di lavoro', 'tut.1':'L’app ti propone blocchi negli spazi liberi prima della consegna.', 'tut.2':'Trascina il blocco per spostarlo, o i suoi estremi per allungarlo o accorciarlo: non esce mai dallo spazio libero.', 'tut.3':'Con ‹ › lo sposti allo spazio precedente o successivo; con il cestino lo togli.', 'tut.ok':'Capito', 'press.hint':'Tieni premuto uno spazio libero per aggiungere un evento o un blocco di lavoro.', 'press.q':'Vuoi aggiungere un evento o lavorare a un compito?', 'press.event':'Aggiungi evento', 'press.eventSub':'Dalle {a} alle {b} (fino al successivo)', 'press.task':'Lavora a un compito', 'press.taskSub':'Un blocco di lavoro che inizia qui', 'press.pick':'Quale compito?', 'press.left':'mancano {t}', 'press.allPlanned':'tutto pianificato', 'press.noTasks':'Nessun compito in sospeso con consegna successiva.', 'press.past':'Quel momento è già passato.', 'press.busy':'Lì c’è già qualcosa: tieni premuto uno spazio libero.', 'tut.4':'Puoi anche tenere premuto uno spazio libero sulla barra del tempo o nel Calendario.', 'today.empty':'Per oggi non resta nient’altro.', 'today.more1':'E 1 altro oggi: lo vedi nella barra del tempo.', 'today.more':'E altri {n} oggi: li vedi nella barra del tempo.',
+      'tab.today':'Oggi', 'task.plan':'Pianifica', 'plan.title':'Pianifica', 'plan.noEst':'Questo compito non ha tempo stimato: ogni nuovo blocco è di 30 min.', 'plan.add':'Aggiungi blocco', 'plan.save':'Salva', 'plan.none':'Non ci sono spazi liberi prima della consegna.', 'plan.empty':'Nessun blocco. Tocca «Aggiungi blocco» per riservare tempo.', 'plan.prevGap':'Spazio precedente', 'plan.nextGap':'Spazio successivo', 'plan.remove':'Togli blocco', 'plan.gap':'Spazio libero {a}–{b}', 'plan.move':'Sposta il blocco', 'plan.startH':'Inizio del blocco', 'plan.endH':'Fine del blocco', 'toast.planSaved':'Pianificazione di «{name}» salvata', 'd.blocks':'Blocchi di lavoro', 'block.label':'Blocco di lavoro', 'legend.block':'Blocco di lavoro', 'tut.title':'Blocchi di lavoro', 'tut.1':'L’app ti propone blocchi negli spazi liberi prima della consegna.', 'tut.2':'Trascina il blocco per spostarlo, o i suoi estremi per allungarlo o accorciarlo: non esce mai dallo spazio libero.', 'tut.3':'Con ‹ › lo sposti allo spazio precedente o successivo; con il cestino lo togli.', 'tut.ok':'Capito', 'press.hint':'Tieni premuto uno spazio libero per aggiungere un evento o un blocco di lavoro.', 'press.q':'Vuoi aggiungere un evento o lavorare a un compito?', 'press.event':'Aggiungi evento', 'press.eventSub':'Dalle {a} alle {b} (fino al successivo, max 2 h)', 'press.task':'Lavora a un compito', 'press.taskSub':'Un blocco di lavoro che inizia qui', 'press.pick':'Quale compito?', 'press.left':'mancano {t}', 'press.allPlanned':'tutto pianificato', 'press.noTasks':'Nessun compito in sospeso con consegna successiva.', 'press.past':'Quel momento è già passato.', 'press.busy':'Lì c’è già qualcosa: tieni premuto uno spazio libero.', 'tut.4':'Puoi anche tenere premuto uno spazio libero sulla barra del tempo o nel Calendario.', 'd.progress':'Avanzamento', 'prog.of':'{done} di {est}', 'prog.done':'{done} fatti', 'prog.logged':'{t} fatti', 'plan.pEst':'Stimato {t}', 'plan.pNoEst':'Senza tempo stimato', 'plan.pDone':'fatto {t}', 'plan.pPlan':'pianificato {t}', 'plan.pLeft':'mancano {t}', 'plan.pFull':'tutto pianificato ✓', 'end.title':'Blocco finito', 'end.q':'Quanto hai lavorato?', 'end.later':'Non ora', 'end.next':'Avanti', 'end.q2':'Così arrivi al tempo stimato. Hai finito «{name}»?', 'end.notYet':'Non ancora', 'end.yesDone':'Sì, è fatto', 'end.saved':'Annotato: {t} su «{name}»', 'end.notif':'Il tuo blocco di «{name}» è finito. Quanto hai lavorato?', 'today.empty':'Per oggi non resta nient’altro.', 'today.more1':'E 1 altro oggi: lo vedi nella barra del tempo.', 'today.more':'E altri {n} oggi: li vedi nella barra del tempo.',
       'btn.backCal':'Torna al Calendario',
       'btn.backToday':'Torna a Oggi', 'd.leave':'Partenza',
       'task.markDone':'Segna come fatto', 'task.reopen':'Riapri', 'tasks.overdue':'In ritardo',
@@ -2139,7 +2183,7 @@
       'task.deleteConfirmLinked':'Confirmer : la tâche est retirée de « {name} »', 'toast.taskSaved':'Tâche « {name} » enregistrée', 'toast.taskDeleted':'Tâche « {name} » supprimée',
       'task.ownPrio':'{p} · propre à la tâche',
       'btn.back':'Retour', 'tasks.add':'Ajouter une tâche', 'task.newTitle':'Nouvelle tâche', 'task.fromManual':'Ajoutée à la main', 'd.when':'Quand', 'd.task':'Tâche associée', 'd.origin':'Origine', 'd.prioOwn':'(propre)', 'd.prioDefault':'(celle de la catégorie)',
-      'tab.today':'Aujourd’hui', 'task.plan':'Planifier', 'plan.title':'Planifier', 'plan.sum':'Estimé {est} · planifié {plan} · reste {left}', 'plan.sumFull':'Estimé {est} · planifié {plan} ✓', 'plan.sumNoEst':'Sans temps estimé · planifié {plan}', 'plan.noEst':'Cette tâche n’a pas de temps estimé : chaque nouveau bloc dure 30 min.', 'plan.add':'Ajouter un bloc', 'plan.save':'Enregistrer', 'plan.none':'Aucun créneau libre avant l’échéance.', 'plan.empty':'Aucun bloc. Touchez « Ajouter un bloc » pour réserver du temps.', 'plan.prevGap':'Créneau précédent', 'plan.nextGap':'Créneau suivant', 'plan.remove':'Retirer le bloc', 'plan.gap':'Créneau libre {a}–{b}', 'plan.move':'Déplacer le bloc', 'plan.startH':'Début du bloc', 'plan.endH':'Fin du bloc', 'toast.planSaved':'Planification de « {name} » enregistrée', 'd.blocks':'Blocs de travail', 'block.label':'Bloc de travail', 'legend.block':'Bloc de travail', 'tut.title':'Blocs de travail', 'tut.1':'L’app propose des blocs dans les créneaux libres avant l’échéance.', 'tut.2':'Faites glisser le bloc pour le déplacer, ou ses bords pour l’allonger ou le raccourcir : il ne sort jamais du créneau libre.', 'tut.3':'Avec ‹ › vous le passez au créneau précédent ou suivant ; la corbeille le retire.', 'tut.ok':'Compris', 'press.hint':'Maintenez appuyé un créneau libre pour ajouter un événement ou un bloc de travail.', 'press.q':'Voulez-vous ajouter un événement ou travailler sur une tâche ?', 'press.event':'Ajouter un événement', 'press.eventSub':'De {a} à {b} (jusqu’au suivant)', 'press.task':'Travailler sur une tâche', 'press.taskSub':'Un bloc de travail qui commence ici', 'press.pick':'Quelle tâche ?', 'press.left':'reste {t}', 'press.allPlanned':'tout planifié', 'press.noTasks':'Aucune tâche en attente avec une échéance plus tard.', 'press.past':'Ce moment est déjà passé.', 'press.busy':'Il y a déjà quelque chose : maintenez appuyé un créneau libre.', 'tut.4':'Vous pouvez aussi maintenir appuyé un créneau libre sur la barre de temps ou dans le Calendrier.', 'today.empty':'Plus rien pour aujourd’hui.', 'today.more1':'Et 1 de plus aujourd’hui : voyez-le sur la barre de temps.', 'today.more':'Et {n} de plus aujourd’hui : voyez-les sur la barre de temps.',
+      'tab.today':'Aujourd’hui', 'task.plan':'Planifier', 'plan.title':'Planifier', 'plan.noEst':'Cette tâche n’a pas de temps estimé : chaque nouveau bloc dure 30 min.', 'plan.add':'Ajouter un bloc', 'plan.save':'Enregistrer', 'plan.none':'Aucun créneau libre avant l’échéance.', 'plan.empty':'Aucun bloc. Touchez « Ajouter un bloc » pour réserver du temps.', 'plan.prevGap':'Créneau précédent', 'plan.nextGap':'Créneau suivant', 'plan.remove':'Retirer le bloc', 'plan.gap':'Créneau libre {a}–{b}', 'plan.move':'Déplacer le bloc', 'plan.startH':'Début du bloc', 'plan.endH':'Fin du bloc', 'toast.planSaved':'Planification de « {name} » enregistrée', 'd.blocks':'Blocs de travail', 'block.label':'Bloc de travail', 'legend.block':'Bloc de travail', 'tut.title':'Blocs de travail', 'tut.1':'L’app propose des blocs dans les créneaux libres avant l’échéance.', 'tut.2':'Faites glisser le bloc pour le déplacer, ou ses bords pour l’allonger ou le raccourcir : il ne sort jamais du créneau libre.', 'tut.3':'Avec ‹ › vous le passez au créneau précédent ou suivant ; la corbeille le retire.', 'tut.ok':'Compris', 'press.hint':'Maintenez appuyé un créneau libre pour ajouter un événement ou un bloc de travail.', 'press.q':'Voulez-vous ajouter un événement ou travailler sur une tâche ?', 'press.event':'Ajouter un événement', 'press.eventSub':'De {a} à {b} (jusqu’au suivant, 2 h max)', 'press.task':'Travailler sur une tâche', 'press.taskSub':'Un bloc de travail qui commence ici', 'press.pick':'Quelle tâche ?', 'press.left':'reste {t}', 'press.allPlanned':'tout planifié', 'press.noTasks':'Aucune tâche en attente avec une échéance plus tard.', 'press.past':'Ce moment est déjà passé.', 'press.busy':'Il y a déjà quelque chose : maintenez appuyé un créneau libre.', 'tut.4':'Vous pouvez aussi maintenir appuyé un créneau libre sur la barre de temps ou dans le Calendrier.', 'd.progress':'Progression', 'prog.of':'{done} sur {est}', 'prog.done':'{done} faits', 'prog.logged':'{t} faits', 'plan.pEst':'Estimé {t}', 'plan.pNoEst':'Sans temps estimé', 'plan.pDone':'fait {t}', 'plan.pPlan':'planifié {t}', 'plan.pLeft':'reste {t}', 'plan.pFull':'tout planifié ✓', 'end.title':'Bloc terminé', 'end.q':'Combien de temps as-tu travaillé ?', 'end.later':'Pas maintenant', 'end.next':'Suivant', 'end.q2':'Tu atteins le temps estimé. As-tu terminé « {name} » ?', 'end.notYet':'Pas encore', 'end.yesDone':'Oui, c’est fait', 'end.saved':'Noté : {t} sur « {name} »', 'end.notif':'Ton bloc pour « {name} » est terminé. Combien de temps as-tu travaillé ?', 'today.empty':'Plus rien pour aujourd’hui.', 'today.more1':'Et 1 de plus aujourd’hui : voyez-le sur la barre de temps.', 'today.more':'Et {n} de plus aujourd’hui : voyez-les sur la barre de temps.',
       'btn.backCal':'Retour au Calendrier',
       'btn.backToday':'Retour à Aujourd’hui', 'd.leave':'Départ',
       'task.markDone':'Marquer comme faite', 'task.reopen':'Rouvrir', 'tasks.overdue':'En retard',
@@ -2266,7 +2310,7 @@
       'task.deleteConfirmLinked':'Bestätigen: Die Aufgabe wird aus „{name}“ entfernt', 'toast.taskSaved':'Aufgabe „{name}“ gespeichert', 'toast.taskDeleted':'Aufgabe „{name}“ gelöscht',
       'task.ownPrio':'{p} · eigene der Aufgabe',
       'btn.back':'Zurück', 'tasks.add':'Aufgabe hinzufügen', 'task.newTitle':'Neue Aufgabe', 'task.fromManual':'Von Hand hinzugefügt', 'd.when':'Wann', 'd.task':'Zugehörige Aufgabe', 'd.origin':'Herkunft', 'd.prioOwn':'(eigene)', 'd.prioDefault':'(die der Kategorie)',
-      'tab.today':'Heute', 'task.plan':'Planen', 'plan.title':'Planen', 'plan.sum':'Geschätzt {est} · geplant {plan} · offen {left}', 'plan.sumFull':'Geschätzt {est} · geplant {plan} ✓', 'plan.sumNoEst':'Keine geschätzte Zeit · geplant {plan}', 'plan.noEst':'Diese Aufgabe hat keine geschätzte Zeit: Jeder neue Block dauert 30 Min.', 'plan.add':'Block hinzufügen', 'plan.save':'Speichern', 'plan.none':'Vor der Abgabe gibt es keine freien Lücken.', 'plan.empty':'Keine Blöcke. Tippe auf „Block hinzufügen“, um Zeit zu reservieren.', 'plan.prevGap':'Vorherige Lücke', 'plan.nextGap':'Nächste Lücke', 'plan.remove':'Block entfernen', 'plan.gap':'Freie Lücke {a}–{b}', 'plan.move':'Block verschieben', 'plan.startH':'Blockbeginn', 'plan.endH':'Blockende', 'toast.planSaved':'Plan für „{name}“ gespeichert', 'd.blocks':'Arbeitsblöcke', 'block.label':'Arbeitsblock', 'legend.block':'Arbeitsblock', 'tut.title':'Arbeitsblöcke', 'tut.1':'Die App schlägt Blöcke in den freien Lücken vor der Abgabe vor.', 'tut.2':'Zieh den Block, um ihn zu verschieben, oder seine Enden, um ihn zu verlängern oder zu kürzen: Er verlässt nie die freie Lücke.', 'tut.3':'Mit ‹ › geht er zur vorherigen oder nächsten Lücke; der Papierkorb entfernt ihn.', 'tut.ok':'Verstanden', 'press.hint':'Halte eine freie Lücke gedrückt, um einen Termin oder einen Arbeitsblock hinzuzufügen.', 'press.q':'Möchtest du einen Termin hinzufügen oder an einer Aufgabe arbeiten?', 'press.event':'Termin hinzufügen', 'press.eventSub':'Von {a} bis {b} (bis zum nächsten Eintrag)', 'press.task':'An einer Aufgabe arbeiten', 'press.taskSub':'Ein Arbeitsblock, der hier beginnt', 'press.pick':'Welche Aufgabe?', 'press.left':'offen {t}', 'press.allPlanned':'alles geplant', 'press.noTasks':'Keine offenen Aufgaben mit späterer Abgabe.', 'press.past':'Dieser Zeitpunkt ist schon vorbei.', 'press.busy':'Da ist schon etwas: Halte eine freie Lücke gedrückt.', 'tut.4':'Du kannst auch eine freie Lücke in der Zeitleiste oder im Kalender gedrückt halten.', 'today.empty':'Für heute steht nichts mehr an.', 'today.more1':'Und 1 weiterer heute: siehe Zeitleiste.', 'today.more':'Und {n} weitere heute: siehe Zeitleiste.',
+      'tab.today':'Heute', 'task.plan':'Planen', 'plan.title':'Planen', 'plan.noEst':'Diese Aufgabe hat keine geschätzte Zeit: Jeder neue Block dauert 30 Min.', 'plan.add':'Block hinzufügen', 'plan.save':'Speichern', 'plan.none':'Vor der Abgabe gibt es keine freien Lücken.', 'plan.empty':'Keine Blöcke. Tippe auf „Block hinzufügen“, um Zeit zu reservieren.', 'plan.prevGap':'Vorherige Lücke', 'plan.nextGap':'Nächste Lücke', 'plan.remove':'Block entfernen', 'plan.gap':'Freie Lücke {a}–{b}', 'plan.move':'Block verschieben', 'plan.startH':'Blockbeginn', 'plan.endH':'Blockende', 'toast.planSaved':'Plan für „{name}“ gespeichert', 'd.blocks':'Arbeitsblöcke', 'block.label':'Arbeitsblock', 'legend.block':'Arbeitsblock', 'tut.title':'Arbeitsblöcke', 'tut.1':'Die App schlägt Blöcke in den freien Lücken vor der Abgabe vor.', 'tut.2':'Zieh den Block, um ihn zu verschieben, oder seine Enden, um ihn zu verlängern oder zu kürzen: Er verlässt nie die freie Lücke.', 'tut.3':'Mit ‹ › geht er zur vorherigen oder nächsten Lücke; der Papierkorb entfernt ihn.', 'tut.ok':'Verstanden', 'press.hint':'Halte eine freie Lücke gedrückt, um einen Termin oder einen Arbeitsblock hinzuzufügen.', 'press.q':'Möchtest du einen Termin hinzufügen oder an einer Aufgabe arbeiten?', 'press.event':'Termin hinzufügen', 'press.eventSub':'Von {a} bis {b} (bis zum nächsten Eintrag, max. 2 Std.)', 'press.task':'An einer Aufgabe arbeiten', 'press.taskSub':'Ein Arbeitsblock, der hier beginnt', 'press.pick':'Welche Aufgabe?', 'press.left':'offen {t}', 'press.allPlanned':'alles geplant', 'press.noTasks':'Keine offenen Aufgaben mit späterer Abgabe.', 'press.past':'Dieser Zeitpunkt ist schon vorbei.', 'press.busy':'Da ist schon etwas: Halte eine freie Lücke gedrückt.', 'tut.4':'Du kannst auch eine freie Lücke in der Zeitleiste oder im Kalender gedrückt halten.', 'd.progress':'Fortschritt', 'prog.of':'{done} von {est}', 'prog.done':'{done} erledigt', 'prog.logged':'{t} erledigt', 'plan.pEst':'Geschätzt {t}', 'plan.pNoEst':'Keine geschätzte Zeit', 'plan.pDone':'erledigt {t}', 'plan.pPlan':'geplant {t}', 'plan.pLeft':'offen {t}', 'plan.pFull':'alles geplant ✓', 'end.title':'Block beendet', 'end.q':'Wie lange hast du gearbeitet?', 'end.later':'Jetzt nicht', 'end.next':'Weiter', 'end.q2':'Damit ist die geschätzte Zeit erreicht. Hast du „{name}“ fertig?', 'end.notYet':'Noch nicht', 'end.yesDone':'Ja, erledigt', 'end.saved':'Notiert: {t} für „{name}“', 'end.notif':'Dein Block für „{name}“ ist vorbei. Wie lange hast du gearbeitet?', 'today.empty':'Für heute steht nichts mehr an.', 'today.more1':'Und 1 weiterer heute: siehe Zeitleiste.', 'today.more':'Und {n} weitere heute: siehe Zeitleiste.',
       'btn.backCal':'Zurück zum Kalender',
       'btn.backToday':'Zurück zu Heute', 'd.leave':'Abfahrt',
       'task.markDone':'Als erledigt markieren', 'task.reopen':'Wieder öffnen', 'tasks.overdue':'Überfällig',
@@ -3871,7 +3915,7 @@
   // Bloques de trabajo de la semana (atenuados si la tarea ya está hecha)
   function weekBlocks(){
     return liveBlocks().map(function(o){
-      return { day: weekDayIndex(o.b.date), title: o.x.name, start: o.b.start, end: o.b.end, block: true, done: o.x.done, ref: { kind:'task', id:o.x.key } };
+      return { day: weekDayIndex(o.b.date), title: o.x.name, start: o.b.start, end: o.b.end, block: true, done: o.x.done || isLogged(o.b), ref: { kind:'task', id:o.x.key } };
     }).filter(function(e){ return e.day >= 0; });
   }
   function weekActTasks(){
@@ -3977,6 +4021,7 @@
           '<span class="prio-chip prio-' + x.prio + '">' + t('prio.' + x.prio) + '</span></span>' +
         '<span class="row-sub"><span>' + when + ' · ' + est + '</span></span>' +
         '<span class="row-sub">' + TASK_SVG + '<span>' + esc(x.origin) + '</span></span>' +
+        (!x.done && doneMin(x.key) ? progressHtml(x) : '') +
         (x.desc && !x.done ? '<span class="evt-desc">' + esc(x.desc) + '</span>' : '') +
       '</div>' + ROW_CHEV +
     '</div>';
@@ -4020,7 +4065,10 @@
         [t('f.prio'), prioHtml(x.prio, !!x.own)],
         [t('f.desc'), x.desc ? esc(x.desc) : ''],
         [t('d.status'), t(x.done ? 'status.done' : x.overdue ? 'status.overdue' : 'status.pending')],
-        [t('d.blocks'), blocksOf(key).map(function(b){ return fmtDay(b.date) + ' ' + fmtHour(b.start) + '–' + fmtHour(b.end); }).join('<br>')]
+        [t('d.progress'), progressHtml(x)],
+        [t('d.blocks'), blocksOf(key).map(function(b){
+          return '<span class="block-line">' + fmtDay(b.date) + ' ' + fmtHour(b.start) + '–' + fmtHour(b.end) + (isLogged(b) ? ' <span class="muted">· ' + t('prog.logged', { t: b.logged ? fmtEst(b.logged) : '0 min' }) + '</span>' : '') + '</span>';
+        }).join('')]
       ],
       extra: '<button type="button" class="btn-done' + (x.done ? ' is-done' : '') + '" onclick="setTaskDone(\'' + key + '\', ' + !x.done + ')">' + CHECK_ICON + t(x.done ? 'task.reopen' : 'task.markDone') + '</button>' +
         (x.done ? '' : '<button type="button" class="btn-plan" onclick="openPlan(\'' + key + '\')">' + CAL_PLAN_SVG + t('task.plan') + '</button>'),
@@ -4138,6 +4186,22 @@
   }
   function blocksOf(key){ return WORK_BLOCKS.filter(function(b){ return b.task === key; }).sort(function(p, q){ return (p.date + fmtHour(p.start)).localeCompare(q.date + fmtHour(q.start)); }); }
   function blockHours(list){ return list.reduce(function(sum, b){ return sum + (b.end - b.start); }, 0); }
+  // Progreso: cada bloque terminado guarda en «logged» los minutos trabajados (lo confirma el usuario)
+  function blockEnd(b){ return atTime(b.date, fmtHour(b.end)); }
+  function isLogged(b){ return typeof b.logged === 'number'; }
+  // Editable en «Planificar»: sin registrar y sin terminar
+  function isEditable(b){ return !isLogged(b) && blockEnd(b) > demoNow(); }
+  function doneMin(key){ return blocksOf(key).reduce(function(sum, b){ return sum + (isLogged(b) ? b.logged : 0); }, 0); }
+  // Planificado pendiente: bloques sin registrar (los futuros y los terminados sin confirmar)
+  function plannedMin(key){ return Math.round(blockHours(blocksOf(key).filter(function(b){ return !isLogged(b); })) * 60); }
+  // Barra de progreso de una tarea (hecho / estimado); extra: minutos aún sin guardar
+  function progressHtml(x, extra){
+    var done = doneMin(x.key) + (extra || 0);
+    if(!x.est && !done){ return ''; }
+    var pct = x.est ? Math.min(100, Math.round(done / x.est * 100)) : 0;
+    return '<span class="progress-line"><span class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></span>' +
+      '<span class="progress-text">' + (x.est ? t('prog.of', { done: done ? fmtEst(done) : '0 min', est: fmtEst(x.est) }) : t('prog.done', { done: fmtEst(done) })) + '</span></span>';
+  }
   function snap(h){ return Math.round(h / BLOCK_STEP) * BLOCK_STEP; }
   function addDays(iso, n){ var d = isoDate(iso); d.setDate(d.getDate() + n); return isoOf(d); }
 
@@ -4214,16 +4278,16 @@
   function openPlan(key, at){
     var x = allTasks().filter(function(it){ return it.key === key; })[0];
     if(!x){ return; }
-    var drafts = blocksOf(key).map(function(b){ return Object.assign({}, b); });
+    var drafts = blocksOf(key).filter(isEditable).map(function(b){ return Object.assign({}, b); });
     PLAN = { key:key, x:x, drafts:drafts, back: at && at.back };
     if(at){
-      var left = x.est ? x.est / 60 - blockHours(drafts) : 0;
+      var left = x.est ? (planLeftMin() / 60) : 0;
       if(left < BLOCK_MIN - 1e-9){ left = BLOCK_NEW; }
       var g = planGaps(x.due, [], drafts).filter(function(g){ return g.date === at.date && g.s <= at.h + 1e-9 && g.e >= at.h + BLOCK_MIN - 1e-9; })[0];
       if(g){ drafts.push({ id:'b' + Date.now().toString(36), task:key, date:at.date, start:at.h, end:at.h + Math.min(left, BLOCK_MAX, g.e - at.h) }); }
     }
     // Sin bloques: la App propone los suyos para lo que falta
-    else if(!drafts.length && x.est){ PLAN.drafts = suggestBlocks(x, x.est / 60, []); }
+    else if(!drafts.length && x.est && planLeftMin() > 0){ PLAN.drafts = suggestBlocks(x, planLeftMin() / 60, []); }
     el('task-list-view').hidden = true; el('task-detail').hidden = true; el('task-form').hidden = true;
     el('task-plan').hidden = false;
     el('task-plan').closest('.screen').parentElement.scrollTop = 0;
@@ -4246,7 +4310,8 @@
   function savePlan(ev){
     if(ev){ ev.preventDefault(); }
     var key = PLAN.key, name = PLAN.x.name;
-    WORK_BLOCKS = WORK_BLOCKS.filter(function(b){ return b.task !== key; }).concat(PLAN.drafts.map(function(b){
+    // Los bloques ya terminados (registrados o por confirmar) se conservan tal cual
+    WORK_BLOCKS = WORK_BLOCKS.filter(function(b){ return b.task !== key || !isEditable(b); }).concat(PLAN.drafts.map(function(b){
       return { id:b.id, task:key, date:b.date, start:b.start, end:b.end };
     }));
     storeBlocks();
@@ -4254,12 +4319,20 @@
     renderCalendar(calView); renderToday();
     toast(t('toast.planSaved', { name: name }));
   }
+  // Minutos planificados en el borrador más los bloques terminados sin confirmar
+  function planPlannedMin(){
+    var fixed = blocksOf(PLAN.key).filter(function(b){ return !isEditable(b) && !isLogged(b); });
+    return Math.round((blockHours(PLAN.drafts) + blockHours(fixed)) * 60);
+  }
+  // Lo que falta por planificar: estimado − hecho − planificado
+  function planLeftMin(){ return PLAN.x.est ? PLAN.x.est - doneMin(PLAN.key) - planPlannedMin() : 0; }
   function planSummary(){
-    var x = PLAN.x, plan = Math.round(blockHours(PLAN.drafts) * 60);
-    if(!x.est){ return t('plan.sumNoEst', { plan: fmtEst(plan) || '0 min' }); }
-    var left = x.est - plan;
-    return left > 0 ? t('plan.sum', { est: fmtEst(x.est), plan: plan ? fmtEst(plan) : '0 min', left: fmtEst(left) })
-                    : t('plan.sumFull', { est: fmtEst(x.est), plan: fmtEst(plan) });
+    var x = PLAN.x, plan = planPlannedMin(), done = doneMin(PLAN.key), parts = [];
+    parts.push(x.est ? t('plan.pEst', { t: fmtEst(x.est) }) : t('plan.pNoEst'));
+    if(done){ parts.push(t('plan.pDone', { t: fmtEst(done) })); }
+    parts.push(t('plan.pPlan', { t: plan ? fmtEst(plan) : '0 min' }));
+    if(x.est){ var left = planLeftMin(); parts.push(left > 0 ? t('plan.pLeft', { t: fmtEst(left) }) : t('plan.pFull')); }
+    return parts.join(' · ');
   }
   // Hueco libre en el que está un bloque (sin contar él mismo; los otros borradores sí ocupan)
   function gapOf(b){
@@ -4272,6 +4345,7 @@
     el('plan-task').textContent = x.name;
     el('plan-due').textContent = x.due ? t('task.dueAt', { t: fmtWhen(x.due) }) : '';
     el('plan-sum').textContent = planSummary();
+    el('plan-prog').innerHTML = progressHtml(x);
     el('plan-hint').hidden = !!x.est;
     el('plan-hint').textContent = x.est ? '' : t('plan.noEst');
     PLAN.drafts.sort(function(p, q){ return (p.date + fmtHour(p.start)).localeCompare(q.date + fmtHour(q.start)); });
@@ -4321,7 +4395,7 @@
   }
   function removeBlock(i){ PLAN.drafts.splice(i, 1); renderPlan(); }
   function addPlanBlock(){
-    var x = PLAN.x, left = x.est ? x.est / 60 - blockHours(PLAN.drafts) : BLOCK_NEW;
+    var x = PLAN.x, left = x.est ? planLeftMin() / 60 : BLOCK_NEW;
     if(left < BLOCK_MIN - 1e-9){ left = BLOCK_NEW; }
     var nb = suggestBlocks(x, Math.min(left, BLOCK_MAX), PLAN.drafts);
     if(!nb.length){ toast(t('plan.none')); return; }
@@ -4373,11 +4447,88 @@
     if(card){ card.querySelector('[data-mode="' + mode + '"]').focus(); }
   });
 
+  /* ================= FIN DE UN BLOQUE ================= */
+  // Al terminar un bloque la App pregunta cuánto se ha trabajado (de 0 a lo que falta; por
+  // defecto, lo planificado). Si se elige el máximo, pregunta si la tarea está terminada.
+  // Sin cronómetro. Si la App estaba cerrada, la pregunta sale al abrirla (y el móvil avisa
+  // con una notificación; los permisos se piden en la configuración del primer inicio).
+  var END = null, END_LATER = [];
+  function pendingEnds(){
+    var now = demoNow();
+    return liveBlocks().filter(function(o){
+      return !o.x.done && !isLogged(o.b) && blockEnd(o.b) <= now && END_LATER.indexOf(o.b.id) < 0;
+    }).sort(function(p, q){ return blockEnd(p.b) - blockEnd(q.b); });
+  }
+  function checkBlockEnds(){
+    if(END || document.querySelector('dialog[open]')){ return; }
+    var o = pendingEnds()[0];
+    if(o){ openBlockEnd(o); }
+  }
+  function openBlockEnd(o){
+    var b = o.b, x = o.x, len = Math.round((b.end - b.start) * 60);
+    var left = x.est ? x.est - doneMin(x.key) : 0;
+    var max = left > 0 ? left : len;
+    END = { b:b, x:x, max:max, full: left > 0 };
+    el('end-task').textContent = x.name;
+    el('end-when').textContent = fmtDay(b.date) + ' · ' + fmtHour(b.start) + '–' + fmtHour(b.end) + ' (' + fmtEst(len) + ')';
+    var r = el('end-range');
+    r.max = max; r.value = Math.min(len, max);
+    el('end-max').textContent = fmtEst(max);
+    el('end-step1').hidden = false; el('end-step2').hidden = true;
+    endInput();
+    el('end-dialog').showModal();
+    notifyBlockEnd(x);
+  }
+  // Aviso del sistema (si la App tiene permiso; en la maqueta no se pide)
+  function notifyBlockEnd(x){
+    try{ if(window.Notification && Notification.permission === 'granted'){ new Notification(t('end.title'), { body: t('end.notif', { name: x.name }) }); } }catch(e){}
+  }
+  function endInput(){
+    var v = +el('end-range').value, x = END.x;
+    el('end-value').textContent = v ? fmtEst(v) : '0 min';
+    el('end-range').setAttribute('aria-valuetext', el('end-value').textContent);
+    el('end-prog').innerHTML = x.est ? progressHtml(x, v) : '';
+    el('end-ok').textContent = t(END.full && v >= END.max ? 'end.next' : 'btn.save');
+  }
+  function endConfirm(){
+    var v = +el('end-range').value;
+    if(END.full && v >= END.max){
+      el('end-q2').textContent = t('end.q2', { name: END.x.name });
+      el('end-step1').hidden = true; el('end-step2').hidden = false;
+      return;
+    }
+    endSave(v, false);
+  }
+  function endFinish(done){ endSave(+el('end-range').value, done); }
+  function endSave(v, finished){
+    var o = END;
+    o.b.logged = v;
+    storeBlocks();
+    END = null;
+    el('end-dialog').close();
+    if(finished){ setTaskDone(o.x.key, true); }
+    else {
+      renderTasks(); renderCalendar(calView); renderToday(); refreshOpenDetails();
+      toast(t('end.saved', { t: v ? fmtEst(v) : '0 min', name: o.x.name }));
+    }
+    setTimeout(checkBlockEnds, 300);
+  }
+  // «Ahora no»: se vuelve a preguntar la próxima vez que se abra la App
+  function endLater(){
+    if(END){ END_LATER.push(END.b.id); }
+    END = null;
+    if(el('end-dialog').open){ el('end-dialog').close(); }
+    setTimeout(checkBlockEnds, 300);
+  }
+  el('end-dialog').addEventListener('cancel', function(ev){ ev.preventDefault(); endLater(); });
+  // Con la App abierta, se comprueba cada minuto si ha terminado algún bloque
+  setInterval(checkBlockEnds, 60000);
+
   /* ================= PULSACIÓN LARGA ================= */
   // Mantener pulsado un hueco libre de la barra de tiempo de «Hoy» o del Calendario pregunta si se
   // quiere añadir un evento (fecha y hora de ese punto; dura hasta el siguiente elemento) o
   // trabajar en una tarea (como «Planificar», con un bloque que empieza en ese punto).
-  var PRESS_MS = 550, PRESS = null, PRESS_BACK = null, CAL_POS = null;
+  var PRESS_MS = 550, PRESS_MAX_EVT = 2, PRESS = null, PRESS_BACK = null, CAL_POS = null;
   function onLongPress(host, where, fire){
     var timer = null, sx = 0, sy = 0, fired = false, mark = null;
     function clear(){ clearTimeout(timer); timer = null; if(mark){ mark.remove(); mark = null; } }
@@ -4436,10 +4587,11 @@
     if(!gap){ toast(t('press.busy')); return; }
     h = Math.min(Math.max(h, gap[0]), gap[1] - BLOCK_MIN);
     if(h < gap[0] - 1e-9){ toast(t('press.busy')); return; }
-    PRESS = { iso: at.iso, h: h, end: gap[1], from: at.from };
+    // El evento dura hasta el siguiente elemento, con un tope de PRESS_MAX_EVT horas
+    PRESS = { iso: at.iso, h: h, end: Math.min(gap[1], h + PRESS_MAX_EVT), from: at.from };
     el('press-title').textContent = fmtDay(at.iso) + ' · ' + fmtHour(h);
     el('press-q').textContent = t('press.q');
-    el('press-event-sub').textContent = t('press.eventSub', { a: fmtHour(h), b: fmtHour(gap[1]) });
+    el('press-event-sub').textContent = t('press.eventSub', { a: fmtHour(h), b: fmtHour(PRESS.end) });
     el('press-main').hidden = false; el('press-tasks').hidden = true;
     el('press-dialog').showModal();
   }
@@ -4469,7 +4621,7 @@
     el('press-q').textContent = t('press.pick');
     el('press-main').hidden = true; el('press-tasks').hidden = false;
     el('press-tasks').innerHTML = list.length ? list.map(function(x){
-      var left = x.est ? Math.max(0, x.est - Math.round(blockHours(blocksOf(x.key)) * 60)) : 0;
+      var left = x.est ? Math.max(0, x.est - doneMin(x.key) - plannedMin(x.key)) : 0;
       return '<button type="button" class="press-choice" onclick="pressTask(\'' + x.key + '\')">' + TASK_SVG +
         '<span><strong>' + esc(x.name) + '</strong><small>' + t('task.dueAt', { t: fmtWhen(x.due) }) +
         (x.est ? ' · ' + (left ? t('press.left', { t: fmtEst(left) }) : t('press.allPlanned')) : '') + '</small></span></button>';
@@ -4734,6 +4886,7 @@
   loadKidName();
   restoreEventCategories();
   applyI18n();
+  setTimeout(checkBlockEnds, 600);   // bloques que terminaron con la App cerrada
 </script>
 </body>
 </html>

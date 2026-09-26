@@ -103,8 +103,15 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Sin tiempo estimado: no hay propuesta; cada bloque nuevo es de 30 min.
   - **Estilo:** rayas diagonales en **dos tonos cercanos al color de la tarea**, en el Calendario (con su entrada en la leyenda), en las tarjetas de «Hoy» y como tramo rayado en la barra de tiempo.
   - Pulsar un bloque (Calendario u «Hoy») abre la ficha de la tarea, que lista sus bloques. Los bloques de una tarea hecha no salen en «Hoy» y en el Calendario se ven atenuados; si se elimina la tarea, se eliminan sus bloques.
+- **Fin de un bloque y progreso** (fase 5):
+  - Al terminar un bloque, la App pregunta **«¿Cuánto has trabajado?»** con un control deslizante de **0 a lo que falta** de la tarea (estimado − ya hecho), de 5 en 5 min; por defecto, lo planificado para ese bloque. Sin tiempo estimado, el máximo es la duración del bloque. **No hay cronómetro** ni otras formas de anotar el avance.
+  - Si se elige el **máximo**, pregunta si la tarea está terminada: **«Sí, está hecha»** la marca como hecha (con «Deshacer»); **«Todavía no»** solo anota el tiempo.
+  - **«Ahora no»** deja la pregunta para la próxima vez que se abra la App. Si hay varios bloques por confirmar, se preguntan uno detrás de otro (del más antiguo al más reciente).
+  - Si la App estaba **cerrada** cuando terminó el bloque, la pregunta aparece **al abrirla**, y el móvil muestra una **notificación** (los permisos se piden en la configuración del primer inicio). Con la App abierta se comprueba cada minuto.
+  - **Progreso:** barra «hecho de estimado» en la ficha de la tarea (fila «Progreso»), en la lista de Tareas (cuando ya hay algo hecho), en «Planificar» y en la propia pregunta (se actualiza al mover el control). La ficha lista cada bloque con lo que se anotó.
+  - «Planificar» cuenta lo hecho: «Estimado · hecho · planificado · falta»; la propuesta de bloques cubre solo lo que falta. Los bloques ya terminados no se pueden mover y se conservan al guardar; en el Calendario se ven atenuados.
 - **Pulsación larga** (fase 4): mantener pulsado (~0,5 s) un **hueco libre** de la barra de tiempo de «Hoy» (Puntos o Niña soldado) o del **Calendario** (vista semana o día) pregunta **«¿Quieres añadir un evento o trabajar en una tarea?»**, con el día y la hora del punto (al cuarto de hora).
-  - **Añadir evento:** abre el formulario de evento con **fecha y hora** de ese punto y la **duración hasta el siguiente elemento** (o hasta el final de la franja horaria).
+  - **Añadir evento:** abre el formulario de evento con **fecha y hora** de ese punto y la **duración hasta el siguiente elemento** (o hasta el final de la franja horaria), **con un tope de 2 h**.
   - **Trabajar en una tarea:** lista las tareas pendientes con entrega posterior (con lo que falta por planificar); al elegir una se abre «Planificar» con un **bloque que empieza en ese punto** (lo que falta, hasta 1 h 30 min, sin salir del hueco), junto a los bloques que ya tenga.
   - Guardar o cancelar **vuelve a donde se pulsó** (Calendario u «Hoy»).
   - Pulsar sobre algo ocupado (un bloque, el cole…) avisa de que hay que pulsar un hueco libre; un momento pasado, que ya ha pasado. Un toque corto no hace nada; mientras se mantiene pulsado aparece un círculo que crece.
