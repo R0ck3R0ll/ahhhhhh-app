@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-  /* Tema único, claro por decisión de diseño (no sigue el modo del sistema) */
+  /* Fondo claro u oscuro según Configuración > Apariencia (no sigue el modo del sistema) */
   :root{
     --bg:#D9D9D9;
     --surface:#FFFFFF;
@@ -34,6 +34,29 @@
     --shadow: 0 1px 2px rgba(0,0,0,.06), 0 10px 26px rgba(0,0,0,.10);
     --font-display:'Fraunces', serif;
     --font-body:'IBM Plex Sans', system-ui, sans-serif;
+    /* Trazo de dibujo (post-its y barra de la niña) y tinta sobre post-its de color */
+    --ink:#2B2925;
+    --cat-tarea-deep:#0b3431; --cat-cita-deep:#271a47; --cat-actividad-deep:#1f3312; --cat-libre-deep:#14263d;
+  }
+  /* Fondo oscuro: paleta de Design.html */
+  :root[data-theme="dark"]{
+    --bg:#322e2b;
+    --surface:#47413a;
+    --surface-alt:#3c3732;
+    --border:#5c554c;
+    --text:#f5f0e8;
+    --text-muted:#b3a99b;
+    --accent:#d6738a;
+    --accent-strong:#e896aa;
+    --accent-soft:rgba(214,115,138,.18);
+    --on-accent:#2b1a1f;
+    --cat-tarea-ink:#5fb8b0;
+    --cat-cita-ink:#a08bd8;
+    --cat-actividad-ink:#8bb06a;
+    --cat-libre-ink:#6f95c4;
+    --warn-ink:#e8b839;
+    --ink:#15120f;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 26px rgba(0,0,0,.35);
   }
 
   *{box-sizing:border-box;}
@@ -121,13 +144,16 @@
   .alert .alert-title{ font-weight:600; font-size:13.5px; }
   .alert .alert-body{ font-size:13px; margin-top:2px; line-height:1.4; color:var(--alert-body-text); }
 
-  /* ---- Today: franja horaria ---- */
+  /* ---- Today: estructura común ---- */
+  #screen-today.active{ min-height:100%; }
+  #screen-today .alert{ margin-top:auto; }
+  #screen-today[data-layout="postit2"] .alert{ border:2px solid var(--ink); box-shadow:0 3px 0 var(--ink); }
+  .today-layout{ display:flex; flex-direction:column; gap:20px; }
+  .section-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
+
+  /* ---- Barra de tiempo «Puntos»: color de categoría + línea en la hora actual ---- */
   @keyframes needlePulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(43,41,37,.5); } 70%{ box-shadow:0 0 0 10px rgba(43,41,37,0); } }
   @keyframes amberPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(232,184,57,.65); } 70%{ box-shadow:0 0 0 12px rgba(232,184,57,0); } }
-  @media (prefers-reduced-motion: reduce){
-    .now-dot, .pulse-amber{ animation:none; }
-  }
-
   .day-strip{ position:relative; height:78px; }
   .day-strip .bar{
     position:absolute; left:0; right:0; top:32px; height:12px; border-radius:999px;
@@ -140,19 +166,156 @@
   .day-strip .now-line{ position:absolute; top:0; width:3px; border-radius:2px; background:var(--text); transform:translateX(-50%); }
   .day-strip .now-dot{ position:absolute; border-radius:50%; background:var(--text); transform:translateX(-50%); animation:needlePulse 2s ease-out infinite; }
   .day-strip .now-label{ position:absolute; transform:translateX(-50%); font-size:10px; font-weight:700; color:var(--text); white-space:nowrap; }
+  .day-strip .now-label.at-start{ transform:translateX(-6px); }
+  .day-strip .now-label.at-end{ transform:translateX(calc(-100% + 6px)); }
   .day-strip-scale{ display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; }
 
-  .section-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
+  /* ---- Barra de tiempo «Niña soldado»: el camino del día ---- */
+  .timeline svg{ display:block; width:100%; height:auto; overflow:visible; }
+  .tl-label{ font-family:var(--font-body); font-size:10px; font-weight:700; fill:var(--text); font-variant-numeric:tabular-nums; }
+  .tl-label.is-muted{ fill:var(--text-muted); font-weight:500; }
+  .tl-label.is-now{ fill:var(--accent-strong); }
+  .boom{ transform-box:fill-box; transform-origin:center; animation:boomIdle var(--dur,2.6s) ease-in-out infinite; animation-delay:var(--delay,0s); }
+  .boom.is-next{ animation:boomBig 2.4s cubic-bezier(.3,1.6,.5,1) infinite; }
+  @keyframes boomIdle{ 0%,100%{ transform:scale(1) rotate(0deg); } 50%{ transform:scale(1.08) rotate(5deg); } }
+  @keyframes boomBig{
+    0%{ transform:scale(.8) rotate(0deg); }
+    14%{ transform:scale(1.24) rotate(-8deg); }
+    30%{ transform:scale(1) rotate(2deg); }
+    100%{ transform:scale(.8) rotate(0deg); }
+  }
+  .spark{ opacity:0; animation:spark 2.4s ease-out infinite; }
+  @keyframes spark{
+    0%,10%{ opacity:0; transform:translate(0,0); }
+    16%{ opacity:1; }
+    55%{ opacity:0; transform:translate(var(--sx),var(--sy)); }
+    100%{ opacity:0; transform:translate(var(--sx),var(--sy)); }
+  }
+  .w-bob{ animation:bob .45s ease-in-out infinite alternate; }
+  .ponytail{ transform-box:fill-box; transform-origin:100% 50%; animation:swing-hair .45s ease-in-out infinite alternate; }
+  @keyframes bob{ from{ transform:translateY(0); } to{ transform:translateY(-1.4px); } }
+  @keyframes swing-hair{ from{ transform:rotate(-14deg); } to{ transform:rotate(16deg); } }
+
+  /* ---- Tema «Lista» ---- */
   .up-next-card{ border-radius:20px; padding:17px 19px; background:var(--warn-bg); color:var(--warn-text); }
   .up-next-time{ font-family:var(--font-display); font-weight:700; font-size:28px; }
   .up-next-title{ font-family:var(--font-display); font-weight:600; font-size:18px; }
   .up-next-sub{ font-size:12.5px; font-weight:600; margin-top:6px; }
-
   .later-row{ display:flex; flex-wrap:wrap; gap:10px; }
-  .later-chip{ border-radius:14px; padding:10px 14px; flex:1; min-width:152px; }
-  .later-time{ font-size:11px; font-weight:700; }
+  .later-chip{
+    border-radius:14px; padding:10px 14px; flex:1; min-width:152px;
+    background:color-mix(in srgb, var(--c) 14%, transparent);
+    border:1px solid color-mix(in srgb, var(--c) 40%, transparent);
+  }
+  .later-time{ font-size:11px; font-weight:700; color:var(--c-ink); }
   .later-title{ font-size:12.5px; font-weight:600; margin-top:3px; }
   .later-sub{ font-size:10.5px; color:var(--text-muted); margin-top:2px; }
+
+  /* ---- Tema «Post-it 1» (Design.html · Siguiente ahora): protagonista + baraja ---- */
+  @keyframes breathe{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.015); } }
+  @keyframes glowPulse{ 0%,100%{ box-shadow:0 0 0 rgba(232,184,57,0), 0 16px 34px rgba(0,0,0,.22); } 50%{ box-shadow:0 0 46px rgba(232,184,57,.5), 0 16px 34px rgba(0,0,0,.22); } }
+  @keyframes bob1{ 0%,100%{ transform:translateY(0) rotate(-7deg); } 50%{ transform:translateY(-7px) rotate(-7deg); } }
+  @keyframes bob2{ 0%,100%{ transform:translateY(0) rotate(5deg); } 50%{ transform:translateY(-10px) rotate(5deg); } }
+  @keyframes bob3{ 0%,100%{ transform:translateY(0) rotate(-3deg); } 50%{ transform:translateY(-6px) rotate(-3deg); } }
+  .hero-eyebrow{ text-align:center; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:12px; }
+  .hero-card{
+    background:var(--warn-bg); color:var(--warn-text); border-radius:26px; padding:26px 24px; text-align:center;
+    animation:glowPulse 3.2s ease-in-out infinite, breathe 3.2s ease-in-out infinite;
+  }
+  .hero-time{ font-family:var(--font-display); font-weight:700; font-size:52px; line-height:1; }
+  .hero-title{ font-family:var(--font-display); font-weight:600; font-size:24px; margin-top:6px; }
+  .hero-place{ font-size:13px; font-weight:600; margin-top:10px; opacity:.85; }
+  .hero-leave{
+    display:inline-flex; align-items:center; gap:6px; margin-top:14px;
+    background:rgba(0,0,0,.14); font-weight:700; font-size:12.5px; padding:7px 14px; border-radius:999px;
+  }
+  .fan{ display:flex; align-items:center; justify-content:center; padding:8px 0 10px; }
+  .fan-card{
+    position:relative; flex:none; width:112px; min-height:134px; margin-right:-16px;
+    background:var(--surface); border:1px solid var(--c); border-radius:16px; padding:13px;
+    box-shadow:var(--shadow);
+  }
+  .fan-card:last-child{ margin-right:0; }
+  .fan-card:nth-child(3n+1){ animation:bob1 3.6s ease-in-out infinite; }
+  .fan-card:nth-child(3n+2){ animation:bob2 4.1s ease-in-out infinite; }
+  .fan-card:nth-child(3n+3){ animation:bob3 3.8s ease-in-out infinite; }
+  .fan-time{ font-size:11px; font-weight:700; color:var(--c-ink); }
+  .fan-title{ font-size:13px; font-weight:700; margin-top:5px; line-height:1.2; hyphens:auto; overflow-wrap:break-word; }
+  .fan-sub{ font-size:10.5px; color:var(--text-muted); margin-top:4px; }
+
+  /* ---- Tema «Post-it 2» (boceto-today.html): barra del próximo + post-its flotantes ---- */
+  .pi-next{
+    position:relative; overflow:hidden; flex:none;
+    display:flex; align-items:center; gap:12px;
+    background:var(--warn-bg); color:var(--warn-text);
+    border:2px solid var(--ink); border-radius:16px;
+    box-shadow:0 3px 0 var(--ink);
+    padding:11px 16px;
+  }
+  .pi-next::after{
+    content:""; position:absolute; top:0; bottom:0; left:-60%; width:40%;
+    background:linear-gradient(100deg, transparent, rgba(255,255,255,.5), transparent);
+    animation:sheen 6s ease-in-out infinite; pointer-events:none;
+  }
+  @keyframes sheen{ 0%,70%{ left:-60%; } 100%{ left:130%; } }
+  .pi-next-time{ font-family:var(--font-display); font-weight:700; font-size:24px; line-height:1; font-variant-numeric:tabular-nums; }
+  .pi-next-title{ flex:1; min-width:0; font-family:var(--font-display); font-weight:600; font-size:18px; line-height:1.1; }
+  .pi-next-side{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; text-align:right; }
+  .pi-next-when{ font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .pi-next-leave{ display:flex; align-items:center; gap:4px; font-size:12px; font-weight:600; }
+
+  .board{ position:relative; flex:none; height:384px; }
+  .note{
+    position:absolute; width:min(56%, 188px); height:150px;
+    left:var(--x); top:var(--y); z-index:var(--z);
+    transform:rotate(var(--rot));
+    transition:left .8s cubic-bezier(.34,1.25,.5,1), top .8s cubic-bezier(.34,1.25,.5,1), transform .8s cubic-bezier(.34,1.25,.5,1);
+    animation:noteIn .9s cubic-bezier(.2,.9,.3,1.15) backwards;
+    animation-delay:var(--in-delay, 0s);
+    cursor:pointer; outline:none;
+  }
+  @keyframes noteIn{
+    from{ opacity:0; transform:translateY(-40px) rotate(calc(var(--rot) - 14deg)) scale(.9); }
+    to{ opacity:1; transform:translateY(0) rotate(var(--rot)) scale(1); }
+  }
+  .note-shadow{
+    position:absolute; left:14%; right:14%; bottom:-22px; height:18px; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(20,18,15,.34), rgba(20,18,15,0));
+    animation:shadowFloat var(--dur) ease-in-out infinite; animation-delay:var(--delay);
+  }
+  .note-card{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; justify-content:flex-end;
+    padding:13px 15px; border-radius:22px;
+    border:1.5px solid rgba(43,41,37,.8);
+    background:linear-gradient(160deg, rgba(255,255,255,.32), rgba(255,255,255,0) 48%), var(--c);
+    color:var(--deep);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.45), 0 10px 20px rgba(0,0,0,.10);
+    animation:float var(--dur) ease-in-out infinite; animation-delay:var(--delay);
+  }
+  @keyframes float{ 0%,100%{ transform:translateY(0) rotate(0deg); } 50%{ transform:translateY(-10px) rotate(var(--sway)); } }
+  @keyframes shadowFloat{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(.76); opacity:.5; } }
+  .note:focus-visible .note-card{ outline:3px solid var(--accent); outline-offset:3px; }
+  .n-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .n-cat{ font-size:9px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; opacity:.75; }
+  .n-time{ font-family:var(--font-display); font-weight:700; font-size:26px; line-height:1; font-variant-numeric:tabular-nums; }
+  .n-title{ font-family:var(--font-display); font-weight:600; font-size:15.5px; line-height:1.15; margin-top:3px; }
+  .n-meta{ font-size:11px; font-weight:500; opacity:.82; margin-top:3px; }
+  .n-travel{ display:flex; gap:5px; margin-top:8px; }
+  .n-pill{
+    font-family:var(--font-body); font-size:10.5px; font-weight:600;
+    padding:4px 8px; border-radius:999px; cursor:pointer; white-space:nowrap;
+    border:1px solid rgba(43,41,37,.35); background:rgba(255,255,255,.45); color:var(--deep);
+  }
+  .n-pill.is-on{ background:#2B2925; border-color:#2B2925; color:#fff; }
+  .n-pill:focus-visible{ outline:2px solid #2B2925; outline-offset:2px; }
+  .n-leave{ display:flex; align-items:center; gap:5px; font-size:11px; font-weight:700; margin-top:5px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .now-dot, .pulse-amber, .boom, .spark, .w-bob, .ponytail, .hero-card, .fan-card,
+    .pi-next::after, .note, .note-card, .note-shadow{ animation:none !important; }
+    .note{ transition-duration:.01s; }
+  }
 
   .chip{
     display:inline-flex; align-items:center; gap:5px;
@@ -319,7 +482,7 @@
   .cat-name-input:focus{ outline:none; border-bottom-color:var(--accent); }
   .priority-select{
     flex:none;
-    font-family:var(--font-body); font-weight:700; font-size:11px; color:var(--text);
+    font-family:var(--font-body); font-weight:700; font-size:11px; color:#2B2925;
     border:none; border-radius:999px; padding:4px 22px 4px 10px;
     cursor:pointer;
     -webkit-appearance:none; appearance:none;
@@ -390,7 +553,7 @@
   .cal-bar{
     position:absolute; left:2px; right:2px; border-radius:6px; padding:3px 5px;
     overflow:hidden; display:flex; flex-direction:column; justify-content:flex-start;
-    font-size:10.5px; color:var(--text); line-height:1.15;
+    font-size:10.5px; color:#2B2925; line-height:1.15;
   }
   .cal-bar .bar-title{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .cal-bar .bar-time{ font-size:9.5px; opacity:.85; font-variant-numeric:tabular-nums; }
@@ -454,71 +617,16 @@
     <!-- ============ TODAY ============ -->
     <section class="screen active" id="screen-today" aria-labelledby="screen-heading">
 
-      <div class="alert">
+      <!-- Barra de tiempo y tema: se dibujan según Configuración > Apariencia de Today -->
+      <div id="today-bar"></div>
+      <div class="today-layout" id="today-layout"></div>
+
+      <div class="alert" role="status">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
         <div>
           <div class="alert-title">Carga de trabajo próxima</div>
           <div class="alert-body">Trabajo de Ciencias Naturales · estimado 2 h · entrega el lunes 14/09</div>
         </div>
-      </div>
-
-      <div>
-        <div class="day-strip">
-          <div class="bar"></div>
-
-          <div class="marker" style="left:64.3%; top:26px; width:10px; height:10px; background:var(--border);"></div>
-          <div class="stem" style="left:64.3%; top:44px; height:12px; background:var(--border);"></div>
-
-          <div class="marker pulse-amber" style="left:71.4%; top:18px; width:16px; height:16px; background:var(--warn-bg);"></div>
-          <div class="stem" style="left:71.4%; top:44px; height:14px; width:2px; background:var(--warn-bg);"></div>
-
-          <div class="marker" style="left:82.1%; top:28px; width:9px; height:9px; background:var(--cat-libre);"></div>
-          <div class="stem" style="left:82.1%; top:44px; height:12px; background:var(--cat-libre);"></div>
-
-          <div class="marker at-end" style="left:100%; top:28px; width:9px; height:9px; background:var(--cat-tarea);"></div>
-          <div class="stem at-end" style="left:100%; top:44px; height:12px; background:var(--cat-tarea);"></div>
-
-          <div class="now-line" style="left:66.1%; height:56px;"></div>
-          <div class="now-dot" style="left:66.1%; top:52px; width:12px; height:12px;"></div>
-          <div class="now-label" style="left:66.1%; top:66px;">AHORA · 17:15</div>
-        </div>
-        <div class="day-strip-scale"><span>8:00</span><span>22:00</span></div>
-      </div>
-
-      <div>
-        <div class="section-eyebrow" style="color:var(--warn-ink)">Se acerca · faltan 45 min</div>
-        <div class="up-next-card">
-          <div style="display:flex; align-items:baseline; gap:10px;">
-            <span class="up-next-time">18:00</span>
-            <span class="up-next-title">Natación</span>
-          </div>
-          <div class="up-next-sub">Piscina Municipal Las Rozas · sale 17:35 en coche</div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-eyebrow" style="color:var(--text-muted)">Más tarde</div>
-        <div class="later-row">
-          <div class="later-chip" style="background:rgba(111,149,196,.14); border:1px solid rgba(111,149,196,.4);">
-            <div class="later-time" style="color:var(--cat-libre-ink)">19:30</div>
-            <div class="later-title">Merienda con Clara</div>
-            <div class="later-sub">Casa de Clara · 600 m</div>
-            <div class="toggle-row" role="group" aria-label="Modo de traslado a Merienda con Clara">
-              <button type="button" class="toggle-btn is-active" data-walk="1" onclick="setTravelMode(this,'walk')">A pie · 10 min</button>
-              <button type="button" class="toggle-btn" data-walk="0" onclick="setTravelMode(this,'car')">En coche · 5 min</button>
-            </div>
-            <div class="travel-note" id="clara-departure">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              Salida 19:20
-            </div>
-          </div>
-          <div class="later-chip" style="background:rgba(95,184,176,.14); border:1px solid rgba(95,184,176,.4);">
-            <div class="later-time" style="color:var(--cat-tarea-ink)">22:00</div>
-            <div class="later-title">Entrega Lengua</div>
-            <div class="later-sub">Deadline vía Classroom</div>
-          </div>
-        </div>
-      </div>
 
     </section>
 
@@ -619,6 +727,36 @@
 
     <!-- ============ CONFIGURACIÓN ============ -->
     <section class="screen" id="screen-config" aria-labelledby="screen-heading">
+
+      <div>
+        <h2 class="section-title">Apariencia de Today</h2>
+        <div class="config-card">
+          <div class="field-label">Tema</div>
+          <div class="seg-control" role="group" aria-label="Tema de la pantalla Today">
+            <button type="button" class="seg-btn" data-appearance="layout" data-value="list" onclick="setAppearance('layout','list')">Lista</button>
+            <button type="button" class="seg-btn" data-appearance="layout" data-value="postit1" onclick="setAppearance('layout','postit1')">Post-it 1</button>
+            <button type="button" class="seg-btn" data-appearance="layout" data-value="postit2" onclick="setAppearance('layout','postit2')">Post-it 2</button>
+          </div>
+          <p class="card-hint" id="layout-hint"></p>
+          <div class="config-line">
+            <span class="config-label">Fondo</span>
+            <div class="seg-control" role="group" aria-label="Fondo claro u oscuro" style="width:180px">
+              <button type="button" class="seg-btn" data-appearance="mode" data-value="light" onclick="setAppearance('mode','light')">Claro</button>
+              <button type="button" class="seg-btn" data-appearance="mode" data-value="dark" onclick="setAppearance('mode','dark')">Oscuro</button>
+            </div>
+          </div>
+
+          <div class="cover-block">
+            <div class="field-label">Barra de tiempo</div>
+            <div class="seg-control" role="group" aria-label="Barra de tiempo de Today">
+              <button type="button" class="seg-btn" data-appearance="bar" data-value="dots" onclick="setAppearance('bar','dots')">Puntos</button>
+              <button type="button" class="seg-btn" data-appearance="bar" data-value="nina" onclick="setAppearance('bar','nina')">Niña soldado</button>
+            </div>
+            <p class="card-hint" id="bar-hint"></p>
+          </div>
+          <button class="btn-ghost" style="align-self:flex-start" onclick="document.querySelector('.tab[data-screen=today]').click()">Ver Today</button>
+        </div>
+      </div>
 
       <div>
         <h2 class="section-title">Cuentas conectadas</h2>
@@ -812,7 +950,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
       Calendario
     </button>
-    <button class="tab" data-screen="config" data-title="Configuración" data-sub="Cuentas, horario, categorías y calendario" onclick="showScreen(this)">
+    <button class="tab" data-screen="config" data-title="Configuración" data-sub="Apariencia, horario, cuentas y calendario" onclick="showScreen(this)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></svg>
       Config
     </button>
@@ -833,15 +971,339 @@
     document.getElementById('screen-subheading').textContent = btn.dataset.sub;
   }
 
-  function setTravelMode(btn, mode){
-    document.querySelectorAll('.toggle-btn[data-walk]').forEach(b=>b.classList.remove('is-active'));
-    btn.classList.add('is-active');
-    var note = document.getElementById('clara-departure');
-    if(mode === 'walk'){
-      note.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Salida 19:20';
-    } else {
-      note.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Salida 19:25';
+
+  /* ================= TODAY ================= */
+  /* Datos de ejemplo: viernes 11/09 a las 17:15 */
+  var TODAY_DAY = 4;          // lunes = 0
+  var NOW = 17.25;
+  var CAT_NAMES = { tarea:'Tarea', cita:'Cita', actividad:'Actividad', libre:'Tiempo libre' };
+  var TODAY_NEXT = { t:18, cat:'actividad', title:'Natación',
+    place:'Piscina Municipal Las Rozas', dist:'3,5 km', leave:'17:35', how:'en coche' };
+  var TODAY_LATER = [
+    { id:'clara', t:19.5, cat:'libre', title:'Merienda con Clara', place:'Casa de Clara', dist:'600 m',
+      travel:{ mode:'walk',
+        walk:{ label:'A pie · 10 min', short:'A pie 10′', how:'a pie',    leave:'19:20' },
+        car: { label:'En coche · 5 min', short:'Coche 5′', how:'en coche', leave:'19:25' } } },
+    { id:'abuela', t:20.5, cat:'cita', title:'Videollamada con la abuela', place:'En casa', dist:'20 min' },
+    { id:'lengua', t:22, cat:'tarea', title:'Entrega de Lengua', place:'Classroom', dist:'redacción' }
+  ];
+
+  /* ---- Apariencia (Configuración) ---- */
+  var APPEARANCE = { layout:'list', mode:'light', bar:'dots' };
+  var LAYOUT_HINTS = {
+    list:    'Lista: el próximo evento destacado y el resto del día en fichas.',
+    postit1: 'Post-it 1: un solo protagonista, lo que viene ya; el resto del día espera detrás, como una baraja.',
+    postit2: 'Post-it 2: el próximo evento en una barra y el resto en post-its flotantes; toca uno para traerlo al frente.'
+  };
+  var BAR_HINTS = {
+    dots: 'Puntos del color de cada categoría y una línea vertical en la hora actual.',
+    nina: 'La niña soldado avanza por el camino del día; cada evento es una explosión del color de su categoría.'
+  };
+
+  function loadAppearance(){
+    try{
+      var saved = JSON.parse(localStorage.getItem('today-appearance') || 'null');
+      if(saved){ Object.keys(APPEARANCE).forEach(function(k){ if(saved[k]){ APPEARANCE[k] = saved[k]; } }); }
+    }catch(e){}
+  }
+
+  function setAppearance(key, value){
+    APPEARANCE[key] = value;
+    try{ localStorage.setItem('today-appearance', JSON.stringify(APPEARANCE)); }catch(e){}
+    applyAppearance();
+  }
+
+  function applyAppearance(){
+    document.documentElement.setAttribute('data-theme', APPEARANCE.mode === 'dark' ? 'dark' : 'light');
+    document.querySelectorAll('[data-appearance]').forEach(function(b){
+      var on = APPEARANCE[b.dataset.appearance] === b.dataset.value;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    document.getElementById('layout-hint').textContent = LAYOUT_HINTS[APPEARANCE.layout];
+    renderToday();
+  }
+
+  /* ---- Utilidades ---- */
+  function catColor(cat){ return 'var(--cat-' + cat + ')'; }
+  function catVars(cat){ return '--c:var(--cat-' + cat + ');--c-ink:var(--cat-' + cat + '-ink);--deep:var(--cat-' + cat + '-deep)'; }
+  function minsTo(t){ return Math.round((t - NOW) * 60); }
+  function travelOf(item){ return item.travel ? item.travel[item.travel.mode] : null; }
+  var CLOCK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
+  var CAR_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14l-1.5-5.5A2 2 0 0 0 15.6 10H8.4a2 2 0 0 0-1.9 1.5Z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>';
+
+  // Franja que cubre la barra: el tiempo fuera del cole de hoy
+  // (por la mañana, de inicio de franja a la entrada; después, de la salida al final).
+  function todayRange(){
+    var b = dayBounds(), sc = schoolFor(TODAY_DAY);
+    var r = { start:toHours(b.start), end:toHours(b.end) };
+    if(sc.on){
+      if(NOW < toHours(sc.entry)){ r.end = Math.min(toHours(sc.entry), r.end); }
+      else { r.start = Math.max(toHours(sc.exit), r.start); }
     }
+    return r;
+  }
+
+  function todayEvents(){
+    return [ {t:TODAY_NEXT.t, cat:TODAY_NEXT.cat, next:true} ].concat(TODAY_LATER.map(function(e){ return {t:e.t, cat:e.cat}; }))
+      .sort(function(a, b){ return a.t - b.t; });
+  }
+
+  function renderToday(){
+    var screen = document.getElementById('screen-today');
+    screen.setAttribute('data-layout', APPEARANCE.layout);
+    var r = todayRange();
+    var bar = document.getElementById('today-bar');
+    if(APPEARANCE.bar === 'nina'){ renderNinaBar(bar, r); } else { renderDotsBar(bar, r); }
+    var layout = document.getElementById('today-layout');
+    if(APPEARANCE.layout === 'postit1'){ renderPostit1(layout); }
+    else if(APPEARANCE.layout === 'postit2'){ renderPostit2(layout); }
+    else { renderList(layout); }
+    var hint = document.getElementById('bar-hint');
+    if(hint){ hint.textContent = BAR_HINTS[APPEARANCE.bar] + ' Hoy cubre el tiempo fuera del cole: ' + fmtHour(r.start) + '–' + fmtHour(r.end) + '.'; }
+  }
+
+  /* ---- Barra «Puntos» ---- */
+  function renderDotsBar(host, r){
+    function pct(t){ return Math.max(0, Math.min(100, (t - r.start) / (r.end - r.start) * 100)); }
+    var html = '<div class="day-strip"><div class="bar"></div>';
+    todayEvents().forEach(function(e){
+      var p = pct(e.t), end = p > 97 ? ' at-end' : '';
+      if(e.next){
+        html += '<div class="marker pulse-amber' + end + '" style="left:' + p + '%; top:18px; width:16px; height:16px; background:var(--warn-bg);"></div>' +
+                '<div class="stem' + end + '" style="left:' + p + '%; top:44px; height:14px; width:2px; background:var(--warn-bg);"></div>';
+      } else {
+        html += '<div class="marker' + end + '" style="left:' + p + '%; top:28px; width:9px; height:9px; background:' + catColor(e.cat) + ';"></div>' +
+                '<div class="stem' + end + '" style="left:' + p + '%; top:44px; height:12px; background:' + catColor(e.cat) + ';"></div>';
+      }
+    });
+    var n = pct(NOW), edge = n < 12 ? ' at-start' : (n > 88 ? ' at-end' : '');
+    html += '<div class="now-line" style="left:' + n + '%; height:56px;"></div>' +
+            '<div class="now-dot" style="left:' + n + '%; top:52px; width:12px; height:12px;"></div>' +
+            '<div class="now-label' + edge + '" style="left:' + n + '%; top:66px;">AHORA · ' + fmtHour(NOW) + '</div>' +
+            '</div><div class="day-strip-scale"><span>' + fmtHour(r.start) + '</span><span>' + fmtHour(r.end) + '</span></div>';
+    host.innerHTML = html;
+  }
+
+  /* ---- Barra «Niña soldado» (de boceto-today.html) ---- */
+  var TL_X0 = 20, TL_X1 = 304, TL_Y = 58;
+
+  function seeded(seed){
+    var v = seed;
+    return function(){ v = (v * 9301 + 49297) % 233280; return v / 233280; };
+  }
+
+  function boomPoints(seed, rOut, rIn, spikes){
+    var rnd = seeded(seed), pts = [];
+    for(var k = 0; k < spikes * 2; k++){
+      var a = (k + (rnd() - .5) * .5) * Math.PI / spikes - Math.PI / 2;
+      var rad = k % 2 ? rIn * (.85 + rnd() * .3) : rOut * (.72 + rnd() * .5);
+      pts.push((Math.cos(a) * rad).toFixed(2) + ',' + (Math.sin(a) * rad).toFixed(2));
+    }
+    return pts.join(' ');
+  }
+
+  function explosion(e, i, x){
+    var big = !!e.next, color = catColor(e.cat), sparks = '';
+    if(big){
+      for(var k = 0; k < 6; k++){
+        var a = k / 6 * Math.PI * 2 + .3;
+        sparks += '<g class="spark" style="--sx:' + (Math.cos(a) * 17).toFixed(1) + 'px;--sy:' + (Math.sin(a) * 17).toFixed(1) + 'px">' +
+          '<circle r="' + (k % 2 ? 1.1 : 1.6) + '" fill="' + (k % 2 ? '#ffe066' : color) + '" stroke="var(--ink)" stroke-width=".6"/></g>';
+      }
+    }
+    return '<g transform="translate(' + x.toFixed(1) + ' ' + TL_Y + ')">' + sparks +
+      '<g class="boom' + (big ? ' is-next' : '') + '" style="--dur:' + (2.6 + i * .45) + 's;--delay:' + (-i * .7) + 's">' +
+        '<polygon points="' + boomPoints(7 + i * 13, big ? 18 : 14.5, 7.5, 11) + '" fill="' + color + '" stroke="var(--ink)" stroke-width="1.3" stroke-linejoin="round"/>' +
+        '<polygon points="' + boomPoints(3 + i * 29, big ? 9.5 : 7.5, 4.4, 9) + '" fill="' + (big ? '#ffe066' : '#fff4c2') + '" stroke="var(--ink)" stroke-width=".9" stroke-linejoin="round"/>' +
+      '</g></g>';
+  }
+
+  // Extremidad articulada en (x, y) que oscila entre `from` y `to` grados.
+  function limb(x, y, len, w, color, from, to, tip){
+    return '<g transform="translate(' + x + ' ' + y + ')"><g>' +
+      '<animateTransform attributeName="transform" type="rotate" values="' + from + ';' + to + ';' + from + '" dur="0.9s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".45 0 .55 1;.45 0 .55 1"/>' +
+      '<line x1="0" y1="0" x2="0" y2="' + len + '" stroke="var(--ink)" stroke-width="' + (w + 1.8) + '" stroke-linecap="round"/>' +
+      '<line x1="0" y1="0" x2="0" y2="' + len + '" stroke="' + color + '" stroke-width="' + w + '" stroke-linecap="round"/>' +
+      tip + '</g></g>';
+  }
+
+  function soldierGirl(){
+    var OLIVE = '#6f7d3c', OLIVE_DARK = '#56622d', KHAKI = '#7d8a45', SKIN = '#f2c7a0', HAIR = '#6b3b1f';
+    var boot = '<path d="M-2 9.3 h4.6 a1.7 1.7 0 0 1 0 3.4 h-4.6 z" fill="var(--ink)"/>';
+    var hand = '<circle cx="0" cy="8.1" r="1.5" fill="' + SKIN + '" stroke="var(--ink)" stroke-width=".8"/>';
+    return '<g class="w-bob">' +
+      limb(-0.8, -12, 10.5, 3.2, OLIVE_DARK, 24, -24, boot) +
+      limb(0, -21.5, 7.5, 2.6, OLIVE_DARK, -30, 30, hand) +
+      '<rect x="-8.6" y="-24" width="6" height="10.5" rx="2" fill="' + OLIVE_DARK + '" stroke="var(--ink)" stroke-width="1.2"/>' +
+      '<rect x="-3.4" y="-24.5" width="7.2" height="13" rx="2.8" fill="' + KHAKI + '" stroke="var(--ink)" stroke-width="1.3"/>' +
+      '<rect x="-3.4" y="-14.6" width="7.2" height="2" fill="var(--ink)"/>' +
+      '<rect x="0.2" y="-14.4" width="1.6" height="1.6" fill="#e8b839"/>' +
+      '<ellipse class="ponytail" cx="-5.6" cy="-28.4" rx="3" ry="1.7" fill="' + HAIR + '" stroke="var(--ink)" stroke-width="1"/>' +
+      '<circle cx="1" cy="-29.5" r="4.6" fill="' + SKIN + '" stroke="var(--ink)" stroke-width="1.3"/>' +
+      '<ellipse cx="3.1" cy="-29.6" rx=".75" ry="1" fill="var(--ink)"/>' +
+      '<circle cx="3.4" cy="-27.6" r="1" fill="#ea8f8f" opacity=".8"/>' +
+      '<path d="M2.2 -26.3 q1 .8 2.1 0" fill="none" stroke="var(--ink)" stroke-width=".8" stroke-linecap="round"/>' +
+      '<path d="M-3.6 -29.8 q.6 4.6 4.4 5.2" fill="none" stroke="var(--ink)" stroke-width=".8"/>' +
+      '<path d="M-4.9 -30.6 C-4.9 -37.6 7.1 -37.6 7.1 -30.6 Z" fill="' + OLIVE + '" stroke="var(--ink)" stroke-width="1.3" stroke-linejoin="round"/>' +
+      '<circle cx="3.8" cy="-33.1" r="1" fill="' + OLIVE_DARK + '"/>' +
+      '<circle cx="-1.4" cy="-32.5" r=".8" fill="' + OLIVE_DARK + '"/>' +
+      '<path d="M-2.2 -34.1 q2.4 -1.8 5 -.8" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".9" stroke-linecap="round"/>' +
+      '<rect x="-6.2" y="-31.4" width="14.6" height="2" rx="1" fill="' + OLIVE_DARK + '" stroke="var(--ink)" stroke-width="1.1"/>' +
+      limb(0.8, -12, 10.5, 3.2, OLIVE, -24, 24, boot) +
+      limb(0.6, -21.5, 7.5, 2.6, KHAKI, 30, -30, hand) +
+    '</g>';
+  }
+
+  function renderNinaBar(host, r){
+    function xAt(t){ return TL_X0 + Math.max(0, Math.min(1, (t - r.start) / (r.end - r.start))) * (TL_X1 - TL_X0); }
+    var nowX = xAt(NOW), events = todayEvents();
+    var track = 'M20 52 H316 V44 L338 58 L316 72 V64 H20 A6 6 0 0 1 20 52 Z';
+    // Etiqueta de «ahora» a la izquierda de la niña; si no cabe, encima de ella.
+    var nowLabel = nowX - 18 > 48
+      ? '<text class="tl-label is-now" x="' + (nowX - 18).toFixed(1) + '" y="42" text-anchor="end">' + fmtHour(NOW) + '</text>'
+      : '<text class="tl-label is-now" x="' + nowX.toFixed(1) + '" y="-10" text-anchor="middle">' + fmtHour(NOW) + '</text>';
+    var svg =
+      '<svg viewBox="0 -22 350 116" role="img" aria-label="Ahora ' + fmtHour(NOW) + '; próximos: ' + events.map(function(e){ return fmtHour(e.t); }).join(', ') + '">' +
+      '<defs>' +
+        '<clipPath id="trackClip"><path d="' + track + '"/></clipPath>' +
+        '<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+          '<rect width="6" height="6" fill="var(--accent-soft)"/>' +
+          '<line x1="0" y1="0" x2="0" y2="6" stroke="var(--accent)" stroke-opacity=".45" stroke-width="2"/>' +
+        '</pattern>' +
+      '</defs>' +
+      '<path d="' + track + '" fill="var(--surface)"/>' +
+      '<rect x="0" y="40" width="' + nowX + '" height="40" fill="url(#hatch)" clip-path="url(#trackClip)"/>' +
+      '<path d="' + track + '" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/>';
+    events.forEach(function(e, i){
+      var x = xAt(e.t);
+      svg += explosion(e, i, x) + '<text class="tl-label" x="' + x.toFixed(1) + '" y="88" text-anchor="middle">' + fmtHour(e.t) + '</text>';
+    });
+    if(xAt(events[0].t) - TL_X0 > 40){
+      svg += '<text class="tl-label is-muted" x="20" y="88" text-anchor="start">' + fmtHour(r.start) + '</text>';
+    }
+    svg += '<polygon points="' + (nowX - 4) + ',72 ' + (nowX + 4) + ',72 ' + nowX + ',66" fill="var(--ink)"/>' + nowLabel +
+      '<g transform="translate(' + nowX.toFixed(1) + ' 52) scale(1.5)">' + soldierGirl() + '</g></svg>';
+    host.innerHTML = '<div class="timeline">' + svg + '</div>';
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){ host.querySelector('svg').pauseAnimations(); }
+  }
+
+  /* ---- Tema «Lista» ---- */
+  function renderList(host){
+    var n = TODAY_NEXT;
+    var chips = TODAY_LATER.map(function(e, i){
+      var html = '<div class="later-chip" style="' + catVars(e.cat) + '">' +
+        '<div class="later-time">' + fmtHour(e.t) + '</div>' +
+        '<div class="later-title">' + e.title + '</div>' +
+        '<div class="later-sub">' + e.place + ' · ' + e.dist + '</div>';
+      if(e.travel){
+        html += '<div class="toggle-row" role="group" aria-label="Modo de traslado a ' + e.title + '">' +
+          ['walk','car'].map(function(m){
+            return '<button type="button" class="toggle-btn' + (e.travel.mode === m ? ' is-active' : '') + '" data-item="' + i + '" data-mode="' + m + '">' + e.travel[m].label + '</button>';
+          }).join('') + '</div>' +
+          '<div class="travel-note">' + CLOCK_SVG + ' Salida ' + travelOf(e).leave + '</div>';
+      }
+      return html + '</div>';
+    }).join('');
+    host.innerHTML =
+      '<div><div class="section-eyebrow" style="color:var(--warn-ink)">Se acerca · faltan ' + minsTo(n.t) + ' min</div>' +
+      '<div class="up-next-card"><div style="display:flex; align-items:baseline; gap:10px;">' +
+        '<span class="up-next-time">' + fmtHour(n.t) + '</span><span class="up-next-title">' + n.title + '</span></div>' +
+        '<div class="up-next-sub">' + n.place + ' · sale ' + n.leave + ' ' + n.how + '</div></div></div>' +
+      '<div><div class="section-eyebrow" style="color:var(--text-muted)">Más tarde</div><div class="later-row">' + chips + '</div></div>';
+    host.querySelectorAll('.toggle-btn[data-mode]').forEach(function(b){
+      b.onclick = function(){ TODAY_LATER[+b.dataset.item].travel.mode = b.dataset.mode; renderToday(); };
+    });
+  }
+
+  /* ---- Tema «Post-it 1» (Design.html · Siguiente ahora) ---- */
+  function renderPostit1(host){
+    var n = TODAY_NEXT;
+    var cards = TODAY_LATER.map(function(e, i){
+      var tr = travelOf(e);
+      return '<div class="fan-card" style="' + catVars(e.cat) + ';z-index:' + (i + 1) + '">' +
+        '<div class="fan-time">' + fmtHour(e.t) + '</div>' +
+        '<div class="fan-title">' + e.title + '</div>' +
+        '<div class="fan-sub">' + (tr ? e.dist + ' · ' + tr.how + ' · sal ' + tr.leave : e.place + ' · ' + e.dist) + '</div></div>';
+    }).join('');
+    host.innerHTML =
+      '<div><div class="hero-eyebrow">Ahora mismo · faltan ' + minsTo(n.t) + ' min</div>' +
+      '<div class="hero-card"><div class="hero-time">' + fmtHour(n.t) + '</div>' +
+        '<div class="hero-title">' + n.title + '</div>' +
+        '<div class="hero-place">' + n.place + ' · ' + n.dist + '</div>' +
+        '<span class="hero-leave">Salida ' + n.leave + ' · ' + n.how + '</span></div></div>' +
+      '<div><div class="section-eyebrow" style="color:var(--text-muted)">Después, hoy</div><div class="fan">' + cards + '</div></div>';
+  }
+
+  /* ---- Tema «Post-it 2» (boceto-today.html) ---- */
+  var NOTE_SLOTS = [ { x:'2%', y:14, rot:-15 }, { x:'28%', y:108, rot:-6 }, { x:'45%', y:200, rot:9 } ];
+  var NOTE_FLOAT = [
+    { dur:'5.6s', delay:'-0.8s', sway:'1.4deg' },
+    { dur:'6.8s', delay:'-3.1s', sway:'-1.2deg' },
+    { dur:'6.1s', delay:'-1.9s', sway:'1.8deg' }
+  ];
+  var noteOrder = TODAY_LATER.map(function(e){ return e.id; });
+
+  function renderPostit2(host){
+    var n = TODAY_NEXT;
+    host.innerHTML =
+      '<div class="pi-next" role="group" aria-label="Próximo evento">' +
+        '<span class="pi-next-time">' + fmtHour(n.t) + '</span>' +
+        '<span class="pi-next-title">' + n.title + '</span>' +
+        '<span class="pi-next-side"><span class="pi-next-when">en ' + minsTo(n.t) + ' min</span>' +
+        '<span class="pi-next-leave">' + CAR_SVG + ' sal ' + n.leave + '</span></span></div>' +
+      '<div class="board" aria-label="Eventos siguientes"></div>';
+    var board = host.querySelector('.board'), els = {};
+    TODAY_LATER.forEach(function(item, i){
+      var f = NOTE_FLOAT[i % NOTE_FLOAT.length];
+      var note = document.createElement('div');
+      note.className = 'note';
+      note.tabIndex = 0;
+      note.setAttribute('role', 'button');
+      note.setAttribute('aria-label', fmtHour(item.t) + ' ' + item.title + '. Traer al frente');
+      note.setAttribute('style', catVars(item.cat) + ';--dur:' + f.dur + ';--delay:' + f.delay + ';--sway:' + f.sway + ';--in-delay:' + (0.15 + i * 0.18) + 's');
+      var travel = '';
+      if(item.travel){
+        travel = '<div class="n-travel" role="group" aria-label="Modo de traslado">' +
+          ['walk','car'].map(function(m){
+            return '<button type="button" class="n-pill' + (item.travel.mode === m ? ' is-on' : '') + '" data-mode="' + m + '">' + item.travel[m].short + '</button>';
+          }).join('') + '</div>' +
+          '<div class="n-leave">' + CLOCK_SVG + 'Sal a las <span class="n-leave-time">' + travelOf(item).leave + '</span></div>';
+      }
+      note.innerHTML = '<div class="note-shadow"></div><div class="note-card">' +
+        '<div class="n-head"><span class="n-time">' + fmtHour(item.t) + '</span><span class="n-cat">' + CAT_NAMES[item.cat] + '</span></div>' +
+        '<div class="n-title">' + item.title + '</div>' +
+        '<div class="n-meta">' + item.place + ' · ' + item.dist + '</div>' + travel + '</div>';
+      note.querySelectorAll('.n-pill').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          e.stopPropagation();
+          item.travel.mode = btn.dataset.mode;
+          note.querySelectorAll('.n-pill').forEach(function(b){ b.classList.toggle('is-on', b === btn); });
+          note.querySelector('.n-leave-time').textContent = travelOf(item).leave;
+        });
+      });
+      function front(){
+        var k = noteOrder.indexOf(item.id);
+        if(k > 0){ noteOrder.splice(k, 1); noteOrder.unshift(item.id); placeNotes(els); }
+      }
+      note.addEventListener('click', front);
+      note.addEventListener('keydown', function(e){
+        if(e.target === note && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); front(); }
+      });
+      els[item.id] = note;
+      board.appendChild(note);
+    });
+    placeNotes(els);
+  }
+
+  function placeNotes(els){
+    noteOrder.forEach(function(id, slot){
+      var sl = NOTE_SLOTS[slot] || NOTE_SLOTS[NOTE_SLOTS.length - 1], el = els[id];
+      el.style.setProperty('--x', sl.x);
+      el.style.setProperty('--y', sl.y + 'px');
+      el.style.setProperty('--rot', sl.rot + 'deg');
+      el.style.setProperty('--z', String(10 - slot));
+    });
   }
 
   var toastTimer;
@@ -998,6 +1460,7 @@
     CAL_START = Math.floor(toHours(b.start));
     CAL_END = Math.ceil(toHours(b.end));
     renderCalendar(calView);
+    if(typeof renderToday === 'function' && document.getElementById('layout-hint').textContent){ renderToday(); }
   }
 
   /* ---- Exportación a Google Calendar ---- */
@@ -1144,7 +1607,7 @@
   }
 
   function setCalView(btn){
-    document.querySelectorAll('.seg-btn').forEach(function(b){ b.classList.remove('is-active'); });
+    document.querySelectorAll('.seg-btn[data-view]').forEach(function(b){ b.classList.remove('is-active'); });
     btn.classList.add('is-active');
     var view = calView = btn.dataset.view;
     document.getElementById('cal-range').textContent = view === 'week' ? '7–13 septiembre' : 'Viernes 11 septiembre';
@@ -1152,6 +1615,8 @@
   }
 
   onScheduleChanged();
+  loadAppearance();
+  applyAppearance();
 </script>
 </body>
 </html>

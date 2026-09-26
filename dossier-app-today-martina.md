@@ -21,6 +21,11 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
 
 ### 2.1 Configuración
 - Inserción de credenciales / conexión de cuentas externas (Google, y las que se necesiten).
+- **Apariencia de Today** (selecciones independientes; se guardan en el dispositivo):
+  - **Tema**: el dibujo principal de la pantalla. De momento *Lista*, *Post-it 1* (opción B «Siguiente ahora» de `Design.html`: el próximo evento como protagonista y el resto como una baraja) y *Post-it 2* (post-its flotantes de `boceto-today.html`). Se podrán añadir más.
+  - **Fondo claro u oscuro** (el oscuro usa la paleta de `Design.html`); se aplica a toda la App.
+  - **Barra de tiempo**: *Puntos* (puntos del color de cada categoría y línea vertical en la hora actual) o *Niña soldado* (el camino con explosiones por evento y la niña con casco en la hora actual). Se podrán añadir más.
+  - La barra cubre el tiempo fuera del cole de hoy: por la mañana, del inicio de la franja horaria a la entrada; después de clase, de la salida al final de la franja; días sin cole, toda la franja.
 - **Franja horaria** definida por el usuario (ej.: 07:30–23:00): horas del día en las que la App puede planificar. Fuera de ella no planifica nada.
 - **Horario escolar**: una sola hora de entrada y salida para lunes a viernes, y opción de **clases el sábado** (con su propio horario) si las hubiera.
   - La App solo gestiona el tiempo fuera del cole: en los días de cole se quita el horario escolar de la franja horaria. Tiempo planificable = [inicio franja → entrada] + [salida → fin franja].
