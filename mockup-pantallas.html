@@ -864,6 +864,18 @@
   .school-src-name{ font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .school-src-meta{ font-size:12px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .school-link{ display:flex; flex-direction:column; gap:10px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--surface); }
+  /* Con los días a mano, el archivo o enlace se conserva pero no se lee */
+  .school-src.is-off{ opacity:.55; }
+  .school-src.is-off .school-src-name{ text-decoration:line-through; }
+  .school-manual{ display:flex; flex-direction:column; gap:10px; }
+  .school-manual[hidden], #school-cal-line[hidden]{ display:none; }
+  .nsd-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .nsd-list:empty{ display:none; }
+  .nsd-item{ display:flex; align-items:center; gap:10px; padding:8px 10px 8px 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
+  .nsd-text{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+  .nsd-when{ font-size:13.5px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .nsd-meta{ font-size:12px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .nsd-item .row-delete.is-confirm{ background:var(--danger-bg); border-color:var(--danger-bg); color:var(--danger-text); }
 
   /* ---- Editable categories ---- */
   .cat-row{ align-items:center; }
@@ -1407,7 +1419,12 @@
         <div class="cfg-sub">
           <div class="cfg-sub-title" data-i18n="cfg.schoolCal"></div>
         <div class="config-card">
-          <div class="config-line">
+          <!-- Cómo se obtienen los días no lectivos: leyendo el archivo/enlace o insertándolos a mano -->
+          <div class="seg-control" role="group" data-i18n-aria="schoolCal.modeAria">
+            <button type="button" class="seg-btn" data-school-mode="source" onclick="setSchoolMode('source')" data-i18n="schoolCal.modeSource"></button>
+            <button type="button" class="seg-btn" data-school-mode="manual" onclick="setSchoolMode('manual')" data-i18n="schoolCal.modeManual"></button>
+          </div>
+          <div class="config-line" id="school-cal-line">
             <span class="config-label" data-i18n="schoolCal.file"></span>
             <span class="status-chip off" id="school-cal-chip"></span>
           </div>
@@ -1419,7 +1436,7 @@
               <span class="school-src-meta" id="school-cal-meta"></span>
             </span>
           </div>
-          <p class="card-hint" data-i18n-html="hint.schoolCal"></p>
+          <p class="card-hint" id="school-cal-hint" data-i18n-html="hint.schoolCal"></p>
           <p class="card-hint" id="school-cal-pending" data-i18n="schoolCal.pending" hidden></p>
           <div class="school-actions" id="school-cal-actions">
             <button type="button" class="btn-primary" onclick="pickSchoolCalFile()" data-i18n="schoolCal.upload"></button>
@@ -1437,6 +1454,28 @@
             <div class="cat-new-actions">
               <button type="button" class="btn-ghost" onclick="closeSchoolCalLink()" data-i18n="btn.cancel"></button>
               <button type="button" class="btn-primary" onclick="saveSchoolCalLink()" data-i18n="btn.save"></button>
+            </div>
+          </div>
+          <!-- Días no lectivos a mano: un día suelto o un periodo (p. ej. vacaciones), con un nombre opcional -->
+          <div class="school-manual" id="school-manual" hidden>
+            <p class="card-hint" data-i18n-html="hint.schoolManual"></p>
+            <ul class="nsd-list" id="nsd-list"></ul>
+            <div class="school-link">
+              <div class="fld-row">
+                <label class="fld">
+                  <span class="field-label" data-i18n="nsd.from"></span>
+                  <input class="txt-input" id="nsd-from" type="date" oninput="this.classList.remove('is-invalid')">
+                </label>
+                <label class="fld">
+                  <span class="field-label"><span data-i18n="nsd.to"></span> <span class="fld-opt" data-i18n="f.optional"></span></span>
+                  <input class="txt-input" id="nsd-to" type="date" oninput="this.classList.remove('is-invalid')">
+                </label>
+              </div>
+              <label class="fld">
+                <span class="field-label"><span data-i18n="nsd.name"></span> <span class="fld-opt" data-i18n="f.optional"></span></span>
+                <input class="txt-input" id="nsd-name" type="text" maxlength="40" autocomplete="off" data-i18n-ph="nsd.namePh" onkeydown="if(event.key==='Enter'){ event.preventDefault(); addNoSchool(); }">
+              </label>
+              <button type="button" class="btn-primary" style="align-self:flex-end" onclick="addNoSchool()" data-i18n="nsd.add"></button>
             </div>
           </div>
         </div>
@@ -1838,7 +1877,7 @@
       'toast.exitAfter':'La salida tiene que ser después de la entrada',
       'toast.windowOrder':'La franja tiene que terminar después de empezar',
       'cfg.schoolCal':'Calendario escolar',
-      'schoolCal.file':'Archivo o enlace',
+      'schoolCal.file':'Estado',
       'schoolCal.none':'Sin añadir',
       'schoolCal.chipFile':'Archivo',
       'schoolCal.chipLink':'Enlace',
@@ -1859,6 +1898,28 @@
       'toast.schoolBadType':'Solo se admiten PDF, Word o imágenes',
       'toast.schoolTooBig':'El archivo pasa de 20 MB',
       'toast.schoolBadUrl':'Escribe un enlace que empiece por https://',
+      'schoolCal.modeAria':'Cómo se obtienen los días no lectivos',
+      'schoolCal.modeSource':'Archivo o enlace',
+      'schoolCal.modeManual':'A mano',
+      'schoolCal.off':'Lectura desactivada',
+      'hint.schoolManual':'Inserta los <strong>festivos y días no lectivos</strong> uno a uno o por periodos (p. ej. vacaciones). Mientras esté elegido «A mano», el archivo o enlace del calendario <strong>no se lee</strong>: se conserva y vuelve a usarse si eliges «Archivo o enlace».',
+      'nsd.from':'Desde',
+      'nsd.to':'Hasta',
+      'nsd.name':'Motivo',
+      'nsd.namePh':'p. ej. Navidad',
+      'nsd.add':'Añadir',
+      'nsd.day':'1 día',
+      'nsd.days':'{n} días',
+      'nsd.remove':'Quitar',
+      'nsd.removeConfirm':'Pulsa otra vez para quitar',
+      'toast.nsdAdded':'Día no lectivo añadido',
+      'toast.nsdRangeAdded':'Periodo no lectivo añadido',
+      'toast.nsdNoDate':'Elige el día',
+      'toast.nsdOrder':'«Hasta» tiene que ser después de «Desde»',
+      'toast.nsdTooLong':'Un periodo no puede pasar de 120 días',
+      'toast.nsdRemoved':'Día no lectivo quitado',
+      'toast.modeManual':'Días no lectivos a mano: el archivo o enlace ya no se lee',
+      'toast.modeSource':'Se vuelve a usar el archivo o enlace',
       'cfg.cats':'Categorías y prioridades',
       'cat.tarea':'Tarea', 'cat.cita':'Cita', 'cat.actividad':'Actividad', 'cat.libre':'Tiempo libre', 'cat.new':'Nueva categoría', 'category':'Categoría',
       'prio.Alta':'Alta', 'prio.Media':'Media', 'prio.Baja':'Baja',
@@ -1983,7 +2044,7 @@
       'toast.exitAfter':'The end time must be after the start time',
       'toast.windowOrder':'The window must end after it starts',
       'cfg.schoolCal':'School calendar',
-      'schoolCal.file':'File or link',
+      'schoolCal.file':'Status',
       'schoolCal.none':'Not added',
       'schoolCal.chipFile':'File',
       'schoolCal.chipLink':'Link',
@@ -2004,6 +2065,28 @@
       'toast.schoolBadType':'Only PDF, Word or image files',
       'toast.schoolTooBig':'The file is over 20 MB',
       'toast.schoolBadUrl':'Enter a link starting with https://',
+      'schoolCal.modeAria':'How non-school days are obtained',
+      'schoolCal.modeSource':'File or link',
+      'schoolCal.modeManual':'By hand',
+      'schoolCal.off':'Reading off',
+      'hint.schoolManual':'Enter <strong>holidays and non-school days</strong> one by one or as periods (e.g. holidays). While “By hand” is chosen, the calendar file or link <strong>is not read</strong>: it is kept and used again if you choose “File or link”.',
+      'nsd.from':'From',
+      'nsd.to':'To',
+      'nsd.name':'Reason',
+      'nsd.namePh':'e.g. Christmas',
+      'nsd.add':'Add',
+      'nsd.day':'1 day',
+      'nsd.days':'{n} days',
+      'nsd.remove':'Remove',
+      'nsd.removeConfirm':'Tap again to remove',
+      'toast.nsdAdded':'Non-school day added',
+      'toast.nsdRangeAdded':'Non-school period added',
+      'toast.nsdNoDate':'Choose the day',
+      'toast.nsdOrder':'“To” must be after “From”',
+      'toast.nsdTooLong':'A period can’t be longer than 120 days',
+      'toast.nsdRemoved':'Non-school day removed',
+      'toast.modeManual':'Non-school days by hand: the file or link is no longer read',
+      'toast.modeSource':'The file or link is used again',
       'cfg.cats':'Categories and priorities',
       'cat.tarea':'Homework', 'cat.cita':'Appointment', 'cat.actividad':'Activity', 'cat.libre':'Free time', 'cat.new':'New category', 'category':'Category',
       'prio.Alta':'High', 'prio.Media':'Medium', 'prio.Baja':'Low',
@@ -2128,7 +2211,7 @@
       'toast.exitAfter':'L’uscita deve essere dopo l’entrata',
       'toast.windowOrder':'La fascia deve finire dopo l’inizio',
       'cfg.schoolCal':'Calendario scolastico',
-      'schoolCal.file':'File o link',
+      'schoolCal.file':'Stato',
       'schoolCal.none':'Non aggiunto',
       'schoolCal.chipFile':'File',
       'schoolCal.chipLink':'Link',
@@ -2149,6 +2232,28 @@
       'toast.schoolBadType':'Solo file PDF, Word o immagini',
       'toast.schoolTooBig':'Il file supera i 20 MB',
       'toast.schoolBadUrl':'Scrivi un link che inizi con https://',
+      'schoolCal.modeAria':'Come si ottengono i giorni senza lezione',
+      'schoolCal.modeSource':'File o link',
+      'schoolCal.modeManual':'A mano',
+      'schoolCal.off':'Lettura disattivata',
+      'hint.schoolManual':'Inserisci <strong>festivi e giorni senza lezione</strong> uno per uno o per periodi (p. es. vacanze). Finché è scelto «A mano», il file o link del calendario <strong>non viene letto</strong>: resta salvato e torna in uso se scegli «File o link».',
+      'nsd.from':'Dal',
+      'nsd.to':'Al',
+      'nsd.name':'Motivo',
+      'nsd.namePh':'p. es. Natale',
+      'nsd.add':'Aggiungi',
+      'nsd.day':'1 giorno',
+      'nsd.days':'{n} giorni',
+      'nsd.remove':'Rimuovi',
+      'nsd.removeConfirm':'Tocca di nuovo per rimuovere',
+      'toast.nsdAdded':'Giorno senza lezione aggiunto',
+      'toast.nsdRangeAdded':'Periodo senza lezione aggiunto',
+      'toast.nsdNoDate':'Scegli il giorno',
+      'toast.nsdOrder':'«Al» deve essere dopo «Dal»',
+      'toast.nsdTooLong':'Un periodo non può superare 120 giorni',
+      'toast.nsdRemoved':'Giorno senza lezione rimosso',
+      'toast.modeManual':'Giorni senza lezione a mano: il file o link non viene più letto',
+      'toast.modeSource':'Si torna a usare il file o link',
       'cfg.cats':'Categorie e priorità',
       'cat.tarea':'Compito', 'cat.cita':'Appuntamento', 'cat.actividad':'Attività', 'cat.libre':'Tempo libero', 'cat.new':'Nuova categoria', 'category':'Categoria',
       'prio.Alta':'Alta', 'prio.Media':'Media', 'prio.Baja':'Bassa',
@@ -2273,7 +2378,7 @@
       'toast.exitAfter':'La sortie doit être après l’entrée',
       'toast.windowOrder':'La plage doit se terminer après son début',
       'cfg.schoolCal':'Calendrier scolaire',
-      'schoolCal.file':'Fichier ou lien',
+      'schoolCal.file':'État',
       'schoolCal.none':'Non ajouté',
       'schoolCal.chipFile':'Fichier',
       'schoolCal.chipLink':'Lien',
@@ -2294,6 +2399,28 @@
       'toast.schoolBadType':'Uniquement PDF, Word ou images',
       'toast.schoolTooBig':'Le fichier dépasse 20 Mo',
       'toast.schoolBadUrl':'Saisissez un lien commençant par https://',
+      'schoolCal.modeAria':'Comment obtenir les jours sans école',
+      'schoolCal.modeSource':'Fichier ou lien',
+      'schoolCal.modeManual':'À la main',
+      'schoolCal.off':'Lecture désactivée',
+      'hint.schoolManual':'Saisissez les <strong>jours fériés et jours sans école</strong> un par un ou par périodes (p. ex. vacances). Tant que « À la main » est choisi, le fichier ou lien du calendrier <strong>n’est pas lu</strong> : il est conservé et réutilisé si vous choisissez « Fichier ou lien ».',
+      'nsd.from':'Du',
+      'nsd.to':'Au',
+      'nsd.name':'Motif',
+      'nsd.namePh':'p. ex. Noël',
+      'nsd.add':'Ajouter',
+      'nsd.day':'1 jour',
+      'nsd.days':'{n} jours',
+      'nsd.remove':'Retirer',
+      'nsd.removeConfirm':'Touchez encore pour retirer',
+      'toast.nsdAdded':'Jour sans école ajouté',
+      'toast.nsdRangeAdded':'Période sans école ajoutée',
+      'toast.nsdNoDate':'Choisissez le jour',
+      'toast.nsdOrder':'« Au » doit être après « Du »',
+      'toast.nsdTooLong':'Une période ne peut pas dépasser 120 jours',
+      'toast.nsdRemoved':'Jour sans école retiré',
+      'toast.modeManual':'Jours sans école à la main : le fichier ou lien n’est plus lu',
+      'toast.modeSource':'Le fichier ou lien est de nouveau utilisé',
       'cfg.cats':'Catégories et priorités',
       'cat.tarea':'Devoir', 'cat.cita':'Rendez-vous', 'cat.actividad':'Activité', 'cat.libre':'Temps libre', 'cat.new':'Nouvelle catégorie', 'category':'Catégorie',
       'prio.Alta':'Haute', 'prio.Media':'Moyenne', 'prio.Baja':'Basse',
@@ -2418,7 +2545,7 @@
       'toast.exitAfter':'Das Ende muss nach dem Beginn liegen',
       'toast.windowOrder':'Das Zeitfenster muss nach seinem Beginn enden',
       'cfg.schoolCal':'Schulkalender',
-      'schoolCal.file':'Datei oder Link',
+      'schoolCal.file':'Status',
       'schoolCal.none':'Nicht hinzugefügt',
       'schoolCal.chipFile':'Datei',
       'schoolCal.chipLink':'Link',
@@ -2439,6 +2566,28 @@
       'toast.schoolBadType':'Nur PDF-, Word- oder Bilddateien',
       'toast.schoolTooBig':'Die Datei ist größer als 20 MB',
       'toast.schoolBadUrl':'Gib einen Link ein, der mit https:// beginnt',
+      'schoolCal.modeAria':'Woher die schulfreien Tage kommen',
+      'schoolCal.modeSource':'Datei oder Link',
+      'schoolCal.modeManual':'Von Hand',
+      'schoolCal.off':'Lesen aus',
+      'hint.schoolManual':'Gib <strong>Feiertage und schulfreie Tage</strong> einzeln oder als Zeitraum ein (z. B. Ferien). Solange „Von Hand“ gewählt ist, wird die Kalenderdatei bzw. der Link <strong>nicht gelesen</strong>: Sie bleiben gespeichert und werden wieder genutzt, wenn du „Datei oder Link“ wählst.',
+      'nsd.from':'Von',
+      'nsd.to':'Bis',
+      'nsd.name':'Anlass',
+      'nsd.namePh':'z. B. Weihnachten',
+      'nsd.add':'Hinzufügen',
+      'nsd.day':'1 Tag',
+      'nsd.days':'{n} Tage',
+      'nsd.remove':'Entfernen',
+      'nsd.removeConfirm':'Zum Entfernen erneut tippen',
+      'toast.nsdAdded':'Schulfreier Tag hinzugefügt',
+      'toast.nsdRangeAdded':'Schulfreier Zeitraum hinzugefügt',
+      'toast.nsdNoDate':'Wähle den Tag',
+      'toast.nsdOrder':'„Bis“ muss nach „Von“ liegen',
+      'toast.nsdTooLong':'Ein Zeitraum darf höchstens 120 Tage lang sein',
+      'toast.nsdRemoved':'Schulfreier Tag entfernt',
+      'toast.modeManual':'Schulfreie Tage von Hand: Datei oder Link werden nicht mehr gelesen',
+      'toast.modeSource':'Datei oder Link werden wieder genutzt',
       'cfg.cats':'Kategorien und Prioritäten',
       'cat.tarea':'Hausaufgabe', 'cat.cita':'Termin', 'cat.actividad':'Aktivität', 'cat.libre':'Freizeit', 'cat.new':'Neue Kategorie', 'category':'Kategorie',
       'prio.Alta':'Hoch', 'prio.Media':'Mittel', 'prio.Baja':'Niedrig',
@@ -3338,10 +3487,25 @@
     if(day === 5){ return SCHOOL.sat; }
     return {on:false};
   }
-  // Festivos y días no lectivos (fechas ISO) que salen del calendario escolar de Config
-  // (en la maqueta, la importación del archivo aún no está hecha: la lista empieza vacía).
-  var NO_SCHOOL_DATES = [];
-  try{ NO_SCHOOL_DATES = JSON.parse(localStorage.getItem('no-school-dates') || '[]') || []; }catch(e){ NO_SCHOOL_DATES = []; }
+  // Festivos y días no lectivos (fechas ISO). Salen del calendario escolar de Config de una de dos formas:
+  //  - 'source': leídos del archivo o enlace (en la maqueta esa lectura aún no existe: lista vacía);
+  //  - 'manual': insertados a mano, como días sueltos o periodos; entonces el archivo o enlace no se lee.
+  var NO_SCHOOL_READ = [], NSD_MANUAL = [], SCHOOL_MODE = 'source', NO_SCHOOL_DATES = [];
+  try{ NO_SCHOOL_READ = JSON.parse(localStorage.getItem('no-school-dates') || '[]') || []; }catch(e){ NO_SCHOOL_READ = []; }
+  try{ NSD_MANUAL = JSON.parse(localStorage.getItem('no-school-manual') || '[]') || []; }catch(e){ NSD_MANUAL = []; }
+  try{ if(localStorage.getItem('school-cal-mode') === 'manual'){ SCHOOL_MODE = 'manual'; } }catch(e){}
+  function refreshNoSchool(){
+    if(SCHOOL_MODE !== 'manual'){ NO_SCHOOL_DATES = NO_SCHOOL_READ.slice(); return; }
+    var out = [];
+    NSD_MANUAL.forEach(function(r){
+      for(var d = isoDate(r.from), z = isoDate(r.to); d <= z; d.setDate(d.getDate() + 1)){
+        var k = isoOf(d);
+        if(out.indexOf(k) < 0){ out.push(k); }
+      }
+    });
+    NO_SCHOOL_DATES = out;
+  }
+  refreshNoSchool();
   // De dónde sale el calendario escolar (Config > Enlaces): un archivo subido (PDF, Word o imagen)
   // o un enlace (p. ej. un archivo en Google Drive). En la maqueta solo se guardan sus datos;
   // la lectura de los festivos con IA llega en la fase de integraciones.
@@ -3365,14 +3529,27 @@
   }
 
   function renderSchoolCal(){
-    var c = SCHOOL_CAL, chip = el('school-cal-chip');
+    var c = SCHOOL_CAL, chip = el('school-cal-chip'), manual = SCHOOL_MODE === 'manual';
     if(!chip){ return; }
-    chip.className = 'status-chip ' + (c ? 'pending' : 'off');
-    chip.textContent = t(c ? (c.kind === 'file' ? 'schoolCal.chipFile' : 'schoolCal.chipLink') : 'schoolCal.none');
+    document.querySelectorAll('[data-school-mode]').forEach(function(b){
+      var on = b.dataset.schoolMode === SCHOOL_MODE;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    // A mano: el archivo o enlace (si lo hay) se ve tachado y con «Lectura desactivada»; no se puede cambiar
+    chip.className = 'status-chip ' + (c && !manual ? 'pending' : 'off');
+    chip.textContent = t(manual ? 'schoolCal.off' : (c ? (c.kind === 'file' ? 'schoolCal.chipFile' : 'schoolCal.chipLink') : 'schoolCal.none'));
+    el('school-cal-line').hidden = manual && !c;
     el('school-cal-src').hidden = !c;
-    el('school-cal-pending').hidden = !c;
+    el('school-cal-src').classList.toggle('is-off', manual);
+    el('school-cal-hint').hidden = manual;
+    el('school-cal-pending').hidden = !c || manual;
+    el('school-manual').hidden = !manual;
+    if(manual){ closeSchoolCalLink(); }
+    el('school-cal-actions').hidden = manual || !el('school-cal-linkbox').hidden;
     var rm = el('school-cal-remove');
     rm.hidden = !c; rm.classList.remove('is-confirm'); rm.textContent = t('schoolCal.remove');
+    renderNoSchoolList();
     if(!c){ return; }
     var icon = el('school-cal-icon');
     if(c.kind === 'file'){
@@ -3386,6 +3563,71 @@
       el('school-cal-meta').textContent = c.url.replace(/^https?:\/\//, '');
       el('school-cal-meta').title = c.url;
     }
+  }
+
+  function setSchoolMode(m){
+    if(m === SCHOOL_MODE){ return; }
+    SCHOOL_MODE = m;
+    try{ localStorage.setItem('school-cal-mode', m); }catch(e){}
+    renderSchoolCal();
+    noSchoolChanged();
+    toast(t(m === 'manual' ? 'toast.modeManual' : 'toast.modeSource'));
+  }
+  // Los días no lectivos cambian el cole de esos días: Calendario, «Hoy», huecos libres y avisos de riesgo
+  function noSchoolChanged(){
+    refreshNoSchool();
+    onScheduleChanged();
+    schedulePrompts();
+  }
+
+  function nsdDay(iso){
+    var d = isoDate(iso);
+    return cap(fmtDate(d, { weekday:'short' }).replace('.', '')) + ' ' + fmtDate(d, { day:'numeric', month:'short', year:'numeric' });
+  }
+  function renderNoSchoolList(){
+    var ul = el('nsd-list');
+    ul.innerHTML = '';
+    NSD_MANUAL.slice().sort(function(a, b){ return a.from < b.from ? -1 : 1; }).forEach(function(r){
+      var n = Math.round((isoDate(r.to) - isoDate(r.from)) / 864e5) + 1;
+      var li = document.createElement('li'); li.className = 'nsd-item';
+      var tx = document.createElement('span'); tx.className = 'nsd-text';
+      var w = document.createElement('span'); w.className = 'nsd-when';
+      w.textContent = r.from === r.to ? nsdDay(r.from) : nsdDay(r.from) + ' – ' + nsdDay(r.to);
+      var m = document.createElement('span'); m.className = 'nsd-meta';
+      m.textContent = (r.name ? r.name + ' · ' : '') + (n === 1 ? t('nsd.day') : t('nsd.days', { n: n }));
+      tx.appendChild(w); tx.appendChild(m);
+      var x = document.createElement('button');
+      x.type = 'button'; x.className = 'row-delete'; x.textContent = '×';
+      x.setAttribute('aria-label', t('nsd.remove')); x.title = t('nsd.remove');
+      x.onclick = function(){ removeNoSchool(r.id, x); };
+      li.appendChild(tx); li.appendChild(x); ul.appendChild(li);
+    });
+  }
+  function storeNoSchool(){ try{ localStorage.setItem('no-school-manual', JSON.stringify(NSD_MANUAL)); }catch(e){} }
+  function addNoSchool(){
+    var f = el('nsd-from'), z = el('nsd-to'), from = f.value, to = z.value || from;
+    if(!from){ f.classList.add('is-invalid'); toast(t('toast.nsdNoDate')); f.focus(); return; }
+    if(to < from){ z.classList.add('is-invalid'); toast(t('toast.nsdOrder')); z.focus(); return; }
+    if((isoDate(to) - isoDate(from)) / 864e5 >= 120){ z.classList.add('is-invalid'); toast(t('toast.nsdTooLong')); z.focus(); return; }
+    NSD_MANUAL.push({ id:'nsd' + Date.now(), from:from, to:to, name:el('nsd-name').value.trim() });
+    storeNoSchool();
+    f.value = ''; z.value = ''; el('nsd-name').value = '';
+    renderNoSchoolList();
+    noSchoolChanged();
+    toast(t(from === to ? 'toast.nsdAdded' : 'toast.nsdRangeAdded'));
+  }
+  // Quitar pide una segunda pulsación
+  function removeNoSchool(id, btn){
+    if(!btn.classList.contains('is-confirm')){
+      btn.classList.add('is-confirm');
+      btn.title = t('nsd.removeConfirm'); btn.setAttribute('aria-label', t('nsd.removeConfirm'));
+      return;
+    }
+    NSD_MANUAL = NSD_MANUAL.filter(function(r){ return r.id !== id; });
+    storeNoSchool();
+    renderNoSchoolList();
+    noSchoolChanged();
+    toast(t('toast.nsdRemoved'));
   }
 
   function pickSchoolCalFile(){ closeSchoolCalLink(); el('school-cal-file').click(); }
@@ -3583,7 +3825,7 @@
                  t('mode.' + APPEARANCE.mode), t('bar.' + APPEARANCE.bar)].join(' · '));
     var b = dayBounds();
     put('hours', b.start + '–' + b.end + ' · ' + t('sum.school') + '\u00a0' + SCHOOL.week.entry + '\u2011' + SCHOOL.week.exit);
-    put('links', t('sum.links', { n: SCHOOL_CAL ? 1 : 0 }));
+    put('links', t('sum.links', { n: (SCHOOL_MODE === 'manual' ? NSD_MANUAL.length : SCHOOL_CAL) ? 1 : 0 }));
     put('cats', t('sum.cats', { n: document.querySelectorAll('#category-list .cat-row').length }));
     put('gcal', t(document.getElementById('export-switch').getAttribute('aria-checked') === 'true' ? 'sum.gcalOn' : 'sum.gcalOff'));
   }
