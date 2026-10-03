@@ -192,6 +192,13 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 ## 3. Flujo de sincronización con Google (Classroom + Gmail)
 
+> **Estado (3/10/2026): la cuenta del colegio está bloqueada para apps externas.**
+> - Prueba hecha con el proyecto real de Google Cloud («AHHHHHH Today», cuenta de Carlo; app publicada sin verificar, con páginas de inicio, privacidad y condiciones en GitHub Pages: `https://r0ck3r0ll.github.io/ahhhhhh-app/`).
+> - La cuenta de Martina (`@students.laudesanpedro.com`) entra en Google con SSO de ClassLink/Microsoft (grupo ISP). Al dar permiso: **«Access blocked: Your institution's admin needs to review AHHHHHH Today» (Error 400: access_not_configured)**. Tampoco se puede añadir como usuaria de prueba.
+> - Alternativas comprobadas y **cerradas**: dirección iCal de los calendarios de clase (no existe: los calendarios no son de Martina) y reenvío automático del Gmail del colegio (desactivado por el colegio).
+> - Hecho: solicitud enviada con el botón «Request access» (sin texto). Pendiente: correo de Martina al colegio con el ID de cliente y la política de privacidad en inglés.
+> - **Planteamiento de tres vías** para las tareas de Classroom: (1) conexión directa si el colegio autoriza; (2) resúmenes para tutores de Classroom en el Gmail de Carlo, leídos por la App; (3) importación rápida a mano (captura o texto de «Tareas pendientes», la IA extrae tareas y fechas y Martina confirma).
+
 - Al abrir la app, se conecta con Classroom y con el correo de Google.
 - Debe leer **solo lo que ha cambiado** desde la última conexión → requiere un log propio interno que registre qué contenido ya ha sido procesado (para no re-leer ni duplicar).
   - El log guarda también lo que el usuario **ha cancelado, eliminado o cerrado** (p. ej. una tarea de Classroom completada o un evento extraído de un correo y descartado), para **no volver a cargarlo** en las siguientes sincronizaciones.
@@ -210,7 +217,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 | Integración | Qué requiere | Notas |
 |---|---|---|
-| Google Classroom API | Proyecto en Google Cloud, API activada, OAuth (modo "Testing", sin verificación de Google al ser uso familiar) | Ya confirmado: el colegio (Laude San Pedro) usa Google Classroom |
+| Google Classroom API | Proyecto en Google Cloud, API activada, OAuth. App **publicada sin verificar** (en «Testing» los permisos caducan a los 7 días); al conectar sale una vez el aviso de app no verificada | El colegio (Laude San Pedro) usa Google Classroom. **Bloqueado por el colegio** hasta que su administrador autorice la App (ver punto 3) |
 | Gmail API | Mismo proyecto de Google Cloud, API activada, mismo OAuth | Se usa tanto para leer contenido relevante como para la extracción con IA |
 | Geolocalización del dispositivo | Ninguna cuenta ni API — función estándar del navegador con permiso del usuario | Trivial |
 | Google Maps Platform (cálculo de traslados reales) | Clave de API de Google Maps — **requiere asociar una tarjeta de crédito a la cuenta de Google Cloud**, aunque el uso se mantenga dentro del nivel gratuito | **Decidido: Google Maps** (Routes API, con tráfico). Se pone un **tope de gasto** (límite de cuota diaria y alerta de presupuesto en Google Cloud) para que el uso familiar se quede siempre en el nivel gratuito. Descartados: Waze (sin API pública de rutas), TomTom (alternativa sin tarjeta) y la estimación en línea recta |
