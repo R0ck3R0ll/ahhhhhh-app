@@ -21,7 +21,7 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
 
 ### 2.1 Configuración
 Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, al abrir uno, se cierra el que estuviera abierto, para no tener que hacer scroll), cada uno con un resumen de su valor actual en la cabecera. Orden:
-0. **Perfil**: **nombre** de quien usa la App (por defecto «Martina»; editable para poder dejar la App a otra persona). Aparece en los textos («plan de …», «Entregas y tareas de …», el calendario exportado…). También las **direcciones de casa y del colegio**, puntos de partida de los traslados.
+0. **Perfil**: **nombre** de quien usa la App (por defecto «Martina»; editable para poder dejar la App a otra persona). Aparece en los textos («plan de …», «Entregas y tareas de …», el calendario exportado…). También la **dirección de casa**, punto de partida de los traslados.
 1. **Idioma**
 2. **Aspecto** (tema de Today, fondo claro/oscuro, barra de tiempo)
 3. **Horarios** (franja horaria de planificación y horario escolar)
@@ -166,16 +166,16 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - El tiempo que falta se escribe **abreviado**: «45 min», «2h», «4h45».
   - Si no queda nada para hoy, el cuerpo muestra «No queda nada más para hoy.»
   - «Próximos días» también usa las tareas reales pendientes.
-  - Los **traslados** (distancia y horas de salida) quedan pendientes hasta conectar Google Maps: mientras tanto se muestran el lugar y **desde dónde se sale** («Polideportivo · desde el cole»).
+  - Los **traslados** (distancia y horas de salida) quedan pendientes hasta conectar Google Maps: mientras tanto se muestran el lugar y **desde dónde se sale** («Polideportivo · desde casa»).
 - Si un evento implica desplazamiento, se muestran **dos datos**: el deadline en sí, y la hora de salida calculada según el tiempo de traslado (Google Maps).
   - Distancias menores de 1 km: preguntar al usuario si se va andando.
   - Resto de distancias: calcular en coche.
   - **Servicio: Google Maps (Routes API)**, con **tráfico**: el tiempo se pide para la **hora de salida prevista** (tráfico previsto para ese día y hora), se ajusta una vez con la nueva hora de salida y se actualiza con el tráfico real a partir de 1 h antes. La clave de la API vive en el servidor, no en el navegador.
   - **Punto de partida** de cada traslado (solo actividades y eventos con ubicación):
     - **Desde 1 h antes** del elemento: la **ubicación del móvil**.
-    - Antes de eso, si ese día hay **elementos programados antes** con lugar (actividades, eventos con ubicación o el cole, si tiene dirección): **el lugar del anterior**. Si es el mismo lugar, no hay traslado.
-    - Si no hay ninguno: **casa**.
-    - Las direcciones de casa y del colegio se configuran en **Configuración > Perfil**. Sin la del colegio, el cole no cuenta como punto de partida.
+    - Antes de eso, si ese día hay **elementos programados antes** (actividades o eventos): **el lugar del anterior**. Si es el mismo lugar, no hay traslado; si el anterior **no tiene ubicación**, se sale de **casa**.
+    - Si no hay ninguno: **casa**. **El cole no cuenta** como punto de partida: lo primero después del cole sale de casa.
+    - La dirección de casa se configura en **Configuración > Perfil**.
 - Tarjeta **«Próximos días»** (sustituye a «Carga de trabajo»): recoge **todas las tareas de los siguientes 5 días con tiempo estimado de 1,5 h o más**, ordenadas por entrega.
   - Cada tarea: **nombre**; debajo, **tiempo estimado** (sin la palabra «estimado») y **«antes de» fecha y hora** de entrega. Puede tener varias líneas.
   - **Pulsar una tarea** abre su ficha en Tareas (con Editar, Eliminar y Marcar como hecha) y el botón **«‹ Volver a Hoy»**.
