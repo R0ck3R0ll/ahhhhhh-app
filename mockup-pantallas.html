@@ -1303,6 +1303,18 @@
           </label>
           <p class="card-hint" data-i18n="hint.kidName"></p>
         </div>
+        <!-- Direcciones de partida de los traslados (casa) y del colegio (punto de partida al salir de clase) -->
+        <div class="config-card">
+          <label class="fld">
+            <span class="field-label" data-i18n="cfg.home"></span>
+            <input class="txt-input" id="addr-home" type="text" autocomplete="off" maxlength="120" data-i18n-ph="f.placePh" onchange="setAddress('home', this.value)">
+          </label>
+          <label class="fld">
+            <span class="field-label" data-i18n="cfg.schoolAddr"></span>
+            <input class="txt-input" id="addr-school" type="text" autocomplete="off" maxlength="120" data-i18n-ph="f.placePh" onchange="setAddress('school', this.value)">
+          </label>
+          <p class="card-hint" data-i18n-html="hint.addresses"></p>
+        </div>
         </div>
       </details>
       <details class="cfg-group" data-group="language">
@@ -1956,7 +1968,14 @@
       'tasks.doneTitle':'Hechas', 'toast.taskDone':'Tarea «{name}» hecha', 'toast.taskReopened':'Tarea «{name}» reabierta',
       'btn.undo':'Deshacer', 'd.status':'Estado', 'status.done':'Hecha',
       'status.overdue':'Atrasada', 'status.pending':'Pendiente', 'grp.profile':'Perfil',
-      'cfg.kidName':'Nombre', 'hint.kidName':'Nombre de quien usa la App; aparece en los textos (por ejemplo, «plan de {name}»).', 'discard.title':'¿Anular?',
+      'cfg.kidName':'Nombre', 'hint.kidName':'Nombre de quien usa la App; aparece en los textos (por ejemplo, «plan de {name}»).',
+      'cfg.home':'Dirección de casa',
+      'cfg.schoolAddr':'Dirección del colegio',
+      'hint.addresses':'Para calcular los traslados con el tráfico. Cada trayecto sale <strong>del lugar anterior</strong> de ese día (el cole al salir de clase, la actividad anterior…) o, si no hay nada antes, <strong>de casa</strong>; desde 1 h antes, de <strong>la ubicación del móvil</strong>.',
+      'from.device':'desde tu ubicación',
+      'from.prev':'desde {place}',
+      'from.home':'desde casa',
+      'from.school':'el cole', 'discard.title':'¿Anular?',
       'discard.body':'Hay un formulario abierto: si sales ahora, se pierden los cambios sin guardar.', 'discard.keep':'Seguir editando', 'discard.go':'Anular',
       'tab.calendar':'Calendario', 'sub.calendar':'Actividades en vista día o semana',
       'tab.config':'Config', 'title.config':'Configuración', 'sub.config':'Idioma, aspecto, horarios, enlaces y categorías',
@@ -2123,7 +2142,14 @@
       'tasks.doneTitle':'Done', 'toast.taskDone':'Task “{name}” done', 'toast.taskReopened':'Task “{name}” reopened',
       'btn.undo':'Undo', 'd.status':'Status', 'status.done':'Done',
       'status.overdue':'Overdue', 'status.pending':'Pending', 'grp.profile':'Profile',
-      'cfg.kidName':'Name', 'hint.kidName':'Name of the person using the App; it appears in the texts (e.g. “{name}’s plan”).', 'discard.title':'Discard?',
+      'cfg.kidName':'Name', 'hint.kidName':'Name of the person using the App; it appears in the texts (e.g. “{name}’s plan”).',
+      'cfg.home':'Home address',
+      'cfg.schoolAddr':'School address',
+      'hint.addresses':'Used to work out trips with traffic. Each trip starts <strong>from the previous place</strong> that day (school after class, the previous activity…) or, if there is nothing before, <strong>from home</strong>; from 1 h before, from <strong>the phone’s location</strong>.',
+      'from.device':'from your location',
+      'from.prev':'from {place}',
+      'from.home':'from home',
+      'from.school':'school', 'discard.title':'Discard?',
       'discard.body':'A form is open: if you leave now, unsaved changes will be lost.', 'discard.keep':'Keep editing', 'discard.go':'Discard',
       'tab.calendar':'Calendar', 'sub.calendar':'Activities by day or week',
       'tab.config':'Settings', 'title.config':'Settings', 'sub.config':'Language, appearance, schedules, connections and categories',
@@ -2290,7 +2316,14 @@
       'tasks.doneTitle':'Fatti', 'toast.taskDone':'Compito «{name}» fatto', 'toast.taskReopened':'Compito «{name}» riaperto',
       'btn.undo':'Annulla', 'd.status':'Stato', 'status.done':'Fatto',
       'status.overdue':'In ritardo', 'status.pending':'Da fare', 'grp.profile':'Profilo',
-      'cfg.kidName':'Nome', 'hint.kidName':'Nome di chi usa l’app; compare nei testi (es. «piano di {name}»).', 'discard.title':'Annullare?',
+      'cfg.kidName':'Nome', 'hint.kidName':'Nome di chi usa l’app; compare nei testi (es. «piano di {name}»).',
+      'cfg.home':'Indirizzo di casa',
+      'cfg.schoolAddr':'Indirizzo della scuola',
+      'hint.addresses':'Serve a calcolare i tragitti con il traffico. Ogni tragitto parte <strong>dal luogo precedente</strong> di quel giorno (la scuola all’uscita, l’attività precedente…) o, se prima non c’è nulla, <strong>da casa</strong>; da 1 h prima, dalla <strong>posizione del telefono</strong>.',
+      'from.device':'dalla tua posizione',
+      'from.prev':'da {place}',
+      'from.home':'da casa',
+      'from.school':'scuola', 'discard.title':'Annullare?',
       'discard.body':'C’è un modulo aperto: se esci ora, le modifiche non salvate andranno perse.', 'discard.keep':'Continua a modificare', 'discard.go':'Annulla',
       'tab.calendar':'Calendario', 'sub.calendar':'Attività in vista giorno o settimana',
       'tab.config':'Opzioni', 'title.config':'Impostazioni', 'sub.config':'Lingua, aspetto, orari, collegamenti e categorie',
@@ -2457,7 +2490,14 @@
       'tasks.doneTitle':'Faites', 'toast.taskDone':'Tâche « {name} » faite', 'toast.taskReopened':'Tâche « {name} » rouverte',
       'btn.undo':'Annuler', 'd.status':'État', 'status.done':'Faite',
       'status.overdue':'En retard', 'status.pending':'À faire', 'grp.profile':'Profil',
-      'cfg.kidName':'Prénom', 'hint.kidName':'Prénom de la personne qui utilise l’app ; il apparaît dans les textes (p. ex. « plan de {name} »).', 'discard.title':'Abandonner ?',
+      'cfg.kidName':'Prénom', 'hint.kidName':'Prénom de la personne qui utilise l’app ; il apparaît dans les textes (p. ex. « plan de {name} »).',
+      'cfg.home':'Adresse du domicile',
+      'cfg.schoolAddr':'Adresse de l’école',
+      'hint.addresses':'Sert à calculer les trajets avec le trafic. Chaque trajet part <strong>du lieu précédent</strong> de la journée (l’école à la sortie, l’activité précédente…) ou, s’il n’y a rien avant, <strong>de la maison</strong> ; à partir d’1 h avant, de <strong>la position du téléphone</strong>.',
+      'from.device':'depuis ta position',
+      'from.prev':'depuis {place}',
+      'from.home':'depuis la maison',
+      'from.school':'l’école', 'discard.title':'Abandonner ?',
       'discard.body':'Un formulaire est ouvert : si vous quittez maintenant, les modifications non enregistrées seront perdues.', 'discard.keep':'Continuer', 'discard.go':'Abandonner',
       'tab.calendar':'Calendrier', 'sub.calendar':'Activités en vue jour ou semaine',
       'tab.config':'Réglages', 'title.config':'Réglages', 'sub.config':'Langue, apparence, horaires, liens et catégories',
@@ -2624,7 +2664,14 @@
       'tasks.doneTitle':'Erledigt', 'toast.taskDone':'Aufgabe „{name}“ erledigt', 'toast.taskReopened':'Aufgabe „{name}“ wieder geöffnet',
       'btn.undo':'Rückgängig', 'd.status':'Status', 'status.done':'Erledigt',
       'status.overdue':'Überfällig', 'status.pending':'Offen', 'grp.profile':'Profil',
-      'cfg.kidName':'Name', 'hint.kidName':'Name der Person, die die App nutzt; erscheint in den Texten (z. B. „Plan von {name}“).', 'discard.title':'Verwerfen?',
+      'cfg.kidName':'Name', 'hint.kidName':'Name der Person, die die App nutzt; erscheint in den Texten (z. B. „Plan von {name}“).',
+      'cfg.home':'Wohnadresse',
+      'cfg.schoolAddr':'Adresse der Schule',
+      'hint.addresses':'Damit werden Wege mit Verkehr berechnet. Jeder Weg beginnt <strong>am vorherigen Ort</strong> des Tages (Schule nach dem Unterricht, die vorige Aktivität…) oder, wenn vorher nichts ist, <strong>zu Hause</strong>; ab 1 Std. vorher am <strong>Standort des Handys</strong>.',
+      'from.device':'von deinem Standort',
+      'from.prev':'von {place}',
+      'from.home':'von zu Hause',
+      'from.school':'der Schule', 'discard.title':'Verwerfen?',
       'discard.body':'Ein Formular ist geöffnet: Wenn du jetzt gehst, gehen nicht gespeicherte Änderungen verloren.', 'discard.keep':'Weiter bearbeiten', 'discard.go':'Verwerfen',
       'tab.calendar':'Kalender', 'sub.calendar':'Aktivitäten in Tages- oder Wochenansicht',
       'tab.config':'Optionen', 'title.config':'Einstellungen', 'sub.config':'Sprache, Darstellung, Zeiten, Verknüpfungen und Kategorien',
@@ -2698,6 +2745,7 @@
   function applyI18n(){
     document.documentElement.lang = LANG;
     if(document.getElementById('kid-name')){ document.getElementById('kid-name').value = KID; }
+    if(document.getElementById('addr-home')){ el('addr-home').value = ADDR.home; el('addr-school').value = ADDR.school; }
     var sel = document.getElementById('lang-select');
     if(sel){ sel.value = LANG; }
     document.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent = t(el.dataset.i18n); });
@@ -2806,6 +2854,7 @@
       out.push({ id:'blk-' + o.b.id, kind:'block', ref:o.x.key, t:o.b.start, end:o.b.end, cat:'tarea', title:o.x.name,
                  place:t('block.label'), dist:fmtEst(Math.round((o.b.end - o.b.start) * 60)) });
     });
+    out.forEach(function(e){ e.from = originText(travelOrigin(e, TODAY_DATE, NOW)); });
     // Se quitan los que ya han terminado (una tarea, al pasar su hora, queda en «Atrasadas»)
     return out.filter(function(e){ return (e.end || e.t) > NOW + 1e-9 && (e.kind !== 'task' || e.t > NOW); })
       .map(function(e){ if(!/^(tarea|cita|actividad|libre)$/.test(e.cat) && !findCategory(e.cat)){ e.cat = 'libre'; } return e; })
@@ -2822,8 +2871,47 @@
     return e.kind === 'task' ? '<button type="button" class="task-check today-check" aria-label="' + t('task.markDone') + ': ' + esc(e.title) + '" title="' + t('task.markDone') + '" ' +
       'onclick="event.stopPropagation(); setTaskDone(\'' + e.ref + '\', true)" onkeydown="event.stopPropagation()" onpointerdown="event.stopPropagation()">' + CHECK_ICON + '</button>' : '';
   }
-  // Lugar · distancia (o, en las tareas, origen · tiempo estimado)
-  function placeLine(n){ return [n.place, n.dist].filter(Boolean).map(esc).join(' · '); }
+  // Lugar · desde dónde se sale · distancia (o, en las tareas, origen · tiempo estimado)
+  function placeLine(n){ return [n.place, n.from, n.dist].filter(Boolean).map(esc).join(' · '); }
+
+  /* ---- Traslados: punto de partida ----
+     Desde 1 h antes del elemento: la ubicación del móvil. Antes de eso: el lugar del elemento
+     anterior de ese día (actividad, evento con ubicación o el cole); si no hay ninguno, casa.
+     Google Maps (con tráfico previsto para la hora de salida) calculará el tiempo desde ahí. */
+  var ADDR = { home:'', school:'' };
+  try{ var a0 = JSON.parse(localStorage.getItem('addresses') || 'null'); if(a0){ ADDR.home = a0.home || ''; ADDR.school = a0.school || ''; } }catch(e){}
+  function setAddress(k, v){
+    ADDR[k] = v.trim();
+    try{ localStorage.setItem('addresses', JSON.stringify(ADDR)); }catch(e){}
+    renderToday();
+  }
+  // Elementos con lugar de una fecha (también los ya terminados): sesiones, eventos con ubicación y el cole
+  function placedElements(d){
+    var iso = isoOf(d), wd = weekdayOf(d), out = [], sc = schoolForDate(d);
+    if(sc.on && ADDR.school){ out.push({ id:'school', t:toHours(sc.entry), place:ADDR.school, name:t('from.school') }); }
+    USER_ACTS.forEach(function(a){
+      a.sessions.filter(function(x){ return x.day === wd; }).forEach(function(x){
+        if(a.place){ out.push({ id:'act-' + a.id + '-' + x.start, t:toHours(x.start), place:a.place, name:a.name }); }
+      });
+    });
+    USER_EVENTS.filter(function(e){ return e.date === iso && e.place; }).forEach(function(e){
+      out.push({ id:'evt-' + e.id, t:toHours(e.time), place:e.place, name:e.name });
+    });
+    return out;
+  }
+  // { kind:'device' | 'prev' | 'home', place, name } o null si no hay traslado
+  // (sin ubicación, ya empezado o en el mismo sitio que el elemento anterior)
+  function travelOrigin(item, d, now){
+    if(!item.place || (item.kind !== 'activity' && item.kind !== 'event') || now >= item.t){ return null; }
+    if(item.t - now <= 1){ return { kind:'device' }; }
+    var prev = placedElements(d).filter(function(p){ return p.id !== item.id && p.t < item.t; })
+      .sort(function(p, q){ return q.t - p.t; })[0];
+    if(prev){ return prev.place === item.place ? null : { kind:'prev', place:prev.place, name:prev.name }; }
+    return { kind:'home', place:ADDR.home };
+  }
+  function originText(o){
+    return !o ? '' : o.kind === 'device' ? t('from.device') : o.kind === 'home' ? t('from.home') : t('from.prev', { place: o.name });
+  }
 
   /* ---- Apariencia (Configuración) ---- */
   var APPEARANCE = { layout:'list', mode:'light', bar:'dots' };

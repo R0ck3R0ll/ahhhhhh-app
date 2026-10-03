@@ -21,7 +21,7 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
 
 ### 2.1 Configuración
 Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, al abrir uno, se cierra el que estuviera abierto, para no tener que hacer scroll), cada uno con un resumen de su valor actual en la cabecera. Orden:
-0. **Perfil**: **nombre** de quien usa la App (por defecto «Martina»; editable para poder dejar la App a otra persona). Aparece en los textos («plan de …», «Entregas y tareas de …», el calendario exportado…).
+0. **Perfil**: **nombre** de quien usa la App (por defecto «Martina»; editable para poder dejar la App a otra persona). Aparece en los textos («plan de …», «Entregas y tareas de …», el calendario exportado…). También las **direcciones de casa y del colegio**, puntos de partida de los traslados.
 1. **Idioma**
 2. **Aspecto** (tema de Today, fondo claro/oscuro, barra de tiempo)
 3. **Horarios** (franja horaria de planificación y horario escolar)
@@ -166,10 +166,16 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - El tiempo que falta se escribe **abreviado**: «45 min», «2h», «4h45».
   - Si no queda nada para hoy, el cuerpo muestra «No queda nada más para hoy.»
   - «Próximos días» también usa las tareas reales pendientes.
-  - Los **traslados** (distancia y horas de salida) quedan pendientes hasta conectar Google Maps: mientras tanto se muestra solo el lugar.
+  - Los **traslados** (distancia y horas de salida) quedan pendientes hasta conectar Google Maps: mientras tanto se muestran el lugar y **desde dónde se sale** («Polideportivo · desde el cole»).
 - Si un evento implica desplazamiento, se muestran **dos datos**: el deadline en sí, y la hora de salida calculada según el tiempo de traslado (Google Maps).
   - Distancias menores de 1 km: preguntar al usuario si se va andando.
   - Resto de distancias: calcular en coche.
+  - **Servicio: Google Maps (Routes API)**, con **tráfico**: el tiempo se pide para la **hora de salida prevista** (tráfico previsto para ese día y hora), se ajusta una vez con la nueva hora de salida y se actualiza con el tráfico real a partir de 1 h antes. La clave de la API vive en el servidor, no en el navegador.
+  - **Punto de partida** de cada traslado (solo actividades y eventos con ubicación):
+    - **Desde 1 h antes** del elemento: la **ubicación del móvil**.
+    - Antes de eso, si ese día hay **elementos programados antes** con lugar (actividades, eventos con ubicación o el cole, si tiene dirección): **el lugar del anterior**. Si es el mismo lugar, no hay traslado.
+    - Si no hay ninguno: **casa**.
+    - Las direcciones de casa y del colegio se configuran en **Configuración > Perfil**. Sin la del colegio, el cole no cuenta como punto de partida.
 - Tarjeta **«Próximos días»** (sustituye a «Carga de trabajo»): recoge **todas las tareas de los siguientes 5 días con tiempo estimado de 1,5 h o más**, ordenadas por entrega.
   - Cada tarea: **nombre**; debajo, **tiempo estimado** (sin la palabra «estimado») y **«antes de» fecha y hora** de entrega. Puede tener varias líneas.
   - **Pulsar una tarea** abre su ficha en Tareas (con Editar, Eliminar y Marcar como hecha) y el botón **«‹ Volver a Hoy»**.
@@ -207,7 +213,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 | Google Classroom API | Proyecto en Google Cloud, API activada, OAuth (modo "Testing", sin verificación de Google al ser uso familiar) | Ya confirmado: el colegio (Laude San Pedro) usa Google Classroom |
 | Gmail API | Mismo proyecto de Google Cloud, API activada, mismo OAuth | Se usa tanto para leer contenido relevante como para la extracción con IA |
 | Geolocalización del dispositivo | Ninguna cuenta ni API — función estándar del navegador con permiso del usuario | Trivial |
-| Google Maps Platform (cálculo de traslados reales) | Clave de API de Google Maps — **requiere asociar una tarjeta de crédito a la cuenta de Google Cloud**, aunque el uso se mantenga dentro del nivel gratuito | Alternativa sin tarjeta: estimación en línea recta con velocidad media (menos realista) — decisión pendiente de confirmar antes de implementar esta parte |
+| Google Maps Platform (cálculo de traslados reales) | Clave de API de Google Maps — **requiere asociar una tarjeta de crédito a la cuenta de Google Cloud**, aunque el uso se mantenga dentro del nivel gratuito | **Decidido: Google Maps** (Routes API, con tráfico). Se pone un **tope de gasto** (límite de cuota diaria y alerta de presupuesto en Google Cloud) para que el uso familiar se quede siempre en el nivel gratuito. Descartados: Waze (sin API pública de rutas), TomTom (alternativa sin tarjeta) y la estimación en línea recta |
 | Google Calendar API (exportación) | Mismo proyecto de Google Cloud y mismo OAuth; API de Google Calendar activada. Permiso limitado `calendar.app.created` (solo puede gestionar calendarios creados por la App, no lee los demás) | Decidido: exportar a Google Calendar. Solo escritura en el calendario propio de la App |
 | Extracción de contenido con IA (Claude API) | Clave de API propia de Anthropic una vez la app esté fuera de Claude.ai | Coste mínimo para volumen familiar, pero no es gratuito como dentro de este chat |
 
@@ -226,7 +232,6 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 ## 7. Pendiente de definir sobre la marcha
 
 - Estrategia concreta de login/sesión persistente con Google que no interrumpa la experiencia de uso.
-- Decisión final sobre Google Maps (con tarjeta, traslados reales) vs. estimación aproximada sin tarjeta.
 - Diseño gráfico y de contenido detallado de cada pantalla (mencionado como primer paso a definir en Code).
 - Peso relativo de los criterios de priorización en el algoritmo de planificación diaria.
 - Grado de autonomía de la IA al interpretar correos (todo lo extraído pasa por aprobación del usuario, según lo decidido en el punto 4).
