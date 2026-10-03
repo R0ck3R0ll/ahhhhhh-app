@@ -25,7 +25,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 1. **Idioma**
 2. **Aspecto** (tema de Today, fondo claro/oscuro, barra de tiempo)
 3. **Horarios** (franja horaria de planificación y horario escolar)
-4. **Enlaces** (cuenta de Google para Classroom/Gmail y archivo del calendario escolar)
+4. **Enlaces** (cuenta de Google para Classroom/Gmail y calendario escolar, como archivo o enlace)
 5. **Categorías**: solo dos de serie, **Tarea** (prioridad alta por defecto) y **Actividad** (media): no se pueden borrar ni renombrar, solo cambiar su prioridad. Las demás las crea el usuario; cada una lleva un botón de lápiz (editar nombre y color) y una X (borrar) justo a la izquierda de la prioridad, que queda alineada con la de las categorías de serie.
    - **Borrar una categoría**: si tiene eventos **activos** (que aún no han terminado) o actividades asociados, aparece un aviso con la lista y **doble confirmación** (Continuar → «Borrar y cancelar (n)»). Al confirmar se borra la categoría y **se cancela todo lo asociado**, con las tareas de preparación de los eventos. Los eventos ya pasados se conservan como historial con su categoría original. Sin nada activo asociado, se borra directamente.
 6. **Google Calendar** (exportación)
@@ -50,7 +50,11 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - El **Calendario** (vista semana y día) cabe en una pantalla sin scroll: el horario escolar se dibuja como un tramo **comprimido y rayado** con el icono del colegio (como en la barra de Today), y el selector Semana/Día comparte fila con las flechas y la fecha. En la semana se comprime el horario de lunes a viernes, **salvo** que un día sin cole (sábado, domingo, festivo o día no lectivo del calendario escolar) o con menos horas de cole (sábado con clases) tenga algo en ese tramo: entonces la semana se dibuja sin comprimir, para que nada quede aplastado. Los días sin cole no llevan tramo rayado.
   - **Días no lectivos:** los festivos y días no lectivos del calendario escolar se tratan como un domingo en toda la App (barra de «Hoy» sin cole, Calendario y huecos libres para los bloques de trabajo). En la maqueta la importación del archivo aún no existe, así que la lista empieza vacía.
   - En el móvil la App ocupa toda la pantalla (cabecera y pestañas fijas; solo se desplaza el contenido) y la cuadrícula del Calendario se estira o encoge para llenar el alto disponible de cada teléfono. En pantallas altas muestra la etiqueta de cada hora; en las pequeñas, cada dos. Solo en móviles muy bajos (menos de ~560 px de alto útil) podría hacer falta algo de scroll.
-- Localización del archivo con el calendario escolar (para importarlo). Se usa para consultar **festivos y días no lectivos**, que la App trata igual que un domingo (toda la franja horaria disponible).
+- **Calendario escolar** (en Enlaces): se usa para consultar **festivos y días no lectivos**, que la App trata igual que un domingo (toda la franja horaria disponible). Dos formas de darlo:
+  - **Subir archivo**: PDF, Word (.doc/.docx) o imagen, de hasta 20 MB. Se muestra con su nombre, tipo y tamaño.
+  - **Pegar enlace**: un archivo en **Google Drive** (compartido con «cualquier persona con el enlace») o la página del colegio con el calendario. Se admite sin «https://»; si no es un enlace válido, la App lo avisa. Los enlaces de Drive se muestran como «Archivo en Google Drive».
+  - Solo hay **uno a la vez**: subir un archivo o pegar un enlace sustituye al anterior. **Quitar** pide una segunda pulsación. Cuenta como uno de los «2 enlazados» del resumen de Enlaces.
+  - La **lectura de los festivos** (con IA, del archivo o del enlace) llega con las integraciones; hasta entonces la App lo indica y la lista de días no lectivos sigue vacía. En la maqueta solo se guardan los datos del archivo (nombre, tipo y tamaño), no el archivo en sí.
 - Definición de categorías de eventos, cada una con un nivel de prioridad asignado: Tarea y Actividad de serie; el resto (cita, tiempo libre…) las define el usuario.
 - **Exportación a Google Calendar (solo en un sentido: App → Google Calendar).**
   - La App **no importa** eventos del calendario: solo lleva actividades, tareas y eventos que inciden en el tiempo disponible de Martina, y muchos eventos del calendario personal no interesan (cumpleaños, trabajo…).

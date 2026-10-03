@@ -852,6 +852,19 @@
   .lang-select:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
   .status-chip.pending{ background:var(--accent-soft); color:var(--accent-strong); border:1px solid var(--accent); }
 
+  /* ---- Calendario escolar: archivo o enlace ---- */
+  .school-actions{ display:flex; flex-wrap:wrap; gap:8px; }
+  .school-actions[hidden], .school-src[hidden], .school-link[hidden]{ display:none; }
+  .school-remove{ color:var(--danger-bg); }
+  .school-remove.is-confirm{ background:var(--danger-bg); color:var(--danger-text); border-color:var(--danger-bg); }
+  .school-src{ display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:var(--surface); min-width:0; }
+  .school-src-icon{ flex:none; width:34px; height:34px; border-radius:9px; display:grid; place-items:center; background:var(--accent-soft); color:var(--accent-strong); font-size:10px; font-weight:800; letter-spacing:.03em; }
+  .school-src-icon svg{ width:18px; height:18px; }
+  .school-src-text{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .school-src-name{ font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .school-src-meta{ font-size:12px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .school-link{ display:flex; flex-direction:column; gap:10px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--surface); }
+
   /* ---- Editable categories ---- */
   .cat-row{ align-items:center; }
   .swatch{ border:none; cursor:pointer; padding:0; }
@@ -1396,10 +1409,36 @@
         <div class="config-card">
           <div class="config-line">
             <span class="config-label" data-i18n="schoolCal.file"></span>
-            <span class="config-value" data-i18n="schoolCal.none"></span>
+            <span class="status-chip off" id="school-cal-chip"></span>
+          </div>
+          <!-- Fuente elegida: nombre del archivo o del enlace, cuándo se añadió y el estado de lectura -->
+          <div class="school-src" id="school-cal-src" hidden>
+            <span class="school-src-icon" id="school-cal-icon" aria-hidden="true"></span>
+            <span class="school-src-text">
+              <span class="school-src-name" id="school-cal-name"></span>
+              <span class="school-src-meta" id="school-cal-meta"></span>
+            </span>
           </div>
           <p class="card-hint" data-i18n-html="hint.schoolCal"></p>
-          <button class="btn-ghost" style="align-self:flex-start" onclick="toast(t('toast.import'))" data-i18n="schoolCal.pick"></button>
+          <p class="card-hint" id="school-cal-pending" data-i18n="schoolCal.pending" hidden></p>
+          <div class="school-actions" id="school-cal-actions">
+            <button type="button" class="btn-primary" onclick="pickSchoolCalFile()" data-i18n="schoolCal.upload"></button>
+            <button type="button" class="btn-ghost" onclick="openSchoolCalLink()" data-i18n="schoolCal.link"></button>
+            <button type="button" class="btn-ghost school-remove" id="school-cal-remove" onclick="removeSchoolCal(this)" data-i18n="schoolCal.remove" hidden></button>
+          </div>
+          <input type="file" id="school-cal-file" accept=".pdf,.doc,.docx,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onchange="onSchoolCalFile(this)">
+          <!-- Pegar un enlace (p. ej. un archivo en Google Drive o la página del colegio) -->
+          <div class="school-link" id="school-cal-linkbox" hidden>
+            <label class="fld">
+              <span class="field-label" data-i18n="schoolCal.linkLabel"></span>
+              <input class="txt-input" id="school-cal-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" data-i18n-ph="schoolCal.linkPh" onkeydown="if(event.key==='Enter'){ event.preventDefault(); saveSchoolCalLink(); } else if(event.key==='Escape'){ closeSchoolCalLink(); }" oninput="this.classList.remove('is-invalid')">
+            </label>
+            <p class="card-hint" data-i18n="hint.schoolCalLink"></p>
+            <div class="cat-new-actions">
+              <button type="button" class="btn-ghost" onclick="closeSchoolCalLink()" data-i18n="btn.cancel"></button>
+              <button type="button" class="btn-primary" onclick="saveSchoolCalLink()" data-i18n="btn.save"></button>
+            </div>
+          </div>
         </div>
         </div>
         </div>
@@ -1798,10 +1837,28 @@
       'sum.week':'lunes a viernes, {t}', 'sum.sat':'sábado, {t}',
       'toast.exitAfter':'La salida tiene que ser después de la entrada',
       'toast.windowOrder':'La franja tiene que terminar después de empezar',
-      'cfg.schoolCal':'Calendario escolar', 'schoolCal.file':'Archivo del calendario', 'schoolCal.none':'Ningún archivo cargado',
-      'hint.schoolCal':'Se consulta para saber los <strong>festivos y días no lectivos</strong>: la App los trata como un domingo, con toda la franja horaria disponible.',
-      'schoolCal.pick':'Seleccionar archivo',
-      'toast.import':'La importación de archivos se activa en la fase de datos',
+      'cfg.schoolCal':'Calendario escolar',
+      'schoolCal.file':'Archivo o enlace',
+      'schoolCal.none':'Sin añadir',
+      'schoolCal.chipFile':'Archivo',
+      'schoolCal.chipLink':'Enlace',
+      'hint.schoolCal':'Sube un <strong>archivo</strong> (PDF, Word o imagen) o pega un <strong>enlace</strong>. Se consulta para saber los <strong>festivos y días no lectivos</strong>: la App los trata como un domingo, con toda la franja horaria disponible.',
+      'schoolCal.upload':'Subir archivo',
+      'schoolCal.link':'Pegar enlace',
+      'schoolCal.remove':'Quitar',
+      'schoolCal.removeConfirm':'Confirmar: quitar',
+      'schoolCal.linkLabel':'Enlace al calendario',
+      'schoolCal.linkPh':'https://drive.google.com/…',
+      'hint.schoolCalLink':'Puede ser un archivo en Google Drive (compartido con «cualquier persona con el enlace») o la página del colegio donde está el calendario.',
+      'schoolCal.pending':'Los festivos y días no lectivos se leerán de aquí cuando se active la lectura con IA; hasta entonces la lista sigue vacía.',
+      'schoolCal.drive':'Archivo en Google Drive',
+      'schoolCal.image':'Imagen',
+      'toast.schoolFile':'Calendario escolar cargado',
+      'toast.schoolLink':'Enlace guardado',
+      'toast.schoolRemoved':'Calendario escolar quitado',
+      'toast.schoolBadType':'Solo se admiten PDF, Word o imágenes',
+      'toast.schoolTooBig':'El archivo pasa de 20 MB',
+      'toast.schoolBadUrl':'Escribe un enlace que empiece por https://',
       'cfg.cats':'Categorías y prioridades',
       'cat.tarea':'Tarea', 'cat.cita':'Cita', 'cat.actividad':'Actividad', 'cat.libre':'Tiempo libre', 'cat.new':'Nueva categoría', 'category':'Categoría',
       'prio.Alta':'Alta', 'prio.Media':'Media', 'prio.Baja':'Baja',
@@ -1925,10 +1982,28 @@
       'sum.week':'Monday to Friday, {t}', 'sum.sat':'Saturday, {t}',
       'toast.exitAfter':'The end time must be after the start time',
       'toast.windowOrder':'The window must end after it starts',
-      'cfg.schoolCal':'School calendar', 'schoolCal.file':'Calendar file', 'schoolCal.none':'No file loaded',
-      'hint.schoolCal':'Used to know <strong>holidays and non-school days</strong>: the App treats them like a Sunday, with the whole time window available.',
-      'schoolCal.pick':'Choose file',
-      'toast.import':'File import comes with the data phase',
+      'cfg.schoolCal':'School calendar',
+      'schoolCal.file':'File or link',
+      'schoolCal.none':'Not added',
+      'schoolCal.chipFile':'File',
+      'schoolCal.chipLink':'Link',
+      'hint.schoolCal':'Upload a <strong>file</strong> (PDF, Word or image) or paste a <strong>link</strong>. It is used to know <strong>holidays and non-school days</strong>: the App treats them like a Sunday, with the whole time window available.',
+      'schoolCal.upload':'Upload file',
+      'schoolCal.link':'Paste link',
+      'schoolCal.remove':'Remove',
+      'schoolCal.removeConfirm':'Confirm: remove',
+      'schoolCal.linkLabel':'Link to the calendar',
+      'schoolCal.linkPh':'https://drive.google.com/…',
+      'hint.schoolCalLink':'It can be a file in Google Drive (shared with “anyone with the link”) or the school page that has the calendar.',
+      'schoolCal.pending':'Holidays and non-school days will be read from here once AI reading is switched on; until then the list stays empty.',
+      'schoolCal.drive':'File in Google Drive',
+      'schoolCal.image':'Image',
+      'toast.schoolFile':'School calendar loaded',
+      'toast.schoolLink':'Link saved',
+      'toast.schoolRemoved':'School calendar removed',
+      'toast.schoolBadType':'Only PDF, Word or image files',
+      'toast.schoolTooBig':'The file is over 20 MB',
+      'toast.schoolBadUrl':'Enter a link starting with https://',
       'cfg.cats':'Categories and priorities',
       'cat.tarea':'Homework', 'cat.cita':'Appointment', 'cat.actividad':'Activity', 'cat.libre':'Free time', 'cat.new':'New category', 'category':'Category',
       'prio.Alta':'High', 'prio.Media':'Medium', 'prio.Baja':'Low',
@@ -2052,10 +2127,28 @@
       'sum.week':'da lunedì a venerdì, {t}', 'sum.sat':'sabato, {t}',
       'toast.exitAfter':'L’uscita deve essere dopo l’entrata',
       'toast.windowOrder':'La fascia deve finire dopo l’inizio',
-      'cfg.schoolCal':'Calendario scolastico', 'schoolCal.file':'File del calendario', 'schoolCal.none':'Nessun file caricato',
-      'hint.schoolCal':'Serve a sapere <strong>festivi e giorni senza lezione</strong>: l’app li tratta come una domenica, con tutta la fascia oraria disponibile.',
-      'schoolCal.pick':'Seleziona file',
-      'toast.import':'L’importazione dei file arriva nella fase dei dati',
+      'cfg.schoolCal':'Calendario scolastico',
+      'schoolCal.file':'File o link',
+      'schoolCal.none':'Non aggiunto',
+      'schoolCal.chipFile':'File',
+      'schoolCal.chipLink':'Link',
+      'hint.schoolCal':'Carica un <strong>file</strong> (PDF, Word o immagine) o incolla un <strong>link</strong>. Serve a sapere <strong>festivi e giorni senza lezione</strong>: l’app li tratta come una domenica, con tutta la fascia oraria disponibile.',
+      'schoolCal.upload':'Carica file',
+      'schoolCal.link':'Incolla link',
+      'schoolCal.remove':'Rimuovi',
+      'schoolCal.removeConfirm':'Conferma: rimuovi',
+      'schoolCal.linkLabel':'Link al calendario',
+      'schoolCal.linkPh':'https://drive.google.com/…',
+      'hint.schoolCalLink':'Può essere un file su Google Drive (condiviso con «chiunque abbia il link») o la pagina della scuola con il calendario.',
+      'schoolCal.pending':'Festivi e giorni senza lezione verranno letti da qui quando si attiverà la lettura con IA; fino ad allora l’elenco resta vuoto.',
+      'schoolCal.drive':'File su Google Drive',
+      'schoolCal.image':'Immagine',
+      'toast.schoolFile':'Calendario scolastico caricato',
+      'toast.schoolLink':'Link salvato',
+      'toast.schoolRemoved':'Calendario scolastico rimosso',
+      'toast.schoolBadType':'Solo file PDF, Word o immagini',
+      'toast.schoolTooBig':'Il file supera i 20 MB',
+      'toast.schoolBadUrl':'Scrivi un link che inizi con https://',
       'cfg.cats':'Categorie e priorità',
       'cat.tarea':'Compito', 'cat.cita':'Appuntamento', 'cat.actividad':'Attività', 'cat.libre':'Tempo libero', 'cat.new':'Nuova categoria', 'category':'Categoria',
       'prio.Alta':'Alta', 'prio.Media':'Media', 'prio.Baja':'Bassa',
@@ -2179,10 +2272,28 @@
       'sum.week':'du lundi au vendredi, {t}', 'sum.sat':'samedi, {t}',
       'toast.exitAfter':'La sortie doit être après l’entrée',
       'toast.windowOrder':'La plage doit se terminer après son début',
-      'cfg.schoolCal':'Calendrier scolaire', 'schoolCal.file':'Fichier du calendrier', 'schoolCal.none':'Aucun fichier chargé',
-      'hint.schoolCal':'Il sert à connaître les <strong>jours fériés et jours sans école</strong> : l’app les traite comme un dimanche, avec toute la plage horaire disponible.',
-      'schoolCal.pick':'Choisir un fichier',
-      'toast.import':'L’import de fichiers arrive avec la phase de données',
+      'cfg.schoolCal':'Calendrier scolaire',
+      'schoolCal.file':'Fichier ou lien',
+      'schoolCal.none':'Non ajouté',
+      'schoolCal.chipFile':'Fichier',
+      'schoolCal.chipLink':'Lien',
+      'hint.schoolCal':'Importez un <strong>fichier</strong> (PDF, Word ou image) ou collez un <strong>lien</strong>. Il sert à connaître les <strong>jours fériés et jours sans école</strong> : l’app les traite comme un dimanche, avec toute la plage horaire disponible.',
+      'schoolCal.upload':'Importer un fichier',
+      'schoolCal.link':'Coller un lien',
+      'schoolCal.remove':'Retirer',
+      'schoolCal.removeConfirm':'Confirmer : retirer',
+      'schoolCal.linkLabel':'Lien vers le calendrier',
+      'schoolCal.linkPh':'https://drive.google.com/…',
+      'hint.schoolCalLink':'Ce peut être un fichier sur Google Drive (partagé avec « tous les utilisateurs disposant du lien ») ou la page de l’école qui contient le calendrier.',
+      'schoolCal.pending':'Les jours fériés et jours sans école seront lus ici quand la lecture par IA sera activée ; d’ici là, la liste reste vide.',
+      'schoolCal.drive':'Fichier sur Google Drive',
+      'schoolCal.image':'Image',
+      'toast.schoolFile':'Calendrier scolaire chargé',
+      'toast.schoolLink':'Lien enregistré',
+      'toast.schoolRemoved':'Calendrier scolaire retiré',
+      'toast.schoolBadType':'Uniquement PDF, Word ou images',
+      'toast.schoolTooBig':'Le fichier dépasse 20 Mo',
+      'toast.schoolBadUrl':'Saisissez un lien commençant par https://',
       'cfg.cats':'Catégories et priorités',
       'cat.tarea':'Devoir', 'cat.cita':'Rendez-vous', 'cat.actividad':'Activité', 'cat.libre':'Temps libre', 'cat.new':'Nouvelle catégorie', 'category':'Catégorie',
       'prio.Alta':'Haute', 'prio.Media':'Moyenne', 'prio.Baja':'Basse',
@@ -2306,10 +2417,28 @@
       'sum.week':'Montag bis Freitag, {t}', 'sum.sat':'Samstag, {t}',
       'toast.exitAfter':'Das Ende muss nach dem Beginn liegen',
       'toast.windowOrder':'Das Zeitfenster muss nach seinem Beginn enden',
-      'cfg.schoolCal':'Schulkalender', 'schoolCal.file':'Kalenderdatei', 'schoolCal.none':'Keine Datei geladen',
-      'hint.schoolCal':'Daraus ergeben sich <strong>Feiertage und schulfreie Tage</strong>: Die App behandelt sie wie einen Sonntag, mit dem ganzen Zeitfenster.',
-      'schoolCal.pick':'Datei auswählen',
-      'toast.import':'Der Dateiimport kommt in der Datenphase',
+      'cfg.schoolCal':'Schulkalender',
+      'schoolCal.file':'Datei oder Link',
+      'schoolCal.none':'Nicht hinzugefügt',
+      'schoolCal.chipFile':'Datei',
+      'schoolCal.chipLink':'Link',
+      'hint.schoolCal':'Lade eine <strong>Datei</strong> hoch (PDF, Word oder Bild) oder füge einen <strong>Link</strong> ein. Daraus ergeben sich <strong>Feiertage und schulfreie Tage</strong>: Die App behandelt sie wie einen Sonntag, mit dem ganzen Zeitfenster.',
+      'schoolCal.upload':'Datei hochladen',
+      'schoolCal.link':'Link einfügen',
+      'schoolCal.remove':'Entfernen',
+      'schoolCal.removeConfirm':'Bestätigen: entfernen',
+      'schoolCal.linkLabel':'Link zum Kalender',
+      'schoolCal.linkPh':'https://drive.google.com/…',
+      'hint.schoolCalLink':'Das kann eine Datei in Google Drive sein (freigegeben für „Jeder, der über den Link verfügt“) oder die Schulseite mit dem Kalender.',
+      'schoolCal.pending':'Feiertage und schulfreie Tage werden von hier gelesen, sobald das Lesen mit KI aktiviert ist; bis dahin bleibt die Liste leer.',
+      'schoolCal.drive':'Datei in Google Drive',
+      'schoolCal.image':'Bild',
+      'toast.schoolFile':'Schulkalender geladen',
+      'toast.schoolLink':'Link gespeichert',
+      'toast.schoolRemoved':'Schulkalender entfernt',
+      'toast.schoolBadType':'Nur PDF-, Word- oder Bilddateien',
+      'toast.schoolTooBig':'Die Datei ist größer als 20 MB',
+      'toast.schoolBadUrl':'Gib einen Link ein, der mit https:// beginnt',
       'cfg.cats':'Kategorien und Prioritäten',
       'cat.tarea':'Hausaufgabe', 'cat.cita':'Termin', 'cat.actividad':'Aktivität', 'cat.libre':'Freizeit', 'cat.new':'Neue Kategorie', 'category':'Kategorie',
       'prio.Alta':'Hoch', 'prio.Media':'Mittel', 'prio.Baja':'Niedrig',
@@ -2441,6 +2570,7 @@
     if(active){ setScreenHeading(active); }
     document.getElementById('cal-range').textContent = calRangeText(calView);
     renderExportCats();
+    renderSchoolCal();
     renderEvents();
     refreshEventForm();
     renderActivities();
@@ -3212,6 +3342,103 @@
   // (en la maqueta, la importación del archivo aún no está hecha: la lista empieza vacía).
   var NO_SCHOOL_DATES = [];
   try{ NO_SCHOOL_DATES = JSON.parse(localStorage.getItem('no-school-dates') || '[]') || []; }catch(e){ NO_SCHOOL_DATES = []; }
+  // De dónde sale el calendario escolar (Config > Enlaces): un archivo subido (PDF, Word o imagen)
+  // o un enlace (p. ej. un archivo en Google Drive). En la maqueta solo se guardan sus datos;
+  // la lectura de los festivos con IA llega en la fase de integraciones.
+  //   { kind:'file', name, size, ext }  ·  { kind:'link', url }
+  var SCHOOL_CAL = null;
+  try{ SCHOOL_CAL = JSON.parse(localStorage.getItem('school-cal') || 'null'); }catch(e){ SCHOOL_CAL = null; }
+  var SCHOOL_CAL_MAX = 20 * 1024 * 1024;
+  var SCHOOL_CAL_EXT = { pdf:'PDF', doc:'DOC', docx:'DOC', png:'IMG', jpg:'IMG', jpeg:'IMG', gif:'IMG', webp:'IMG', heic:'IMG', heif:'IMG' };
+  var LINK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+
+  function setSchoolCal(v){
+    SCHOOL_CAL = v;
+    try{ if(v){ localStorage.setItem('school-cal', JSON.stringify(v)); } else { localStorage.removeItem('school-cal'); } }catch(e){}
+    renderSchoolCal();
+    updateConfigSummaries();
+  }
+  function isDriveUrl(u){ return /(^|\.)(drive|docs)\.google\.com$/i.test(u.hostname); }
+  function fmtSize(b){
+    var mb = b >= 1024 * 1024, n = mb ? b / 1048576 : Math.max(1, Math.round(b / 1024));
+    return new Intl.NumberFormat(LOCALES[LANG], { maximumFractionDigits: mb ? 1 : 0 }).format(n) + (mb ? ' MB' : ' KB');
+  }
+
+  function renderSchoolCal(){
+    var c = SCHOOL_CAL, chip = el('school-cal-chip');
+    if(!chip){ return; }
+    chip.className = 'status-chip ' + (c ? 'pending' : 'off');
+    chip.textContent = t(c ? (c.kind === 'file' ? 'schoolCal.chipFile' : 'schoolCal.chipLink') : 'schoolCal.none');
+    el('school-cal-src').hidden = !c;
+    el('school-cal-pending').hidden = !c;
+    var rm = el('school-cal-remove');
+    rm.hidden = !c; rm.classList.remove('is-confirm'); rm.textContent = t('schoolCal.remove');
+    if(!c){ return; }
+    var icon = el('school-cal-icon');
+    if(c.kind === 'file'){
+      icon.textContent = c.ext;
+      el('school-cal-name').textContent = c.name;
+      el('school-cal-meta').textContent = (c.ext === 'IMG' ? t('schoolCal.image') : c.ext) + ' · ' + fmtSize(c.size);
+    } else {
+      var u = new URL(c.url);
+      icon.innerHTML = LINK_ICON;
+      el('school-cal-name').textContent = isDriveUrl(u) ? t('schoolCal.drive') : u.hostname.replace(/^www\./, '');
+      el('school-cal-meta').textContent = c.url.replace(/^https?:\/\//, '');
+      el('school-cal-meta').title = c.url;
+    }
+  }
+
+  function pickSchoolCalFile(){ closeSchoolCalLink(); el('school-cal-file').click(); }
+  function onSchoolCalFile(input){
+    var f = input.files && input.files[0];
+    input.value = '';
+    if(!f){ return; }
+    var m = /\.([a-z0-9]+)$/i.exec(f.name), ext = m && SCHOOL_CAL_EXT[m[1].toLowerCase()];
+    if(!ext && /^image\//.test(f.type)){ ext = 'IMG'; }
+    if(!ext){ toast(t('toast.schoolBadType')); return; }
+    if(f.size > SCHOOL_CAL_MAX){ toast(t('toast.schoolTooBig')); return; }
+    setSchoolCal({ kind:'file', name:f.name, size:f.size, ext:ext });
+    toast(t('toast.schoolFile'));
+  }
+
+  function openSchoolCalLink(){
+    var input = el('school-cal-url');
+    el('school-cal-linkbox').hidden = false;
+    el('school-cal-actions').hidden = true;
+    input.classList.remove('is-invalid');
+    input.value = SCHOOL_CAL && SCHOOL_CAL.kind === 'link' ? SCHOOL_CAL.url : '';
+    input.focus();
+  }
+  function closeSchoolCalLink(){
+    el('school-cal-linkbox').hidden = true;
+    el('school-cal-actions').hidden = false;
+  }
+  function saveSchoolCalLink(){
+    var input = el('school-cal-url'), v = input.value.trim(), u = null;
+    // Se admite pegar «drive.google.com/…» sin el https://
+    if(v && !/^[a-z][a-z0-9+.-]*:/i.test(v)){ v = 'https://' + v; }
+    try{ u = new URL(v); }catch(e){}
+    if(!u || !/^https?:$/.test(u.protocol) || u.hostname.indexOf('.') < 0){
+      input.classList.add('is-invalid');
+      toast(t('toast.schoolBadUrl'));
+      input.focus();
+      return;
+    }
+    closeSchoolCalLink();
+    setSchoolCal({ kind:'link', url:u.href });
+    toast(t('toast.schoolLink'));
+  }
+  // Quitar pide una segunda pulsación
+  function removeSchoolCal(btn){
+    if(!btn.classList.contains('is-confirm')){
+      btn.classList.add('is-confirm');
+      btn.textContent = t('schoolCal.removeConfirm');
+      return;
+    }
+    setSchoolCal(null);
+    toast(t('toast.schoolRemoved'));
+  }
+
   // Horario del cole para una fecha concreta: un día no lectivo se trata como un domingo
   function schoolForDate(d){
     return NO_SCHOOL_DATES.indexOf(isoOf(d)) >= 0 ? {on:false} : schoolFor(weekdayOf(d));
@@ -3356,7 +3583,7 @@
                  t('mode.' + APPEARANCE.mode), t('bar.' + APPEARANCE.bar)].join(' · '));
     var b = dayBounds();
     put('hours', b.start + '–' + b.end + ' · ' + t('sum.school') + '\u00a0' + SCHOOL.week.entry + '\u2011' + SCHOOL.week.exit);
-    put('links', t('sum.links', { n: 0 }));
+    put('links', t('sum.links', { n: SCHOOL_CAL ? 1 : 0 }));
     put('cats', t('sum.cats', { n: document.querySelectorAll('#category-list .cat-row').length }));
     put('gcal', t(document.getElementById('export-switch').getAttribute('aria-checked') === 'true' ? 'sum.gcalOn' : 'sum.gcalOff'));
   }
