@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AHHHHHH!!!!!</title>
+<meta name="description" content="Organización diaria: tareas, actividades y eventos.">
+<!-- Instalable en el móvil (pantalla de inicio, a pantalla completa) -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" id="theme-color" content="#D9D9D9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AHHHHHH">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page-pad">
+<div class="app-shell is-today">
+
+  <div class="topbar">
+    <span class="brand">AHHHHHH!!!!!</span>
+    <h1 id="screen-heading" data-i18n="tab.today"></h1>
+    <span class="subtitle" id="screen-subheading"></span>
+  </div>
+
+  <main class="screen-container">
+
+    <!-- ============ TODAY ============ -->
+    <section class="screen active" id="screen-today" aria-labelledby="screen-heading">
+
+      <!-- Barra de tiempo y tema: se dibujan según Configuración > Apariencia de Today -->
+      <div id="today-bar"></div>
+      <div class="today-layout" id="today-layout"></div>
+
+      <!-- Próximos días: tareas de los siguientes 5 días con 1,5 h o más; fija justo encima de la barra de pestañas -->
+      <div class="load-card" role="status" aria-labelledby="load-title">
+        <button type="button" class="load-toggle" id="load-toggle" aria-expanded="true" aria-controls="load-list" onclick="toggleLoad()">
+          <span class="load-title" id="load-title"><span data-i18n="load.title"></span> <span class="load-count" id="load-count"></span></span>
+          <svg class="load-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+        </button>
+        <ul class="load-list" id="load-list"></ul>
+      </div>
+
+    </section>
+
+    <!-- ============ ACTIVIDADES ============ -->
+    <!-- Actividades recurrentes (semanales): todo lo inserta el usuario; con la App nueva solo aparece «Añadir actividad» -->
+    <section class="screen" id="screen-activities" aria-labelledby="screen-heading">
+
+      <div id="act-list-view" class="evt-view">
+        <div id="act-list-wrap" hidden>
+          <h2 class="section-title" data-i18n="act.title"></h2>
+          <div class="row-list" id="act-list"></div>
+        </div>
+        <button class="add-btn" onclick="openActivityForm()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span data-i18n="act.add"></span>
+        </button>
+      </div>
+
+      <div class="detail" id="act-detail" hidden></div>
+
+      <form id="act-form" class="evt-form" hidden novalidate onsubmit="saveActivity(event)">
+        <button type="button" class="detail-back form-cancel" onclick="closeActivityForm()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg><span data-i18n="btn.cancel"></span></button>
+        <h2 class="section-title" id="act-form-title"></h2>
+
+        <label class="fld">
+          <span class="field-label" data-i18n="f.name"></span>
+          <input class="txt-input" id="act-name" type="text" autocomplete="off" data-i18n-ph="f.actNamePh">
+        </label>
+
+        <!-- Días de la semana y horario de cada uno -->
+        <div class="fld">
+          <span class="field-label" id="act-days-label" data-i18n="f.days"></span>
+          <div class="day-pick" id="act-days" role="group" aria-labelledby="act-days-label"></div>
+          <div class="sessions" id="act-sessions"></div>
+          <p class="card-hint" id="act-days-hint" data-i18n="hint.days" hidden></p>
+        </div>
+
+        <div class="fld">
+          <span class="field-label" id="act-cat-label" data-i18n="f.cat"></span>
+          <div class="cat-pick" id="act-cat" role="radiogroup" aria-labelledby="act-cat-label"></div>
+          <div class="cat-new" id="act-cat-new" hidden>
+            <input class="txt-input" id="act-cat-name" type="text" autocomplete="off" data-i18n-ph="aria.catName" onkeydown="if(event.key==='Enter'){ event.preventDefault(); addFormCategory('act'); }">
+            <div class="cat-new-colors" id="act-cat-colors" role="radiogroup" data-i18n-aria="aria.catColor"></div>
+            <div class="cat-new-actions">
+              <button type="button" class="btn-ghost" onclick="toggleNewCategory('act', false)" data-i18n="btn.cancel"></button>
+              <button type="button" class="btn-primary" onclick="addFormCategory('act')" data-i18n="cat.add"></button>
+            </div>
+          </div>
+        </div>
+        <div class="fld">
+          <span class="field-label" id="act-prio-label" data-i18n="f.prio"></span>
+          <div class="toggle-row prio-row" id="act-prio" role="radiogroup" aria-labelledby="act-prio-label">
+            <button type="button" class="toggle-btn" role="radio" data-prio="Alta" onclick="setFormPrio('act', this)" data-i18n="prio.Alta"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Media" onclick="setFormPrio('act', this)" data-i18n="prio.Media"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Baja" onclick="setFormPrio('act', this)" data-i18n="prio.Baja"></button>
+          </div>
+          <p class="card-hint" data-i18n="hint.prio"></p>
+        </div>
+
+        <label class="fld">
+          <span class="field-label" data-i18n="f.place"></span>
+          <input class="txt-input" id="act-place" type="text" autocomplete="off" data-i18n-ph="f.placePh">
+        </label>
+        <label class="fld">
+          <span class="field-label"><span data-i18n="f.desc"></span> <span class="fld-opt" data-i18n="f.optional"></span></span>
+          <textarea class="txt-input" id="act-desc" rows="2" data-i18n-ph="f.actDescPh"></textarea>
+        </label>
+
+        <!-- Tarea de práctica: deadline = la siguiente sesión de la actividad -->
+        <div class="task-box">
+          <div class="config-line">
+            <span class="config-label" id="act-task-label" data-i18n="task.genAct"></span>
+            <button type="button" class="switch" id="act-task-switch" role="switch" aria-checked="false" aria-labelledby="act-task-label" onclick="toggleActivityTask()"></button>
+          </div>
+          <p class="card-hint" data-i18n-html="hint.actTask"></p>
+          <div class="task-fields" id="act-task-fields" hidden>
+            <label class="fld">
+              <span class="field-label" data-i18n="task.name"></span>
+              <input class="txt-input" id="atask-name" type="text" autocomplete="off">
+            </label>
+            <div class="fld-row">
+              <div class="fld">
+                <span class="field-label" id="atask-est-label" data-i18n="task.est"></span>
+                <div class="dur-input" role="group" aria-labelledby="atask-est-label">
+                  <input class="txt-input" id="atask-est-h" type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-i18n-aria="aria.hours"><span>h</span>
+                  <input class="txt-input" id="atask-est-m" type="number" inputmode="numeric" min="0" max="59" step="5" placeholder="00" data-i18n-aria="aria.minutes"><span>min</span>
+                </div>
+              </div>
+              <div class="fld">
+                <span class="field-label" data-i18n="f.prio"></span>
+                <span class="prio-copy" id="atask-prio"></span>
+              </div>
+            </div>
+            <div class="fld">
+              <span class="field-label" data-i18n="task.dueDate"></span>
+              <span class="prio-copy" data-i18n="task.dueNext"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" onclick="closeActivityForm()" data-i18n="btn.cancel"></button>
+          <button type="submit" class="btn-primary" data-i18n="btn.save"></button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============ EVENTOS ============ -->
+    <!-- Todo lo inserta el usuario: con la App nueva solo aparece «Añadir evento» -->
+    <section class="screen" id="screen-events" aria-labelledby="screen-heading">
+
+      <div id="evt-list-view" class="evt-view">
+        <div id="evt-list-wrap" hidden>
+          <h2 class="section-title" data-i18n="evt.upcoming"></h2>
+          <div class="row-list" id="evt-list"></div>
+        </div>
+        <button class="add-btn" onclick="openEventForm()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span data-i18n="evt.add"></span>
+        </button>
+      </div>
+
+      <div class="detail" id="evt-detail" hidden></div>
+
+      <form id="evt-form" class="evt-form" hidden novalidate onsubmit="saveEvent(event)">
+        <button type="button" class="detail-back form-cancel" onclick="closeEventForm()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg><span data-i18n="btn.cancel"></span></button>
+        <h2 class="section-title" id="evt-form-title"></h2>
+
+        <label class="fld">
+          <span class="field-label" data-i18n="f.name"></span>
+          <input class="txt-input" id="evt-name" type="text" autocomplete="off" data-i18n-ph="f.namePh">
+        </label>
+        <div class="fld-row">
+          <label class="fld">
+            <span class="field-label" data-i18n="f.date"></span>
+            <input class="txt-input" id="evt-date" type="date">
+          </label>
+          <label class="fld fld-time">
+            <span class="field-label" data-i18n="f.time"></span>
+            <input class="txt-input" id="evt-time" type="time">
+          </label>
+        </div>
+<div class="fld">
+          <span class="field-label" id="evt-dur-label" data-i18n="f.dur"></span>
+          <div class="dur-input" role="group" aria-labelledby="evt-dur-label">
+            <input class="txt-input" id="evt-dur-h" type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-i18n-aria="aria.hours"><span>h</span>
+            <input class="txt-input" id="evt-dur-m" type="number" inputmode="numeric" min="0" max="59" step="5" placeholder="00" data-i18n-aria="aria.minutes"><span>min</span>
+          </div>
+        </div>
+        <div class="fld">
+          <span class="field-label" id="evt-cat-label" data-i18n="f.cat"></span>
+          <div class="cat-pick" id="evt-cat" role="radiogroup" aria-labelledby="evt-cat-label"></div>
+          <div class="cat-new" id="evt-cat-new" hidden>
+            <input class="txt-input" id="evt-cat-name" type="text" autocomplete="off" data-i18n-ph="aria.catName" onkeydown="if(event.key==='Enter'){ event.preventDefault(); addFormCategory('evt'); }">
+            <div class="cat-new-colors" id="evt-cat-colors" role="radiogroup" data-i18n-aria="aria.catColor"></div>
+            <div class="cat-new-actions">
+              <button type="button" class="btn-ghost" onclick="toggleNewCategory('evt', false)" data-i18n="btn.cancel"></button>
+              <button type="button" class="btn-primary" onclick="addFormCategory('evt')" data-i18n="cat.add"></button>
+            </div>
+          </div>
+        </div>
+        <div class="fld">
+          <span class="field-label" id="evt-prio-label" data-i18n="f.prio"></span>
+          <div class="toggle-row prio-row" id="evt-prio" role="radiogroup" aria-labelledby="evt-prio-label">
+            <button type="button" class="toggle-btn" role="radio" data-prio="Alta" onclick="setFormPrio('evt', this)" data-i18n="prio.Alta"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Media" onclick="setFormPrio('evt', this)" data-i18n="prio.Media"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Baja" onclick="setFormPrio('evt', this)" data-i18n="prio.Baja"></button>
+          </div>
+          <p class="card-hint" data-i18n="hint.prio"></p>
+        </div>
+
+        <label class="fld">
+          <span class="field-label"><span data-i18n="f.place"></span> <span class="fld-opt" data-i18n="f.optional"></span></span>
+          <input class="txt-input" id="evt-place" type="text" autocomplete="off" data-i18n-ph="f.placePh">
+        </label>
+        <label class="fld">
+          <span class="field-label"><span data-i18n="f.desc"></span> <span class="fld-opt" data-i18n="f.optional"></span></span>
+          <textarea class="txt-input" id="evt-desc" rows="2" data-i18n-ph="f.descPh"></textarea>
+        </label>
+
+        <!-- Tarea de preparación: opcional, depende del evento -->
+        <div class="task-box">
+          <div class="config-line">
+            <span class="config-label" id="evt-task-label" data-i18n="task.gen"></span>
+            <button type="button" class="switch" id="evt-task-switch" role="switch" aria-checked="false" aria-labelledby="evt-task-label" onclick="toggleEventTask()"></button>
+          </div>
+          <p class="card-hint" data-i18n-html="hint.task"></p>
+          <div class="task-fields" id="evt-task-fields" hidden>
+            <label class="fld">
+              <span class="field-label" data-i18n="task.name"></span>
+              <input class="txt-input" id="task-name" type="text" autocomplete="off">
+            </label>
+            <div class="fld-row">
+              <label class="fld">
+                <span class="field-label" data-i18n="task.dueDate"></span>
+                <input class="txt-input" id="task-date" type="date">
+              </label>
+              <label class="fld fld-time">
+                <span class="field-label" data-i18n="task.dueTime"></span>
+                <input class="txt-input" id="task-time" type="time">
+              </label>
+            </div>
+            <div class="fld-row">
+<div class="fld">
+          <span class="field-label" id="task-est-label" data-i18n="task.est"></span>
+          <div class="dur-input" role="group" aria-labelledby="task-est-label">
+            <input class="txt-input" id="task-est-h" type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-i18n-aria="aria.hours"><span>h</span>
+            <input class="txt-input" id="task-est-m" type="number" inputmode="numeric" min="0" max="59" step="5" placeholder="00" data-i18n-aria="aria.minutes"><span>min</span>
+          </div>
+        </div>
+              <div class="fld">
+                <span class="field-label" data-i18n="f.prio"></span>
+                <span class="prio-copy" id="task-prio"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" onclick="closeEventForm()" data-i18n="btn.cancel"></button>
+          <button type="submit" class="btn-primary" data-i18n="btn.save"></button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============ CONFIGURACIÓN ============ -->
+    <section class="screen" id="screen-config" aria-labelledby="screen-heading">
+
+      <div class="cfg-groups">
+      <details class="cfg-group" data-group="profile">
+        <summary><span class="cfg-group-title" data-i18n="grp.profile"></span><span class="cfg-group-sum" id="sum-profile"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="config-card">
+          <label class="fld">
+            <span class="field-label" data-i18n="cfg.kidName"></span>
+            <input class="txt-input" id="kid-name" type="text" autocomplete="off" maxlength="30" onchange="setKidName(this.value)">
+          </label>
+          <p class="card-hint" data-i18n="hint.kidName"></p>
+        </div>
+        <!-- Dirección de casa: punto de partida de los traslados cuando no hay un lugar anterior -->
+        <div class="config-card">
+          <label class="fld">
+            <span class="field-label" data-i18n="cfg.home"></span>
+            <input class="txt-input" id="addr-home" type="text" autocomplete="off" maxlength="120" data-i18n-ph="f.placePh" onchange="setAddress('home', this.value)">
+          </label>
+          <p class="card-hint" data-i18n-html="hint.addresses"></p>
+        </div>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="language">
+        <summary><span class="cfg-group-title" data-i18n="grp.language"></span><span class="cfg-group-sum" id="sum-language"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="config-card">
+          <div class="config-line">
+            <label class="config-label" for="lang-select" data-i18n="cfg.languageLabel"></label>
+            <select id="lang-select" class="lang-select" onchange="setLanguage(this.value)">
+              <option value="es">Español</option>
+              <option value="en">English</option>
+              <option value="it">Italiano</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+            </select>
+          </div>
+          <p class="card-hint" data-i18n="cfg.languageHint"></p>
+        </div>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="look">
+        <summary><span class="cfg-group-title" data-i18n="grp.look"></span><span class="cfg-group-sum" id="sum-look"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="config-card">
+          <div class="field-label" data-i18n="cfg.theme"></div>
+          <div class="seg-control" role="group" data-i18n-aria="cfg.themeAria">
+            <button type="button" class="seg-btn" data-appearance="layout" data-value="list" onclick="setAppearance('layout','list')" data-i18n="layout.list"></button>
+            <button type="button" class="seg-btn" data-appearance="layout" data-value="postit1" onclick="setAppearance('layout','postit1')">Post-it 1</button>
+            <button type="button" class="seg-btn" data-appearance="layout" data-value="postit2" onclick="setAppearance('layout','postit2')">Post-it 2</button>
+          </div>
+          <p class="card-hint" id="layout-hint"></p>
+          <div class="config-line">
+            <span class="config-label" data-i18n="cfg.bg"></span>
+            <div class="seg-control" role="group" data-i18n-aria="cfg.bgAria" style="width:180px">
+              <button type="button" class="seg-btn" data-appearance="mode" data-value="light" onclick="setAppearance('mode','light')" data-i18n="mode.light"></button>
+              <button type="button" class="seg-btn" data-appearance="mode" data-value="dark" onclick="setAppearance('mode','dark')" data-i18n="mode.dark"></button>
+            </div>
+          </div>
+
+          <div class="cover-block">
+            <div class="field-label" data-i18n="cfg.bar"></div>
+            <div class="seg-control" role="group" data-i18n-aria="cfg.barAria">
+              <button type="button" class="seg-btn" data-appearance="bar" data-value="dots" onclick="setAppearance('bar','dots')" data-i18n="bar.dots"></button>
+              <button type="button" class="seg-btn" data-appearance="bar" data-value="nina" onclick="setAppearance('bar','nina')" data-i18n="bar.nina"></button>
+            </div>
+            <p class="card-hint" id="bar-hint"></p>
+          </div>
+          <button class="btn-ghost" style="align-self:flex-start" onclick="document.querySelector('.tab[data-screen=today]').click()" data-i18n="cfg.viewToday"></button>
+        </div>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="hours">
+        <summary><span class="cfg-group-title" data-i18n="grp.hours"></span><span class="cfg-group-sum" id="sum-hours"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="cfg-sub">
+          <div class="cfg-sub-title" data-i18n="cfg.window"></div>
+        <div class="config-card">
+          <div class="config-line time-line">
+            <span class="config-label" data-i18n="cfg.everyDay"></span>
+            <span class="time-pair">
+              <input type="time" class="time-input" id="day-start" value="07:30" data-i18n-aria="aria.windowStart" onchange="onBoundsChange(this)">
+              –
+              <input type="time" class="time-input" id="day-end" value="23:00" data-i18n-aria="aria.windowEnd" onchange="onBoundsChange(this)">
+            </span>
+          </div>
+          <p class="card-hint" data-i18n="hint.window"></p>
+        </div>
+        </div>
+        <div class="cfg-sub">
+          <div class="cfg-sub-title" data-i18n="cfg.school"></div>
+        <div class="config-card">
+          <div class="config-line time-line">
+            <span class="config-label" data-i18n="monFri"></span>
+            <span class="time-pair">
+              <input type="time" class="time-input" id="school-week-entry" value="09:00" data-i18n-aria="aria.entryWeek" onchange="onSchoolTime('week','entry',this)">
+              –
+              <input type="time" class="time-input" id="school-week-exit" value="17:00" data-i18n-aria="aria.exitWeek" onchange="onSchoolTime('week','exit',this)">
+            </span>
+          </div>
+          <div class="config-line">
+            <span class="config-label" data-i18n="satClasses"></span>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="sat-switch" data-i18n-aria="satClasses" onclick="toggleSaturday(this)"></button>
+          </div>
+          <div class="config-line time-line" id="sat-times" hidden>
+            <span class="config-label" data-i18n="saturday"></span>
+            <span class="time-pair">
+              <input type="time" class="time-input" id="school-sat-entry" value="09:00" data-i18n-aria="aria.entrySat" onchange="onSchoolTime('sat','entry',this)">
+              –
+              <input type="time" class="time-input" id="school-sat-exit" value="13:00" data-i18n-aria="aria.exitSat" onchange="onSchoolTime('sat','exit',this)">
+            </span>
+          </div>
+          <p class="card-hint" data-i18n-html="hint.school"></p>
+          <div class="cover-block">
+            <div class="field-label" data-i18n="cover.title"></div>
+            <div class="cover-list" id="cover-list"></div>
+          </div>
+        </div>
+        </div>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="links">
+        <summary><span class="cfg-group-title" data-i18n="grp.links"></span><span class="cfg-group-sum" id="sum-links"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="cfg-sub">
+          <div class="cfg-sub-title" data-i18n="cfg.google"></div>
+        <div class="config-card">
+          <div class="config-line">
+            <span class="config-label" data-i18n="cfg.accountsLabel"></span>
+            <span class="status-chip off" data-i18n="status.off"></span>
+          </div>
+          <button class="btn-primary" style="align-self:flex-start" onclick="toast(t('toast.google'))" data-i18n="connect"></button>
+          <p class="card-hint" data-i18n-html="hint.googleAdmin"></p>
+        </div>
+        </div>
+        <div class="cfg-sub">
+          <div class="cfg-sub-title" data-i18n="cfg.schoolCal"></div>
+        <div class="config-card">
+          <!-- Cómo se obtienen los días no lectivos: leyendo el archivo/enlace o insertándolos a mano -->
+          <div class="seg-control" role="group" data-i18n-aria="schoolCal.modeAria">
+            <button type="button" class="seg-btn" data-school-mode="source" onclick="setSchoolMode('source')" data-i18n="schoolCal.modeSource"></button>
+            <button type="button" class="seg-btn" data-school-mode="manual" onclick="setSchoolMode('manual')" data-i18n="schoolCal.modeManual"></button>
+          </div>
+          <div class="config-line" id="school-cal-line">
+            <span class="config-label" data-i18n="schoolCal.file"></span>
+            <span class="status-chip off" id="school-cal-chip"></span>
+          </div>
+          <!-- Fuente elegida: nombre del archivo o del enlace, cuándo se añadió y el estado de lectura -->
+          <div class="school-src" id="school-cal-src" hidden>
+            <span class="school-src-icon" id="school-cal-icon" aria-hidden="true"></span>
+            <span class="school-src-text">
+              <span class="school-src-name" id="school-cal-name"></span>
+              <span class="school-src-meta" id="school-cal-meta"></span>
+            </span>
+          </div>
+          <p class="card-hint" id="school-cal-hint" data-i18n-html="hint.schoolCal"></p>
+          <p class="card-hint" id="school-cal-pending" data-i18n="schoolCal.pending" hidden></p>
+          <div class="school-actions" id="school-cal-actions">
+            <button type="button" class="btn-primary" onclick="pickSchoolCalFile()" data-i18n="schoolCal.upload"></button>
+            <button type="button" class="btn-ghost" onclick="openSchoolCalLink()" data-i18n="schoolCal.link"></button>
+            <button type="button" class="btn-ghost school-remove" id="school-cal-remove" onclick="removeSchoolCal(this)" data-i18n="schoolCal.remove" hidden></button>
+          </div>
+          <input type="file" id="school-cal-file" accept=".pdf,.doc,.docx,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onchange="onSchoolCalFile(this)">
+          <!-- Pegar un enlace (p. ej. un archivo en Google Drive o la página del colegio) -->
+          <div class="school-link" id="school-cal-linkbox" hidden>
+            <label class="fld">
+              <span class="field-label" data-i18n="schoolCal.linkLabel"></span>
+              <input class="txt-input" id="school-cal-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" data-i18n-ph="schoolCal.linkPh" onkeydown="if(event.key==='Enter'){ event.preventDefault(); saveSchoolCalLink(); } else if(event.key==='Escape'){ closeSchoolCalLink(); }" oninput="this.classList.remove('is-invalid')">
+            </label>
+            <p class="card-hint" data-i18n="hint.schoolCalLink"></p>
+            <div class="cat-new-actions">
+              <button type="button" class="btn-ghost" onclick="closeSchoolCalLink()" data-i18n="btn.cancel"></button>
+              <button type="button" class="btn-primary" onclick="saveSchoolCalLink()" data-i18n="btn.save"></button>
+            </div>
+          </div>
+          <!-- Días no lectivos a mano: un día suelto o un periodo (p. ej. vacaciones), con un nombre opcional -->
+          <div class="school-manual" id="school-manual" hidden>
+            <p class="card-hint" data-i18n-html="hint.schoolManual"></p>
+            <ul class="nsd-list" id="nsd-list"></ul>
+            <div class="school-link">
+              <div class="fld-row">
+                <label class="fld">
+                  <span class="field-label" data-i18n="nsd.from"></span>
+                  <input class="txt-input" id="nsd-from" type="date" oninput="this.classList.remove('is-invalid')">
+                </label>
+                <label class="fld">
+                  <span class="field-label"><span data-i18n="nsd.to"></span> <span class="fld-opt" data-i18n="f.optional"></span></span>
+                  <input class="txt-input" id="nsd-to" type="date" oninput="this.classList.remove('is-invalid')">
+                </label>
+              </div>
+              <label class="fld">
+                <span class="field-label"><span data-i18n="nsd.name"></span> <span class="fld-opt" data-i18n="f.optional"></span></span>
+                <input class="txt-input" id="nsd-name" type="text" maxlength="40" autocomplete="off" data-i18n-ph="nsd.namePh" onkeydown="if(event.key==='Enter'){ event.preventDefault(); addNoSchool(); }">
+              </label>
+              <button type="button" class="btn-primary" style="align-self:flex-end" onclick="addNoSchool()" data-i18n="nsd.add"></button>
+            </div>
+          </div>
+        </div>
+        </div>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="cats">
+        <summary><span class="cfg-group-title" data-i18n="grp.cats"></span><span class="cfg-group-sum" id="sum-cats"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <p class="card-hint" data-i18n="hint.cats"></p>
+        <div class="row-list" id="category-list">
+          <div class="row cat-row" data-default="1" data-cat="tarea">
+            <span class="row-bar" style="background:var(--cat-tarea)"></span>
+            <div class="row-body"><span class="cat-name" data-i18n="cat.tarea"></span></div>
+            <select class="priority-select" style="background:var(--cat-tarea)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
+              <option value="Alta" selected>Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+          </div>
+          <div class="row cat-row" data-default="1" data-cat="actividad">
+            <span class="row-bar" style="background:var(--cat-actividad)"></span>
+            <div class="row-body"><span class="cat-name" data-i18n="cat.actividad"></span></div>
+            <select class="priority-select" style="background:var(--cat-actividad)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
+              <option value="Alta">Alta</option>
+              <option value="Media" selected>Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+          </div>
+          <div class="row cat-row" data-cat="cita">
+            <button class="row-bar swatch" style="background:var(--cat-cita)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
+            <div class="row-body"><input class="cat-name-input" value="Cita" readonly data-i18n-aria="aria.catName" onkeydown="if(event.key==='Enter'){ editCategory(this); }"></div>
+            <button class="row-edit" onclick="editCategory(this)" data-i18n-aria="aria.catEdit" data-i18n-title="aria.catEdit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+            <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
+            <select class="priority-select" style="background:var(--cat-cita)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
+              <option value="Alta" selected>Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+          </div>
+          <div class="row cat-row" data-cat="libre">
+            <button class="row-bar swatch" style="background:var(--cat-libre)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
+            <div class="row-body"><input class="cat-name-input" value="Tiempo libre" readonly data-i18n-aria="aria.catName" onkeydown="if(event.key==='Enter'){ editCategory(this); }"></div>
+            <button class="row-edit" onclick="editCategory(this)" data-i18n-aria="aria.catEdit" data-i18n-title="aria.catEdit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+            <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
+            <select class="priority-select" style="background:var(--cat-libre)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
+              <option value="Alta">Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja" selected>Baja</option>
+            </select>
+          </div>
+        </div>
+        <button class="add-btn" style="margin-top:12px" onclick="addCategory()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span data-i18n="cat.add"></span>
+        </button>
+        </div>
+      </details>
+      <details class="cfg-group" data-group="gcal">
+        <summary><span class="cfg-group-title" data-i18n="grp.gcal"></span><span class="cfg-group-sum" id="sum-gcal"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <div class="config-card">
+          <div class="config-line">
+            <span class="config-label" data-i18n="gcal.export"></span>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="export-switch" data-i18n-aria="gcal.export" onclick="toggleExport(this)"></button>
+          </div>
+          <p class="card-hint" data-i18n-html="hint.gcal"></p>
+
+          <div class="export-options" id="export-options" hidden>
+            <div class="field-label" data-i18n="gcal.what"></div>
+            <div class="check-list" id="export-cats"></div>
+            <p class="card-hint" data-i18n="hint.gcalTasks"></p>
+            <div class="config-line">
+              <span class="config-label" data-i18n="gcal.leaveAlert"></span>
+              <button type="button" class="switch" role="switch" aria-checked="true" id="leave-switch" data-i18n-aria="gcal.leaveAlert" onclick="toggleSwitch(this, t('gcal.leaveAlert'))"></button>
+            </div>
+            <p class="card-hint" data-i18n="hint.gcalLeave"></p>
+            <div class="config-line">
+              <span class="config-label" data-i18n="gcal.status"></span>
+              <span class="status-chip off" data-i18n="gcal.needsGoogle"></span>
+            </div>
+            <button class="btn-primary" style="align-self:flex-start" onclick="toast(t('toast.gcal'))" data-i18n="gcal.create"></button>
+          </div>
+        </div>
+        </div>
+      </details>
+      </div>
+
+    </section>
+
+    <!-- ============ TAREAS ============ -->
+    <!-- Todas las tareas (Classroom, eventos y actividades): se abren pulsando encima y se editan aquí -->
+    <section class="screen" id="screen-tasks" aria-labelledby="screen-heading">
+      <div id="task-list-view" class="evt-view">
+        <div id="task-list-wrap" hidden>
+          <details class="done-group overdue-group" id="task-overdue-wrap" hidden>
+            <summary><span data-i18n="tasks.overdue"></span> · <span id="tasks-overdue-count"></span></summary>
+            <div class="row-list" id="task-overdue"></div>
+          </details>
+          <h2 class="section-title" id="task-pending-title" data-i18n="tasks.title"></h2>
+          <div class="row-list" id="task-list"></div>
+          <details class="done-group" id="tasks-done" hidden>
+            <summary><span data-i18n="tasks.doneTitle"></span> · <span id="tasks-done-count"></span></summary>
+            <div class="row-list" id="task-done-list"></div>
+          </details>
+        </div>
+        <button class="add-btn" onclick="openTaskForm()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span data-i18n="tasks.add"></span>
+        </button>
+      </div>
+
+      <div class="detail" id="task-detail" hidden></div>
+
+      <form id="task-form" class="evt-form" hidden novalidate onsubmit="saveTask(event)">
+        <button type="button" class="detail-back form-cancel" onclick="closeTaskForm()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg><span data-i18n="btn.cancel"></span></button>
+        <h2 class="section-title" id="tk-form-title"></h2>
+        <p class="task-origin" id="tk-origin"></p>
+
+        <label class="fld">
+          <span class="field-label" data-i18n="task.name"></span>
+          <input class="txt-input" id="tk-name" type="text" autocomplete="off">
+        </label>
+        <div class="fld-row" id="tk-due-row">
+          <label class="fld">
+            <span class="field-label" data-i18n="task.dueDate"></span>
+            <input class="txt-input" id="tk-date" type="date">
+          </label>
+          <label class="fld fld-time">
+            <span class="field-label" data-i18n="task.dueTime"></span>
+            <input class="txt-input" id="tk-time" type="time">
+          </label>
+        </div>
+        <div class="fld" id="tk-due-auto" hidden>
+          <span class="field-label" data-i18n="task.dueDate"></span>
+          <span class="prio-copy" id="tk-due-auto-text"></span>
+        </div>
+        <div class="fld">
+          <span class="field-label" id="tk-est-label" data-i18n="task.est"></span>
+          <div class="dur-input" role="group" aria-labelledby="tk-est-label">
+            <input class="txt-input" id="tk-est-h" type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-i18n-aria="aria.hours"><span>h</span>
+            <input class="txt-input" id="tk-est-m" type="number" inputmode="numeric" min="0" max="59" step="5" placeholder="00" data-i18n-aria="aria.minutes"><span>min</span>
+          </div>
+        </div>
+        <div class="fld">
+          <span class="field-label" id="tk-prio-label" data-i18n="f.prio"></span>
+          <div class="toggle-row prio-row" id="tk-prio" role="radiogroup" aria-labelledby="tk-prio-label">
+            <button type="button" class="toggle-btn" role="radio" data-prio="Alta" onclick="setTaskPrio(this)" data-i18n="prio.Alta"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Media" onclick="setTaskPrio(this)" data-i18n="prio.Media"></button>
+            <button type="button" class="toggle-btn" role="radio" data-prio="Baja" onclick="setTaskPrio(this)" data-i18n="prio.Baja"></button>
+          </div>
+          <p class="card-hint" id="tk-prio-hint"></p>
+        </div>
+        <label class="fld">
+          <span class="field-label"><span data-i18n="f.desc"></span> <span class="fld-opt" data-i18n="f.optional"></span></span>
+          <textarea class="txt-input" id="tk-desc" rows="3" data-i18n-ph="f.taskDescPh"></textarea>
+        </label>
+
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" onclick="closeTaskForm()" data-i18n="btn.cancel"></button>
+          <button type="submit" class="btn-primary" data-i18n="btn.save"></button>
+        </div>
+      </form>
+
+      <!-- Planificar: bloques de trabajo de una tarea (sugeridos por la App y editables) -->
+      <form id="task-plan" class="evt-form plan-form" hidden novalidate onsubmit="savePlan(event)">
+        <button type="button" class="detail-back form-cancel" onclick="closePlan()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg><span data-i18n="btn.cancel"></span></button>
+        <h2 class="section-title" data-i18n="plan.title"></h2>
+        <div class="plan-head">
+          <strong id="plan-task"></strong>
+          <span id="plan-due"></span>
+          <span class="plan-sum" id="plan-sum"></span>
+          <span id="plan-prog"></span>
+        </div>
+        <p class="card-hint" id="plan-hint" hidden></p>
+        <div class="plan-list" id="plan-list"></div>
+        <button type="button" class="add-btn" onclick="addPlanBlock()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span data-i18n="plan.add"></span>
+        </button>
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" onclick="closePlan()" data-i18n="btn.cancel"></button>
+          <button type="submit" class="btn-primary" data-i18n="plan.save"></button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============ CALENDARIO ============ -->
+    <section class="screen" id="screen-calendar" aria-labelledby="screen-heading">
+      <div class="cal-head">
+        <div class="seg-control" role="tablist" data-i18n-aria="tab.calendar">
+          <button class="seg-btn is-active" data-view="week" onclick="setCalView(this)" data-i18n="cal.week"></button>
+          <button class="seg-btn" data-view="day" onclick="setCalView(this)" data-i18n="cal.day"></button>
+        </div>
+        <div class="cal-nav">
+          <button class="nav-arrow" onclick="calNav(-1)" data-i18n-aria="aria.prevWeek">‹</button>
+          <button type="button" class="cal-range" id="cal-range" onclick="calToday()" data-i18n-title="cal.goToday"></button>
+          <button class="nav-arrow" onclick="calNav(1)" data-i18n-aria="aria.nextWeek">›</button>
+        </div>
+      </div>
+
+      <div class="cal-grid" id="cal-grid"></div>
+
+      <div class="cal-legend" id="cal-legend"></div>
+      <p class="press-hint" data-i18n="press.hint"></p>
+    </section>
+
+  </main>
+
+  <nav class="tabbar" data-i18n-aria="aria.nav">
+    <button class="tab is-active" data-screen="today" onclick="showScreen(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <span data-i18n="tab.today"></span>
+    </button>
+    <button class="tab" data-screen="activities" data-title="tab.activities" data-sub="sub.activities" onclick="showScreen(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l3 3-8 8-4 1 1-4 8-8z"/><path d="M4 20h16"/></svg>
+      <span data-i18n="tab.activities"></span>
+    </button>
+    <button class="tab" data-screen="events" data-title="tab.events" data-sub="sub.events" onclick="showScreen(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/></svg>
+      <span data-i18n="tab.events"></span>
+    </button>
+    <button class="tab" data-screen="tasks" data-title="tab.tasks" data-sub="sub.tasks" onclick="showScreen(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span data-i18n="tab.tasks"></span>
+    </button>
+    <button class="tab" data-screen="calendar" data-title="tab.calendar" data-sub="sub.calendar" onclick="showScreen(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
+      <span data-i18n="tab.calendar"></span>
+    </button>
+    <button class="tab" data-screen="config" data-title="title.config" data-sub="sub.config" onclick="showScreen(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></svg>
+      <span data-i18n="tab.config"></span>
+    </button>
+  </nav>
+
+</div>
+</div>
+
+<!-- Borrar una categoría con elementos activos: aviso y doble confirmación -->
+<dialog class="confirm-dialog" id="cat-del-dialog" aria-labelledby="cat-del-title">
+  <h2 id="cat-del-title"></h2>
+  <p id="cat-del-body"></p>
+  <ul id="cat-del-list"></ul>
+  <p class="confirm-warn" id="cat-del-warn"></p>
+  <div class="form-actions">
+    <button type="button" class="btn-ghost" onclick="closeCatDelete()" data-i18n="btn.cancel"></button>
+    <button type="button" class="btn-danger" id="cat-del-go" onclick="confirmCatDelete()"></button>
+  </div>
+</dialog>
+
+<!-- Primera vez en «Planificar»: cómo se editan los bloques -->
+<dialog class="confirm-dialog tut-dialog" id="plan-tutorial" aria-labelledby="tut-title">
+  <h2 id="tut-title" data-i18n="tut.title"></h2>
+  <div class="tut-demo" aria-hidden="true"><div class="tut-gap"><div class="tut-block"><i></i><i></i></div></div></div>
+  <ul class="tut-list">
+    <li data-i18n="tut.1"></li>
+    <li data-i18n="tut.2"></li>
+    <li data-i18n="tut.3"></li>
+    <li data-i18n="tut.4"></li>
+  </ul>
+  <div class="form-actions">
+    <button type="button" class="btn-primary" onclick="closeTutorial()" data-i18n="tut.ok"></button>
+  </div>
+</dialog>
+
+<!-- Pulsación larga en un hueco libre (barra de tiempo de «Hoy» o Calendario) -->
+<dialog class="confirm-dialog press-dialog" id="press-dialog" aria-labelledby="press-title">
+  <h2 id="press-title"></h2>
+  <p id="press-q"></p>
+  <div class="press-choices" id="press-main">
+    <button type="button" class="press-choice" onclick="pressEvent()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>
+      <span><strong data-i18n="press.event"></strong><small id="press-event-sub"></small></span>
+    </button>
+    <button type="button" class="press-choice is-task" onclick="pressTaskList()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span><strong data-i18n="press.task"></strong><small data-i18n="press.taskSub"></small></span>
+    </button>
+  </div>
+  <div class="press-tasks" id="press-tasks" hidden></div>
+  <div class="form-actions">
+    <button type="button" class="btn-ghost" onclick="closePress()" data-i18n="btn.cancel"></button>
+  </div>
+</dialog>
+
+<!-- Fin de un bloque de trabajo: cuánto se ha trabajado -->
+<dialog class="confirm-dialog end-dialog" id="end-dialog" aria-labelledby="end-title">
+  <h2 id="end-title" data-i18n="end.title"></h2>
+  <p class="end-task"><strong id="end-task"></strong><span id="end-when"></span></p>
+  <div id="end-step1">
+    <label class="field-label" for="end-range" data-i18n="end.q"></label>
+    <div class="end-value" id="end-value"></div>
+    <input type="range" class="end-range" id="end-range" min="0" step="5" oninput="endInput()">
+    <div class="end-scale"><span>0 min</span><span id="end-max"></span></div>
+    <div class="end-prog" id="end-prog"></div>
+    <div class="form-actions">
+      <button type="button" class="btn-ghost" onclick="endLater()" data-i18n="end.later"></button>
+      <button type="button" class="btn-primary" id="end-ok" onclick="endConfirm()"></button>
+    </div>
+  </div>
+  <div id="end-step2" hidden>
+    <p id="end-q2"></p>
+    <div class="form-actions">
+      <button type="button" class="btn-ghost" onclick="endFinish(false)" data-i18n="end.notYet"></button>
+      <button type="button" class="btn-primary" onclick="endFinish(true)" data-i18n="end.yesDone"></button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Aviso de riesgo: una tarea que no cabe en el tiempo libre antes de su entrega -->
+<dialog class="confirm-dialog risk-dialog" id="risk-dialog" aria-labelledby="risk-title">
+  <h2 class="risk-head"><span id="risk-icon" aria-hidden="true"></span><span id="risk-title"></span></h2>
+  <p id="risk-body"></p>
+  <div class="press-tasks" id="risk-list"></div>
+  <div class="form-actions">
+    <button type="button" class="btn-ghost" id="risk-open" onclick="riskAccept(true)" data-i18n="risk.open"></button>
+    <button type="button" class="btn-primary" id="risk-ok" onclick="riskAccept(false)" data-i18n="risk.ok"></button>
+    <button type="button" class="btn-ghost" id="risk-close" onclick="el('risk-dialog').close()" data-i18n="risk.close"></button>
+  </div>
+</dialog>
+
+<!-- Salir de un formulario abierto con la barra de pestañas -->
+<dialog class="confirm-dialog" id="discard-dialog" aria-labelledby="discard-title">
+  <h2 id="discard-title" data-i18n="discard.title"></h2>
+  <p data-i18n="discard.body"></p>
+  <div class="form-actions">
+    <button type="button" class="btn-ghost" onclick="el('discard-dialog').close()" data-i18n="discard.keep"></button>
+    <button type="button" class="btn-danger" onclick="discardAndGo()" data-i18n="discard.go"></button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+<script>
+  // Funciona sin conexión y se puede instalar: el service worker guarda la App en el dispositivo
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  }
+</script>
+</body>
+</html>

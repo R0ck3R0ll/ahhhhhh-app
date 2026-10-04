@@ -190,6 +190,16 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 ---
 
+## 2 bis. La App real (paso 1: sin servidor)
+
+- **Dónde está:** `docs/app/` del repositorio, publicada con GitHub Pages en **https://r0ck3r0ll.github.io/ahhhhhh-app/app/** (la página de inicio enlaza con ella). La maqueta `mockup-pantallas.html` queda como referencia de la fase de diseño; **el desarrollo sigue en `docs/app/`**.
+- **Archivos:** `index.html` (pantallas), `styles.css`, `i18n.js` (textos en los cinco idiomas), `app.js` (lógica), `manifest.webmanifest` y `sw.js` (instalable y sin conexión), `icons/` (icono provisional «AH!!!!!») y `assets/`.
+- **Instalable:** en iPhone, Safari → Compartir → «Añadir a la pantalla de inicio»; en Android, Chrome → menú → «Instalar aplicación». Se abre a pantalla completa, con su icono, y funciona sin conexión (el service worker guarda la App; al haber conexión carga siempre la última versión publicada).
+- **Reloj real:** «Hoy», el Calendario, los avisos y los bloques usan la fecha y la hora del dispositivo (se actualizan cada minuto y al volver a la App). Si cambia el día, todo se redibuja.
+- **Calendario:** flechas ‹ › para pasar de semana (o de día en la vista día); pulsar la fecha vuelve a hoy.
+- **Datos:** en el dispositivo, sin datos de ejemplo. Además de lo que ya guardaba la maqueta (actividades, eventos, tareas, bloques, aspecto, idioma, nombre, direcciones, calendario escolar), ahora se guardan también la **franja horaria**, el **horario escolar**, las **categorías** (nombre, color, prioridad, orden y borradas) y la **exportación a Google Calendar**.
+- **Aún no (llega con el servidor, paso 3 «Firebase»):** conexión con Google (el botón «Conectar» lo avisa), traslados con Maps, lectura con IA, notificaciones con la App cerrada y sincronización entre dispositivos. Al pasar a Firebase cambiará la dirección de la App; los datos del dispositivo se llevarán a la nueva al iniciar sesión por primera vez.
+
 ## 3. Flujo de sincronización con Google (Classroom + Gmail)
 
 > **Estado (3/10/2026): la cuenta del colegio está bloqueada para apps externas.**
