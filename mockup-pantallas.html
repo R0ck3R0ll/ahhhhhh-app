@@ -1422,6 +1422,7 @@
             <span class="status-chip off" data-i18n="status.off"></span>
           </div>
           <button class="btn-primary" style="align-self:flex-start" onclick="toast(t('toast.google'))" data-i18n="connect"></button>
+          <p class="card-hint" data-i18n-html="hint.googleAdmin"></p>
         </div>
         </div>
         <div class="cfg-sub">
@@ -1949,7 +1950,7 @@
       'tab.activities':'Actividades', 'sub.activities':'Extraescolares recurrentes de {name}',
       'tab.events':'Eventos', 'sub.events':'Eventos puntuales de {name}',
       'tab.tasks':'Tareas', 'sub.tasks':'Entregas y tareas de {name}', 'tasks.title':'Próximas entregas',
-      'tasks.empty':'Aún no hay tareas. Llegarán de Classroom y de los eventos y actividades que generen una tarea.', 'task.editTitle':'Tarea', 'f.taskDescPh':'Detalles, material, instrucciones…',
+      'tasks.empty':'Aún no hay tareas. Llegarán de Classroom (si está conectado) y de los eventos y actividades que generen una tarea; también puedes añadirlas a mano con «Añadir tarea».', 'task.editTitle':'Tarea', 'f.taskDescPh':'Detalles, material, instrucciones…',
       'hint.prio':'Por defecto, la de la categoría. Cambiarla aquí solo afecta a este elemento, no a la categoría.', 'task.fromClassroom':'Classroom · {name}', 'task.fromEvent':'Evento · {name}',
       'task.fromAct':'Actividad · {name}', 'task.dueAt':'entrega {t}', 'task.noEst':'falta tiempo estimado',
       'task.dueNextAt':'La siguiente sesión: {t}', 'hint.taskPrioEvt':'Por defecto, la del evento ({p}). Cambiarla aquí solo afecta a esta tarea.', 'hint.taskPrioAct':'Por defecto, la de la actividad ({p}). Cambiarla aquí solo afecta a esta tarea.',
@@ -1987,6 +1988,7 @@
       'grp.cats':'Categorías',
       'grp.gcal':'Google Calendar',
       'cfg.accountsLabel':'Cuenta de Google',
+      'hint.googleAdmin':'<strong>Cuentas de colegio o de empresa:</strong> su administrador puede tener que autorizar AHHHHHH Today. Si no lo ha hecho, Google muestra «Acceso bloqueado» al conectar y la App no podrá leer Classroom ni el correo. En ese caso, las tareas se añaden <strong>a mano</strong> en Tareas («Añadir tarea»).',
       
       'legend.deadline':'(entrega)',
       'hint.cats':'Tarea y Actividad vienen de serie: solo se puede cambiar su prioridad. Las demás las creas tú y puedes editarlas o borrarlas (en el ejemplo, Cita y Tiempo libre).',
@@ -2121,7 +2123,7 @@
       'tab.activities':'Activities', 'sub.activities':'{name}’s recurring after-school activities',
       'tab.events':'Events', 'sub.events':'{name}’s one-off events',
       'tab.tasks':'Tasks', 'sub.tasks':'{name}’s tasks and deadlines', 'tasks.title':'Upcoming deadlines',
-      'tasks.empty':'No tasks yet. They’ll come from Classroom and from events and activities that create a task.', 'task.editTitle':'Task', 'f.taskDescPh':'Details, materials, instructions…',
+      'tasks.empty':'No tasks yet. They’ll come from Classroom (if connected) and from events and activities that create a task; you can also add them by hand with “Add task”.', 'task.editTitle':'Task', 'f.taskDescPh':'Details, materials, instructions…',
       'hint.prio':'By default, the category’s. Changing it here only affects this item, not the category.', 'task.fromClassroom':'Classroom · {name}', 'task.fromEvent':'Event · {name}',
       'task.fromAct':'Activity · {name}', 'task.dueAt':'due {t}', 'task.noEst':'estimated time missing',
       'task.dueNextAt':'The next session: {t}', 'hint.taskPrioEvt':'By default, the event’s ({p}). Changing it here only affects this task.', 'hint.taskPrioAct':'By default, the activity’s ({p}). Changing it here only affects this task.',
@@ -2159,6 +2161,7 @@
       'grp.cats':'Categories',
       'grp.gcal':'Google Calendar',
       'cfg.accountsLabel':'Google account',
+      'hint.googleAdmin':'<strong>School or work accounts:</strong> their administrator may need to approve AHHHHHH Today. If they haven’t, Google shows “Access blocked” when connecting and the App can’t read Classroom or email. In that case, add tasks <strong>by hand</strong> in Tasks (“Add task”).',
       
       'legend.deadline':'(due)',
       'hint.cats':'Homework and Activity are built in: only their priority can be changed. You create the rest and can edit or delete them (in the example, Cita and Tiempo libre).',
@@ -2293,7 +2296,7 @@
       'tab.activities':'Attività', 'sub.activities':'Attività extrascolastiche ricorrenti di {name}',
       'tab.events':'Eventi', 'sub.events':'Eventi singoli di {name}',
       'tab.tasks':'Compiti', 'sub.tasks':'Compiti e consegne di {name}', 'tasks.title':'Prossime consegne',
-      'tasks.empty':'Ancora nessun compito. Arriveranno da Classroom e dagli eventi e attività che generano un compito.', 'task.editTitle':'Compito', 'f.taskDescPh':'Dettagli, materiale, istruzioni…',
+      'tasks.empty':'Ancora nessun compito. Arriveranno da Classroom (se collegato) e dagli eventi e attività che generano un compito; puoi anche aggiungerli a mano con «Aggiungi compito».', 'task.editTitle':'Compito', 'f.taskDescPh':'Dettagli, materiale, istruzioni…',
       'hint.prio':'Per impostazione predefinita, quella della categoria. Cambiarla qui vale solo per questo elemento, non per la categoria.', 'task.fromClassroom':'Classroom · {name}', 'task.fromEvent':'Evento · {name}',
       'task.fromAct':'Attività · {name}', 'task.dueAt':'consegna {t}', 'task.noEst':'manca il tempo stimato',
       'task.dueNextAt':'La sessione successiva: {t}', 'hint.taskPrioEvt':'Per impostazione predefinita, quella dell’evento ({p}). Cambiarla qui vale solo per questo compito.', 'hint.taskPrioAct':'Per impostazione predefinita, quella dell’attività ({p}). Cambiarla qui vale solo per questo compito.',
@@ -2331,6 +2334,7 @@
       'grp.cats':'Categorie',
       'grp.gcal':'Google Calendar',
       'cfg.accountsLabel':'Account Google',
+      'hint.googleAdmin':'<strong>Account della scuola o di lavoro:</strong> l’amministratore potrebbe dover autorizzare AHHHHHH Today. Se non l’ha fatto, Google mostra «Accesso bloccato» al collegamento e l’app non potrà leggere Classroom né la posta. In quel caso i compiti si aggiungono <strong>a mano</strong> in Compiti («Aggiungi compito»).',
       
       'legend.deadline':'(consegna)',
       'hint.cats':'Compito e Attività sono predefinite: si può cambiare solo la loro priorità. Le altre le crei tu e puoi modificarle o eliminarle (nell’esempio, Cita e Tiempo libre).',
@@ -2465,7 +2469,7 @@
       'tab.activities':'Activités', 'sub.activities':'Activités extrascolaires récurrentes de {name}',
       'tab.events':'Événements', 'sub.events':'Événements ponctuels de {name}',
       'tab.tasks':'Tâches', 'sub.tasks':'Tâches et échéances de {name}', 'tasks.title':'Prochaines échéances',
-      'tasks.empty':'Pas encore de tâches. Elles viendront de Classroom et des événements et activités qui créent une tâche.', 'task.editTitle':'Tâche', 'f.taskDescPh':'Détails, matériel, consignes…',
+      'tasks.empty':'Pas encore de tâches. Elles viendront de Classroom (s’il est connecté) et des événements et activités qui créent une tâche ; tu peux aussi les ajouter à la main avec « Ajouter une tâche ».', 'task.editTitle':'Tâche', 'f.taskDescPh':'Détails, matériel, consignes…',
       'hint.prio':'Par défaut, celle de la catégorie. La modifier ici ne concerne que cet élément, pas la catégorie.', 'task.fromClassroom':'Classroom · {name}', 'task.fromEvent':'Événement · {name}',
       'task.fromAct':'Activité · {name}', 'task.dueAt':'échéance {t}', 'task.noEst':'temps estimé manquant',
       'task.dueNextAt':'La séance suivante : {t}', 'hint.taskPrioEvt':'Par défaut, celle de l’événement ({p}). La modifier ici ne concerne que cette tâche.', 'hint.taskPrioAct':'Par défaut, celle de l’activité ({p}). La modifier ici ne concerne que cette tâche.',
@@ -2503,6 +2507,7 @@
       'grp.cats':'Catégories',
       'grp.gcal':'Google Calendar',
       'cfg.accountsLabel':'Compte Google',
+      'hint.googleAdmin':'<strong>Comptes scolaires ou professionnels :</strong> leur administrateur peut devoir autoriser AHHHHHH Today. Sinon, Google affiche « Accès bloqué » à la connexion et l’app ne pourra lire ni Classroom ni les e-mails. Dans ce cas, ajoutez les tâches <strong>à la main</strong> dans Tâches (« Ajouter une tâche »).',
       
       'legend.deadline':'(à rendre)',
       'hint.cats':'Devoir et Activité sont fournies par défaut : seule leur priorité peut être modifiée. Les autres, c’est vous qui les créez et pouvez les modifier ou les supprimer (dans l’exemple, Cita et Tiempo libre).',
@@ -2637,7 +2642,7 @@
       'tab.activities':'Aktivitäten', 'sub.activities':'{name}s wiederkehrende Freizeitaktivitäten',
       'tab.events':'Termine', 'sub.events':'Einzeltermine von {name}',
       'tab.tasks':'Aufgaben', 'sub.tasks':'Aufgaben und Abgaben von {name}', 'tasks.title':'Nächste Abgaben',
-      'tasks.empty':'Noch keine Aufgaben. Sie kommen aus Classroom und von Terminen und Aktivitäten, die eine Aufgabe erstellen.', 'task.editTitle':'Aufgabe', 'f.taskDescPh':'Details, Material, Anleitung …',
+      'tasks.empty':'Noch keine Aufgaben. Sie kommen aus Classroom (falls verbunden) und aus Terminen und Aktivitäten, die eine Aufgabe erzeugen; du kannst sie auch von Hand mit „Aufgabe hinzufügen“ eintragen.', 'task.editTitle':'Aufgabe', 'f.taskDescPh':'Details, Material, Anleitung …',
       'hint.prio':'Standardmäßig die der Kategorie. Eine Änderung hier gilt nur für diesen Eintrag, nicht für die Kategorie.', 'task.fromClassroom':'Classroom · {name}', 'task.fromEvent':'Termin · {name}',
       'task.fromAct':'Aktivität · {name}', 'task.dueAt':'fällig {t}', 'task.noEst':'geschätzte Zeit fehlt',
       'task.dueNextAt':'Die nächste Stunde: {t}', 'hint.taskPrioEvt':'Standardmäßig die des Termins ({p}). Eine Änderung hier gilt nur für diese Aufgabe.', 'hint.taskPrioAct':'Standardmäßig die der Aktivität ({p}). Eine Änderung hier gilt nur für diese Aufgabe.',
@@ -2675,6 +2680,7 @@
       'grp.cats':'Kategorien',
       'grp.gcal':'Google Calendar',
       'cfg.accountsLabel':'Google-Konto',
+      'hint.googleAdmin':'<strong>Schul- oder Firmenkonten:</strong> Der Administrator muss AHHHHHH Today eventuell freigeben. Ohne Freigabe zeigt Google beim Verbinden „Zugriff blockiert“, und die App kann weder Classroom noch E-Mails lesen. Dann werden Aufgaben <strong>von Hand</strong> unter Aufgaben eingetragen („Aufgabe hinzufügen“).',
       
       'legend.deadline':'(Abgabe)',
       'hint.cats':'Hausaufgabe und Aktivität sind vorgegeben: Nur ihre Priorität lässt sich ändern. Die übrigen legst du selbst an und kannst sie bearbeiten oder löschen (im Beispiel Cita und Tiempo libre).',

@@ -197,7 +197,8 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 > - La cuenta de Martina (`@students.laudesanpedro.com`) entra en Google con SSO de ClassLink/Microsoft (grupo ISP). Al dar permiso: **«Access blocked: Your institution's admin needs to review AHHHHHH Today» (Error 400: access_not_configured)**. Tampoco se puede añadir como usuaria de prueba.
 > - Alternativas comprobadas y **cerradas**: dirección iCal de los calendarios de clase (no existe: los calendarios no son de Martina) y reenvío automático del Gmail del colegio (desactivado por el colegio).
 > - Hecho: solicitud enviada con el botón «Request access» (sin texto). Pendiente: correo de Martina al colegio con el ID de cliente y la política de privacidad en inglés.
-> - **Planteamiento de tres vías** para las tareas de Classroom: (1) conexión directa si el colegio autoriza; (2) resúmenes para tutores de Classroom en el Gmail de Carlo, leídos por la App; (3) importación rápida a mano (captura o texto de «Tareas pendientes», la IA extrae tareas y fechas y Martina confirma).
+> - Hecho también: correo de Martina al especialista de IT del colegio (4/10/2026), con el ID de cliente y la política de privacidad en inglés.
+> - **Decisión:** se sigue con el planteamiento original (conexión directa con Classroom y Gmail). En **Config > Enlaces** un aviso explica que en cuentas de colegio o empresa el administrador puede tener que autorizar la App; si no lo ha hecho, Google muestra «Acceso bloqueado» y **las tareas se añaden a mano** en Tareas («Añadir tarea»). La App real, al recibir ese error al conectar, lo explicará con ese mismo mensaje en vez de mostrar el error técnico.
 
 - Al abrir la app, se conecta con Classroom y con el correo de Google.
 - Debe leer **solo lo que ha cambiado** desde la última conexión → requiere un log propio interno que registre qué contenido ya ha sido procesado (para no re-leer ni duplicar).
