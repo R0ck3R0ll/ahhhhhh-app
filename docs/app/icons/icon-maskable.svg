@@ -1,69 +1,67 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
-      <stop offset="0" stop-color="#C9577A"/>
-      <stop offset="1" stop-color="#9E3557"/>
-    </radialGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <g transform="translate(51.2 51.2) scale(.8)"><g stroke-linecap="round" stroke-linejoin="round">
-    <!-- Líneas de velocidad -->
-    <g stroke="#F2DDE3" stroke-width="12" opacity=".75">
-      <path d="M64 232 H142"/><path d="M48 286 H128"/><path d="M76 340 H140"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#FBF8F3"/>
+  <g transform="translate(51.2 51.2) scale(.8)">
+  <!-- estela de movimiento detrás -->
+  <path d="M60 300 C40 200 140 120 270 112 C390 104 476 160 470 236" fill="none" stroke="#B9CDF0" stroke-width="16" stroke-linecap="round"/>
+  <path d="M74 360 C120 440 260 470 360 440 C420 422 452 392 462 360" fill="none" stroke="#3E6CC6" stroke-width="16" stroke-linecap="round"/>
+  <path d="M150 470 l26 2 M196 474 l26 0 M242 472 l26 -2" stroke="#3E6CC6" stroke-width="12" stroke-linecap="round"/>
+  <!-- trazos de prisa -->
+  <path d="M66 96 L102 120 M54 140 L96 148" stroke="#F0544B" stroke-width="12" stroke-linecap="round"/>
+
+  <!-- calendario (detrás, a la derecha, inclinado) -->
+  <g transform="rotate(7 350 250)">
+    <rect x="252" y="140" width="210" height="210" rx="22" fill="#2C4C93"/>
+    <rect x="236" y="128" width="210" height="210" rx="22" fill="#FFFFFF"/>
+    <path d="M236 150 a22 22 0 0 1 22 -22 h166 a22 22 0 0 1 22 22 v30 h-210 z" fill="#F0544B"/>
+    <g fill="none" stroke="#22397A" stroke-width="10" stroke-linecap="round">
+      <path d="M272 140 v-26 a10 10 0 0 1 20 0 v12"/>
+      <path d="M318 140 v-26 a10 10 0 0 1 20 0 v12"/>
+      <path d="M364 140 v-26 a10 10 0 0 1 20 0 v12"/>
+      <path d="M410 140 v-26 a10 10 0 0 1 20 0 v12"/>
     </g>
-    <!-- Pierna de atrás (doblada hacia atrás) -->
-    <path d="M232 330 L196 378 L150 362" fill="none" stroke="#2B2925" stroke-width="34"/>
-    <path d="M232 330 L196 378 L150 362" fill="none" stroke="#F2C7A0" stroke-width="20"/>
-    <path d="M190 376 L156 364" fill="none" stroke="#FFFFFF" stroke-width="20"/>
-    <path d="M150 340 q-30 4 -30 26 q0 14 22 14 l22 -2 z" fill="#3a3a48" stroke="#2B2925" stroke-width="8"/>
-    <!-- Mochila -->
-    <rect x="150" y="196" width="80" height="104" rx="26" fill="#2F6B6B" stroke="#2B2925" stroke-width="9" transform="rotate(-12 190 248)"/>
-    <rect x="160" y="248" width="52" height="34" rx="10" fill="#3C8582" stroke="#2B2925" stroke-width="7" transform="rotate(-12 186 265)"/>
-    <!-- Brazo de atrás -->
-    <path d="M232 238 L204 276 L224 300" fill="none" stroke="#2B2925" stroke-width="28"/>
-    <path d="M232 238 L204 276 L224 300" fill="none" stroke="#F2C7A0" stroke-width="15"/>
-    <!-- Falda -->
-    <path d="M222 296 L298 288 L318 346 L206 352 Z" fill="#2E4A7D" stroke="#2B2925" stroke-width="9"/>
-    <path d="M246 296 L244 350 M272 293 L278 348" stroke="#22385F" stroke-width="6"/>
-    <!-- Pierna de delante (hacia delante) -->
-    <path d="M276 338 L330 372 L318 432" fill="none" stroke="#2B2925" stroke-width="34"/>
-    <path d="M276 338 L330 372 L318 432" fill="none" stroke="#F2C7A0" stroke-width="20"/>
-    <path d="M326 390 L320 428" fill="none" stroke="#FFFFFF" stroke-width="20"/>
-    <path d="M300 430 q0 24 26 24 h34 q14 0 14 -12 q0 -16 -26 -20 z" fill="#3a3a48" stroke="#2B2925" stroke-width="8"/>
-    <path d="M318 444 h40" stroke="#E8B839" stroke-width="6"/>
-    <!-- Tronco (camisa) -->
-    <path d="M226 214 Q260 196 292 208 L304 296 Q262 306 220 300 Z" fill="#FFFFFF" stroke="#2B2925" stroke-width="9"/>
-    <!-- Correa de la mochila -->
-    <path d="M238 214 Q248 252 236 296" fill="none" stroke="#2F6B6B" stroke-width="12"/>
-    <!-- Brazo de delante (doblado, puño delante) -->
-    <path d="M286 230 L322 262 L352 238" fill="none" stroke="#2B2925" stroke-width="28"/>
-    <path d="M286 230 L322 262 L352 238" fill="none" stroke="#F2C7A0" stroke-width="15"/>
-    <circle cx="354" cy="236" r="15" fill="#F2C7A0" stroke="#2B2925" stroke-width="7"/>
-    <!-- Cabeza -->
-    <circle cx="214" cy="96" r="24" fill="#2B2925"/>
-    <circle cx="300" cy="80" r="26" fill="#2B2925"/>
-    <path d="M232 104 l10 10 M286 98 l-6 14" stroke="#D2353C" stroke-width="10"/>
-    <circle cx="264" cy="150" r="66" fill="#F2C7A0" stroke="#2B2925" stroke-width="9"/>
-    <!-- Pelo: flequillo de mechones -->
-    <path d="M198 152 C192 96 236 74 270 80 C304 82 330 104 330 138 L314 124 L306 142 L292 118 L282 138 L268 112 L254 134 L240 112 L228 140 L214 124 Z" fill="#2B2925"/>
-    <!-- Cara agobiada: cejas preocupadas, ojos grandes, boca abierta -->
-    <path d="M262 136 l18 -8 M300 128 l18 6" stroke="#2B2925" stroke-width="6"/>
-    <ellipse cx="276" cy="158" rx="10" ry="13" fill="#2B2925"/>
-    <ellipse cx="310" cy="156" rx="9" ry="12" fill="#2B2925"/>
-    <circle cx="279" cy="153" r="4" fill="#FFFFFF"/><circle cx="313" cy="151" r="3.5" fill="#FFFFFF"/>
-    <ellipse cx="300" cy="192" rx="13" ry="15" fill="#7A2A2E" stroke="#2B2925" stroke-width="5"/>
-    <ellipse cx="300" cy="200" rx="7" ry="5" fill="#E07A7E"/>
-    <circle cx="258" cy="182" r="9" fill="#EA8F8F" opacity=".8"/>
-    <!-- Lazo rojo -->
-    <path d="M266 226 l-18 -11 v22 z M266 226 l18 -11 v22 z" fill="#D2353C" stroke="#2B2925" stroke-width="5"/>
-    <!-- Gotas de sudor -->
-    <path d="M356 96 q-20 28 0 38 q20 -10 0 -38 z" fill="#9FD6F2" stroke="#2B2925" stroke-width="6"/>
-    <path d="M186 58 q-16 22 0 30 q16 -8 0 -30 z" fill="#9FD6F2" stroke="#2B2925" stroke-width="6"/>
-    <path d="M166 108 q-12 17 0 23 q12 -6 0 -23 z" fill="#9FD6F2" stroke="#2B2925" stroke-width="5"/>
+    <g stroke="#CFD6EE" stroke-width="5">
+      <path d="M254 232 H428 M254 278 H428"/>
+      <path d="M298 196 V320 M342 196 V320 M386 196 V320"/>
+    </g>
+    <rect x="262" y="202" width="28" height="22" rx="5" fill="#F59BB0"/>
+    <rect x="394" y="240" width="28" height="30" rx="5" fill="#F5CD4A"/>
+    <rect x="306" y="286" width="28" height="26" rx="5" fill="#8EC5B5"/>
+    <ellipse cx="364" cy="255" rx="24" ry="19" fill="none" stroke="#E5383B" stroke-width="7"/>
   </g>
-  <!-- ¡! -->
-  <g fill="#FFF3F0" stroke="#2B2925" stroke-width="5" stroke-linejoin="round">
-    <path d="M384 52 l20 0 l-5 58 l-10 0 z"/><circle cx="394" cy="126" r="9"/>
-    <path d="M420 62 l18 0 l-5 50 l-9 0 z"/><circle cx="429" cy="126" r="8"/>
+
+  <!-- cronómetro (delante, a la izquierda) -->
+  <g transform="rotate(-10 196 236)">
+    <rect x="176" y="68" width="44" height="26" rx="10" fill="#22397A"/>
+    <rect x="186" y="88" width="24" height="28" rx="6" fill="#2C4C93"/>
+    <rect x="76" y="132" width="34" height="22" rx="8" fill="#22397A" transform="rotate(-40 93 143)"/>
+    <circle cx="198" cy="236" r="128" fill="#22397A"/>
+    <circle cx="198" cy="236" r="104" fill="#FBF6EC"/>
+    <path d="M118 182 A104 104 0 0 1 252 148" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" opacity=".7"/>
+    <g stroke="#22397A" stroke-width="9" stroke-linecap="round">
+      <path d="M198 148 v16 M198 308 v16 M110 236 h16 M270 236 h16"/>
+      <path d="M136 174 l10 10 M250 288 l10 10 M136 298 l10 -10 M250 184 l10 -10"/>
+    </g>
+    <path d="M198 236 L252 160" stroke="#E5383B" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="198" cy="236" r="14" fill="#22397A"/>
+    <circle cx="198" cy="236" r="6" fill="#E5383B"/>
   </g>
-</g></svg>
+
+  <!-- notas adhesivas -->
+  <g transform="rotate(-10 150 370)">
+    <path d="M84 312 h132 v116 c-30 8 -96 10 -132 0 z" fill="#F7D458"/>
+    <path d="M84 404 c36 10 102 8 132 0 v24 c-30 8 -96 10 -132 0 z" fill="#E9B926"/>
+    <g stroke="#22397A" stroke-width="8" stroke-linecap="round"><path d="M108 348 h84 M108 374 h64"/></g>
+  </g>
+  <g transform="rotate(8 270 392)">
+    <path d="M204 334 h132 v104 l-26 26 h-106 z" fill="#F59BB6"/>
+    <path d="M336 438 l-26 26 v-20 a6 6 0 0 1 6 -6 z" fill="#E77897"/>
+    <g stroke="#22397A" stroke-width="8" stroke-linecap="round"><path d="M226 370 h86 M226 396 h58"/></g>
+  </g>
+
+  <!-- chincheta de ubicación -->
+  <ellipse cx="410" cy="468" rx="40" ry="10" fill="#B9CDF0"/>
+  <path d="M410 466 C384 430 352 400 352 362 a58 58 0 0 1 116 0 c0 38 -32 68 -58 104 z" fill="#E5383B"/>
+  <path d="M410 466 C430 438 468 400 468 362 a58 58 0 0 0 -30 -50 c18 30 6 70 -28 154 z" fill="#B8232E"/>
+  <circle cx="410" cy="360" r="22" fill="#FFFFFF"/>
+  </g>
+</svg>
