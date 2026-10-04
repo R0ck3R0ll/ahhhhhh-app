@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0" stop-color="#C9577A"/>
+      <stop offset="1" stop-color="#9E3557"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g transform="translate(51.2 51.2) scale(.8)"><g stroke-linecap="round" stroke-linejoin="round">
+    <!-- Líneas de velocidad -->
+    <g stroke="#F2DDE3" stroke-width="12" opacity=".75">
+      <path d="M64 232 H142"/><path d="M48 286 H128"/><path d="M76 340 H140"/>
+    </g>
+    <!-- Pierna de atrás (doblada hacia atrás) -->
+    <path d="M232 330 L196 378 L150 362" fill="none" stroke="#2B2925" stroke-width="34"/>
+    <path d="M232 330 L196 378 L150 362" fill="none" stroke="#F2C7A0" stroke-width="20"/>
+    <path d="M190 376 L156 364" fill="none" stroke="#FFFFFF" stroke-width="20"/>
+    <path d="M150 340 q-30 4 -30 26 q0 14 22 14 l22 -2 z" fill="#3a3a48" stroke="#2B2925" stroke-width="8"/>
+    <!-- Mochila -->
+    <rect x="150" y="196" width="80" height="104" rx="26" fill="#2F6B6B" stroke="#2B2925" stroke-width="9" transform="rotate(-12 190 248)"/>
+    <rect x="160" y="248" width="52" height="34" rx="10" fill="#3C8582" stroke="#2B2925" stroke-width="7" transform="rotate(-12 186 265)"/>
+    <!-- Brazo de atrás -->
+    <path d="M232 238 L204 276 L224 300" fill="none" stroke="#2B2925" stroke-width="28"/>
+    <path d="M232 238 L204 276 L224 300" fill="none" stroke="#F2C7A0" stroke-width="15"/>
+    <!-- Falda -->
+    <path d="M222 296 L298 288 L318 346 L206 352 Z" fill="#2E4A7D" stroke="#2B2925" stroke-width="9"/>
+    <path d="M246 296 L244 350 M272 293 L278 348" stroke="#22385F" stroke-width="6"/>
+    <!-- Pierna de delante (hacia delante) -->
+    <path d="M276 338 L330 372 L318 432" fill="none" stroke="#2B2925" stroke-width="34"/>
+    <path d="M276 338 L330 372 L318 432" fill="none" stroke="#F2C7A0" stroke-width="20"/>
+    <path d="M326 390 L320 428" fill="none" stroke="#FFFFFF" stroke-width="20"/>
+    <path d="M300 430 q0 24 26 24 h34 q14 0 14 -12 q0 -16 -26 -20 z" fill="#3a3a48" stroke="#2B2925" stroke-width="8"/>
+    <path d="M318 444 h40" stroke="#E8B839" stroke-width="6"/>
+    <!-- Tronco (camisa) -->
+    <path d="M226 214 Q260 196 292 208 L304 296 Q262 306 220 300 Z" fill="#FFFFFF" stroke="#2B2925" stroke-width="9"/>
+    <!-- Correa de la mochila -->
+    <path d="M238 214 Q248 252 236 296" fill="none" stroke="#2F6B6B" stroke-width="12"/>
+    <!-- Brazo de delante (doblado, puño delante) -->
+    <path d="M286 230 L322 262 L352 238" fill="none" stroke="#2B2925" stroke-width="28"/>
+    <path d="M286 230 L322 262 L352 238" fill="none" stroke="#F2C7A0" stroke-width="15"/>
+    <circle cx="354" cy="236" r="15" fill="#F2C7A0" stroke="#2B2925" stroke-width="7"/>
+    <!-- Cabeza -->
+    <circle cx="214" cy="96" r="24" fill="#2B2925"/>
+    <circle cx="300" cy="80" r="26" fill="#2B2925"/>
+    <path d="M232 104 l10 10 M286 98 l-6 14" stroke="#D2353C" stroke-width="10"/>
+    <circle cx="264" cy="150" r="66" fill="#F2C7A0" stroke="#2B2925" stroke-width="9"/>
+    <!-- Pelo: flequillo de mechones -->
+    <path d="M198 152 C192 96 236 74 270 80 C304 82 330 104 330 138 L314 124 L306 142 L292 118 L282 138 L268 112 L254 134 L240 112 L228 140 L214 124 Z" fill="#2B2925"/>
+    <!-- Cara agobiada: cejas preocupadas, ojos grandes, boca abierta -->
+    <path d="M262 136 l18 -8 M300 128 l18 6" stroke="#2B2925" stroke-width="6"/>
+    <ellipse cx="276" cy="158" rx="10" ry="13" fill="#2B2925"/>
+    <ellipse cx="310" cy="156" rx="9" ry="12" fill="#2B2925"/>
+    <circle cx="279" cy="153" r="4" fill="#FFFFFF"/><circle cx="313" cy="151" r="3.5" fill="#FFFFFF"/>
+    <ellipse cx="300" cy="192" rx="13" ry="15" fill="#7A2A2E" stroke="#2B2925" stroke-width="5"/>
+    <ellipse cx="300" cy="200" rx="7" ry="5" fill="#E07A7E"/>
+    <circle cx="258" cy="182" r="9" fill="#EA8F8F" opacity=".8"/>
+    <!-- Lazo rojo -->
+    <path d="M266 226 l-18 -11 v22 z M266 226 l18 -11 v22 z" fill="#D2353C" stroke="#2B2925" stroke-width="5"/>
+    <!-- Gotas de sudor -->
+    <path d="M356 96 q-20 28 0 38 q20 -10 0 -38 z" fill="#9FD6F2" stroke="#2B2925" stroke-width="6"/>
+    <path d="M186 58 q-16 22 0 30 q16 -8 0 -30 z" fill="#9FD6F2" stroke="#2B2925" stroke-width="6"/>
+    <path d="M166 108 q-12 17 0 23 q12 -6 0 -23 z" fill="#9FD6F2" stroke="#2B2925" stroke-width="5"/>
+  </g>
+  <!-- ¡! -->
+  <g fill="#FFF3F0" stroke="#2B2925" stroke-width="5" stroke-linejoin="round">
+    <path d="M384 52 l20 0 l-5 58 l-10 0 z"/><circle cx="394" cy="126" r="9"/>
+    <path d="M420 62 l18 0 l-5 50 l-9 0 z"/><circle cx="429" cy="126" r="8"/>
+  </g>
+</g></svg>
