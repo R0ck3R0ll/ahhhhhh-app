@@ -21,7 +21,7 @@ Se desarrolla directamente la versión ambiciosa completa (no un MVP reducido), 
 
 ### 2.1 Configuración
 Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, al abrir uno, se cierra el que estuviera abierto, para no tener que hacer scroll), cada uno con un resumen de su valor actual en la cabecera. Orden:
-0. **Perfil**: **nombre** de quien usa la App (por defecto «Martina»; editable para poder dejar la App a otra persona). Aparece en los textos («plan de …», «Entregas y tareas de …», el calendario exportado…). También la **dirección de casa**, punto de partida de los traslados.
+0. **Perfil**: **nombre** de quien usa la App (vacío al instalar; editable para poder dejar la App a otra persona). Sin nombre, los textos usan su versión sin nombre («tu plan del día»). Aparece en los textos («plan de …», «Entregas y tareas de …», el calendario exportado…). También la **dirección de casa**, punto de partida de los traslados.
 1. **Idioma**
 2. **Aspecto** (tema de Today, fondo claro/oscuro, barra de tiempo)
 3. **Horarios** (franja horaria de planificación y horario escolar)
@@ -197,6 +197,9 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - **Instalable:** en iPhone, Safari → Compartir → «Añadir a la pantalla de inicio»; en Android, Chrome → menú → «Instalar aplicación». Se abre a pantalla completa, con su icono, y funciona sin conexión (el service worker guarda la App; al haber conexión carga siempre la última versión publicada).
 - **Reloj real:** «Hoy», el Calendario, los avisos y los bloques usan la fecha y la hora del dispositivo (se actualizan cada minuto y al volver a la App). Si cambia el día, todo se redibuja.
 - **Calendario:** flechas ‹ › para pasar de semana (o de día en la vista día); pulsar la fecha vuelve a hoy.
+- **Primera instalación limpia:** sin nombre, sin franja horaria, sin horario escolar y solo con las dos categorías de serie (Tarea y Actividad).
+  - Para usar la App hace falta, **como mínimo, el nombre, la franja horaria y el horario escolar**. Mientras falte algo, la App **se abre en Configuración** (con Perfil desplegado), las **demás pestañas están bloqueadas** (atenuadas; al tocarlas avisa de qué falta) y arriba una tarjeta **«Para empezar a usar la App, completa:»** lista lo que falta; cada punto abre su bloque.
+  - Al completarlo aparece «¡Listo! Ya puedes usar la App» y se desbloquean las pestañas.
 - **Datos:** en el dispositivo, sin datos de ejemplo. Además de lo que ya guardaba la maqueta (actividades, eventos, tareas, bloques, aspecto, idioma, nombre, direcciones, calendario escolar), ahora se guardan también la **franja horaria**, el **horario escolar**, las **categorías** (nombre, color, prioridad, orden y borradas) y la **exportación a Google Calendar**.
 - **Aún no (llega con el servidor, paso 3 «Firebase»):** conexión con Google (el botón «Conectar» lo avisa), traslados con Maps, lectura con IA, notificaciones con la App cerrada y sincronización entre dispositivos. Al pasar a Firebase cambiará la dirección de la App; los datos del dispositivo se llevarán a la nueva al iniciar sesión por primera vez.
 

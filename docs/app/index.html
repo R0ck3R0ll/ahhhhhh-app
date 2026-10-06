@@ -275,6 +275,14 @@
     <!-- ============ CONFIGURACIÓN ============ -->
     <section class="screen" id="screen-config" aria-labelledby="screen-heading">
 
+      <!-- Primeros pasos: con la App sin configurar se abre aquí y las demás pestañas esperan
+           a que estén el nombre, la franja horaria y el horario escolar -->
+      <div class="setup-card" id="setup-card" hidden>
+        <div class="setup-title" data-i18n="setup.title"></div>
+        <ul class="setup-list" id="setup-list"></ul>
+        <p class="card-hint" data-i18n="setup.hint"></p>
+      </div>
+
       <div class="cfg-groups">
       <details class="cfg-group" data-group="profile">
         <summary><span class="cfg-group-title" data-i18n="grp.profile"></span><span class="cfg-group-sum" id="sum-profile"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
@@ -282,7 +290,7 @@
         <div class="config-card">
           <label class="fld">
             <span class="field-label" data-i18n="cfg.kidName"></span>
-            <input class="txt-input" id="kid-name" type="text" autocomplete="off" maxlength="30" onchange="setKidName(this.value)">
+            <input class="txt-input" id="kid-name" type="text" autocomplete="off" maxlength="30" data-i18n-ph="cfg.kidNamePh" onchange="setKidName(this.value)">
           </label>
           <p class="card-hint" data-i18n="hint.kidName"></p>
         </div>
@@ -354,9 +362,9 @@
           <div class="config-line time-line">
             <span class="config-label" data-i18n="cfg.everyDay"></span>
             <span class="time-pair">
-              <input type="time" class="time-input" id="day-start" value="07:30" data-i18n-aria="aria.windowStart" onchange="onBoundsChange(this)">
+              <input type="time" class="time-input" id="day-start" data-i18n-aria="aria.windowStart" onchange="onBoundsChange(this)">
               –
-              <input type="time" class="time-input" id="day-end" value="23:00" data-i18n-aria="aria.windowEnd" onchange="onBoundsChange(this)">
+              <input type="time" class="time-input" id="day-end" data-i18n-aria="aria.windowEnd" onchange="onBoundsChange(this)">
             </span>
           </div>
           <p class="card-hint" data-i18n="hint.window"></p>
@@ -368,9 +376,9 @@
           <div class="config-line time-line">
             <span class="config-label" data-i18n="monFri"></span>
             <span class="time-pair">
-              <input type="time" class="time-input" id="school-week-entry" value="09:00" data-i18n-aria="aria.entryWeek" onchange="onSchoolTime('week','entry',this)">
+              <input type="time" class="time-input" id="school-week-entry" data-i18n-aria="aria.entryWeek" onchange="onSchoolTime('week','entry',this)">
               –
-              <input type="time" class="time-input" id="school-week-exit" value="17:00" data-i18n-aria="aria.exitWeek" onchange="onSchoolTime('week','exit',this)">
+              <input type="time" class="time-input" id="school-week-exit" data-i18n-aria="aria.exitWeek" onchange="onSchoolTime('week','exit',this)">
             </span>
           </div>
           <div class="config-line">
@@ -380,9 +388,9 @@
           <div class="config-line time-line" id="sat-times" hidden>
             <span class="config-label" data-i18n="saturday"></span>
             <span class="time-pair">
-              <input type="time" class="time-input" id="school-sat-entry" value="09:00" data-i18n-aria="aria.entrySat" onchange="onSchoolTime('sat','entry',this)">
+              <input type="time" class="time-input" id="school-sat-entry" data-i18n-aria="aria.entrySat" onchange="onSchoolTime('sat','entry',this)">
               –
-              <input type="time" class="time-input" id="school-sat-exit" value="13:00" data-i18n-aria="aria.exitSat" onchange="onSchoolTime('sat','exit',this)">
+              <input type="time" class="time-input" id="school-sat-exit" data-i18n-aria="aria.exitSat" onchange="onSchoolTime('sat','exit',this)">
             </span>
           </div>
           <p class="card-hint" data-i18n-html="hint.school"></p>
@@ -495,28 +503,6 @@
               <option value="Alta">Alta</option>
               <option value="Media" selected>Media</option>
               <option value="Baja">Baja</option>
-            </select>
-          </div>
-          <div class="row cat-row" data-cat="cita">
-            <button class="row-bar swatch" style="background:var(--cat-cita)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
-            <div class="row-body"><input class="cat-name-input" value="Cita" readonly data-i18n-aria="aria.catName" onkeydown="if(event.key==='Enter'){ editCategory(this); }"></div>
-            <button class="row-edit" onclick="editCategory(this)" data-i18n-aria="aria.catEdit" data-i18n-title="aria.catEdit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-            <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
-            <select class="priority-select" style="background:var(--cat-cita)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
-              <option value="Alta" selected>Alta</option>
-              <option value="Media">Media</option>
-              <option value="Baja">Baja</option>
-            </select>
-          </div>
-          <div class="row cat-row" data-cat="libre">
-            <button class="row-bar swatch" style="background:var(--cat-libre)" onclick="cycleColor(this)" data-i18n-aria="aria.catColor" data-i18n-title="aria.catColor"></button>
-            <div class="row-body"><input class="cat-name-input" value="Tiempo libre" readonly data-i18n-aria="aria.catName" onkeydown="if(event.key==='Enter'){ editCategory(this); }"></div>
-            <button class="row-edit" onclick="editCategory(this)" data-i18n-aria="aria.catEdit" data-i18n-title="aria.catEdit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-            <button class="row-delete" onclick="removeCategory(this)" data-i18n-aria="aria.catDelete" data-i18n-title="aria.catDelete">×</button>
-            <select class="priority-select" style="background:var(--cat-libre)" onchange="onPriorityChange(this)" data-i18n-aria="aria.catPrio">
-              <option value="Alta">Alta</option>
-              <option value="Media">Media</option>
-              <option value="Baja" selected>Baja</option>
             </select>
           </div>
         </div>

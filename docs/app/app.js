@@ -5,7 +5,11 @@
     if(s == null){ s = I18N.es[key]; }
     if(s == null){ return key; }
     vars = vars || {};
-    if(vars.name == null){ vars.name = KID; }
+    if(vars.name == null){
+      // Sin nombre configurado, los textos que lo usan tienen su versión sin nombre
+      if(!KID && I18N.es[key + '.anon'] != null){ return t(key + '.anon', vars); }
+      vars.name = KID;
+    }
     return s.replace(/\{(\w+)\}/g, function(m, k){ return vars[k] != null ? vars[k] : m; });
   }
   function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -32,7 +36,7 @@
   function loadKidName(){ try{ var n = localStorage.getItem('kid-name'); if(n){ KID = n; } }catch(e){} }
   function setKidName(v){
     v = v.trim();
-    if(!v){ el('kid-name').value = KID; return; }
+    if(!v){ el('kid-name').value = KID; if(KID){ return; } }
     KID = v;
     try{ localStorage.setItem('kid-name', v); }catch(e){}
     applyI18n();
@@ -97,6 +101,8 @@
     if(btn){ showScreen(btn); }
   }
   function showScreen(btn){
+    // Sin configurar lo mínimo, solo se puede usar Configuración
+    if(btn.dataset.screen !== 'config' && !setupDone()){ toast(t('setup.locked')); renderSetup(); return; }
     // Con un formulario abierto, cambiar de pestaña pide confirmación
     if(openForm() && !btn.classList.contains('is-active')){ pendingTab = btn; el('discard-dialog').showModal(); return; }
     PRESS_BACK = null;
@@ -393,6 +399,42 @@
   function todayEvents(){
     return (TODAY_NEXT ? [ {t:TODAY_NEXT.t, cat:TODAY_NEXT.cat, next:true} ] : []).concat(todayVisible().map(function(e){ return {t:e.t, cat:e.cat}; }))
       .sort(function(a, b){ return a.t - b.t; });
+  }
+
+  /* ---- Primeros pasos ----
+     Para usar la App hacen falta, como mínimo, el nombre, la franja horaria y el horario escolar.
+     Mientras falte algo, la App se abre en Configuración, las demás pestañas están bloqueadas y
+     una tarjeta arriba dice qué falta (cada punto abre su bloque). */
+  var SETUP_WAS_DONE = null;
+  function setupMissing(){
+    var m = [];
+    if(!KID){ m.push({ key:'setup.name', group:'profile' }); }
+    if(!boundsSet()){ m.push({ key:'setup.window', group:'hours' }); }
+    if(!schoolSet()){ m.push({ key:'setup.school', group:'hours' }); }
+    return m;
+  }
+  function setupDone(){ return !setupMissing().length; }
+  function renderSetup(){
+    var card = el('setup-card');
+    if(!card){ return; }
+    var missing = setupMissing(), done = !missing.length;
+    card.hidden = done;
+    el('setup-list').innerHTML = missing.map(function(m){
+      return '<li><button type="button" class="setup-link" onclick="openCfgGroup(\'' + m.group + '\')">' + esc(t(m.key)) + '</button></li>';
+    }).join('');
+    document.querySelectorAll('.tab').forEach(function(tab){
+      var locked = !done && tab.dataset.screen !== 'config';
+      tab.classList.toggle('is-locked', locked);
+      if(locked){ tab.setAttribute('aria-disabled', 'true'); } else { tab.removeAttribute('aria-disabled'); }
+    });
+    if(SETUP_WAS_DONE === false && done){ toast(t('setup.done')); }
+    SETUP_WAS_DONE = done;
+  }
+  function openCfgGroup(name, noScroll){
+    var g = document.querySelector('.cfg-group[data-group="' + name + '"]');
+    if(!g){ return; }
+    g.open = true;
+    if(!noScroll){ g.scrollIntoView({ block:'start', behavior:'smooth' }); }
   }
 
   function renderToday(){
@@ -874,7 +916,7 @@
     var rows = document.querySelectorAll('#category-list .cat-row');
     document.querySelectorAll('#export-cats input').forEach(function(i, idx){ if(rows[idx]){ exportCats[rows[idx].dataset.cat] = i.checked; } });
     var data = {
-      bounds: dayBounds(),
+      bounds: { start: el('day-start').value, end: el('day-end').value },
       school: SCHOOL,
       categories: getCategories(),
       exportOn: el('export-switch').getAttribute('aria-checked') === 'true',
@@ -887,7 +929,8 @@
     var data = null;
     try{ data = JSON.parse(localStorage.getItem('app-settings') || 'null'); }catch(e){}
     if(data){
-      if(data.bounds){ el('day-start').value = data.bounds.start; el('day-end').value = data.bounds.end; }
+      if(data.bounds){ el('day-start').value = data.bounds.start || ''; el('day-end').value = data.bounds.end || ''; }
+      el('day-start').dataset.prev = el('day-start').value; el('day-end').dataset.prev = el('day-end').value;
       if(data.school){
         SCHOOL = data.school;
         el('school-week-entry').value = SCHOOL.week.entry; el('school-week-exit').value = SCHOOL.week.exit;
@@ -929,11 +972,14 @@
   }
 
   /* ---- Franja horaria y horario escolar ---- */
+  // Vacíos al instalar: hasta que se configuren, no hay cole y la App planifica todo el día
   var SCHOOL = {
-    week: {entry:'09:00', exit:'17:00'},            // lunes a viernes
-    sat:  {on:false, entry:'09:00', exit:'13:00'}   // clases el sábado (opcional)
+    week: {entry:'', exit:''},            // lunes a viernes
+    sat:  {on:false, entry:'', exit:''}   // clases el sábado (opcional)
   };
-  var DEFAULT_BOUNDS = {'day-start':'07:30', 'day-end':'23:00'};
+  var DEFAULT_BOUNDS = {'day-start':'00:00', 'day-end':'23:59'};
+  function boundsSet(){ return !!(el('day-start').value && el('day-end').value); }
+  function schoolSet(){ return !!(SCHOOL.week.entry && SCHOOL.week.exit); }
   var TIME_RE = /^\d{2}:\d{2}$/;
 
   function toHours(t){ var p = t.split(':'); return +p[0] + (+p[1]) / 60; }
@@ -945,8 +991,8 @@
   // Horario del cole para un día de la semana (lunes = 0). Domingos y
   // festivos/no lectivos del calendario escolar: sin cole.
   function schoolFor(day){
-    if(day < 5){ return {on:true, entry:SCHOOL.week.entry, exit:SCHOOL.week.exit}; }
-    if(day === 5){ return SCHOOL.sat; }
+    if(day < 5){ return schoolSet() ? {on:true, entry:SCHOOL.week.entry, exit:SCHOOL.week.exit} : {on:false}; }
+    if(day === 5){ return SCHOOL.sat.on && SCHOOL.sat.entry && SCHOOL.sat.exit ? SCHOOL.sat : {on:false}; }
     return {on:false};
   }
   // Festivos y días no lectivos (fechas ISO). Salen del calendario escolar de Config de una de dos formas:
@@ -1180,7 +1226,7 @@
   function onSchoolTime(which, field, input){
     var d = SCHOOL[which], v = input.value;
     var entry = field === 'entry' ? v : d.entry, exit = field === 'exit' ? v : d.exit;
-    if(!TIME_RE.test(v) || entry >= exit){
+    if((v && !TIME_RE.test(v)) || (entry && exit && entry >= exit)){
       input.value = d[field];
       toast(t('toast.exitAfter'));
       return;
@@ -1197,15 +1243,17 @@
   }
 
   function onBoundsChange(input){
-    var b = dayBounds();
-    if(!TIME_RE.test(input.value) || b.start >= b.end){
-      input.value = DEFAULT_BOUNDS[input.id];
+    var s0 = el('day-start').value, e0 = el('day-end').value;
+    if((input.value && !TIME_RE.test(input.value)) || (s0 && e0 && s0 >= e0)){
+      input.value = input.dataset.prev || '';
       toast(t('toast.windowOrder'));
     }
+    input.dataset.prev = input.value;
     onScheduleChanged();
   }
 
   function scheduleSummary(){
+    if(!schoolSet()){ return t('sum.noSchool'); }
     var txt = t('sum.week', { t: SCHOOL.week.entry + '–' + SCHOOL.week.exit });
     if(SCHOOL.sat.on){ txt += ' · ' + t('sum.sat', { t: SCHOOL.sat.entry + '–' + SCHOOL.sat.exit }); }
     return txt;
@@ -1281,12 +1329,13 @@
   // Resumen del valor actual en la cabecera de cada bloque plegado
   function updateConfigSummaries(){
     function put(id, text){ var el = document.getElementById('sum-' + id); if(el){ el.textContent = text; } }
-    put('profile', KID);
+    put('profile', KID || t('sum.notSet'));
+    renderSetup();
     put('language', LANGS[LANG]);
     put('look', [t(APPEARANCE.layout === 'list' ? 'layout.list' : (APPEARANCE.layout === 'postit1' ? 'Post-it 1' : 'Post-it 2')),
                  t('mode.' + APPEARANCE.mode), t('bar.' + APPEARANCE.bar)].join(' · '));
     var b = dayBounds();
-    put('hours', b.start + '–' + b.end + ' · ' + t('sum.school') + '\u00a0' + SCHOOL.week.entry + '\u2011' + SCHOOL.week.exit);
+    put('hours', !boundsSet() ? t('sum.notSet') : b.start + '–' + b.end + (schoolSet() ? ' · ' + t('sum.school') + '\u00a0' + SCHOOL.week.entry + '\u2011' + SCHOOL.week.exit : ''));
     put('links', t('sum.links', { n: (SCHOOL_MODE === 'manual' ? NSD_MANUAL.length : SCHOOL_CAL) ? 1 : 0 }));
     put('cats', t('sum.cats', { n: document.querySelectorAll('#category-list .cat-row').length }));
     put('gcal', t(document.getElementById('export-switch').getAttribute('aria-checked') === 'true' ? 'sum.gcalOn' : 'sum.gcalOff'));
@@ -3021,4 +3070,11 @@
   loadSettings();
   restoreEventCategories();
   applyI18n();
+  if(!setupDone()){
+    var cfgTab = document.querySelector('.tab[data-screen="config"]');
+    showScreen(cfgTab);
+    openCfgGroup('profile', true);
+    var sc = document.querySelector('main.screen-container');
+    if(sc){ sc.scrollTop = 0; }
+  }
   setTimeout(checkBlockEnds, 600);   // bloques que terminaron con la App cerrada

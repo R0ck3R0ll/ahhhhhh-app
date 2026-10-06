@@ -798,6 +798,17 @@
   .switch:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
   @media (prefers-reduced-motion: reduce){ .switch, .switch::after{ transition:none; } }
 
+  /* ---- Primeros pasos (en «Hoy», hasta que la App esté configurada) ---- */
+  .setup-card{ display:flex; flex-direction:column; gap:8px; padding:14px 16px; border-radius:14px; background:var(--surface); border:1px solid var(--accent); }
+  .setup-card[hidden]{ display:none; }
+  .setup-title{ font-weight:600; font-size:14px; color:var(--accent-strong); }
+  .setup-list{ margin:0; padding-left:18px; font-size:13px; color:var(--text-muted); display:flex; flex-direction:column; gap:3px; }
+  .setup-link{ display:inline; font:inherit; color:var(--accent-strong); background:none; border:none; padding:2px 0; text-align:left; cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+  .setup-link:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
+  .setup-card{ margin-bottom:14px; }
+  /* Pestañas bloqueadas hasta terminar los primeros pasos */
+  .tab.is-locked{ opacity:.35; }
+
   /* ---- Franja horaria y horario escolar ---- */
   .time-input{
     font-family:var(--font-body); font-size:13px; font-variant-numeric:tabular-nums; color:var(--text);
