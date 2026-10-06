@@ -3007,6 +3007,14 @@
     refreshCalendar();
   }
 
+  // Campos de fecha y hora: al tocarlos se abre el selector nativo (donde el navegador lo permite)
+  document.addEventListener('click', function(ev){
+    var t = ev.target;
+    if(t && t.tagName === 'INPUT' && (t.type === 'time' || t.type === 'date') && !t.disabled && !t.readOnly && t.showPicker){
+      try{ t.showPicker(); }catch(e){}
+    }
+  });
+
   loadAppearance();
   loadLanguage();
   loadKidName();

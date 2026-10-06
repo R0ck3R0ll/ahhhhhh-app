@@ -520,7 +520,10 @@
   textarea.txt-input{ resize:vertical; line-height:1.35; }
   /* Fecha y hora: sin icono (el selector se abre al tocar), así caben en móviles estrechos */
   input.txt-input[type=date], input.txt-input[type=time]{ padding:9px 8px; font-variant-numeric:tabular-nums; }
-  input.txt-input::-webkit-calendar-picker-indicator{ display:none; }
+  /* El icono del selector, invisible pero ocupando todo el campo: tocar en cualquier punto
+     abre el selector nativo (en Android solo se abre al tocar el icono) */
+  input.txt-input[type=date], input.txt-input[type=time]{ position:relative; }
+  input.txt-input::-webkit-calendar-picker-indicator{ position:absolute; inset:0; width:auto; height:auto; margin:0; padding:0; opacity:0; cursor:pointer; }
   .txt-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
   .txt-input.is-invalid{ border-color:var(--danger-bg); box-shadow:0 0 0 1px var(--danger-bg); }
   .prio-row{ margin-top:0; }
@@ -802,8 +805,12 @@
     padding:5px 6px; width:84px; min-width:0; text-align:center;
   }
   .time-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
-  /* Sin icono de reloj: en el móvil el selector se abre al tocar y así caben las horas */
-  .time-input::-webkit-calendar-picker-indicator{ display:none; }
+  /* Sin icono de reloj visible (así caben las horas), pero el icono invisible cubre todo el
+     campo: tocar en cualquier punto abre el selector nativo */
+  .time-input{ position:relative; }
+  .time-input::-webkit-calendar-picker-indicator{ position:absolute; inset:0; width:auto; height:auto; margin:0; padding:0; opacity:0; cursor:pointer; }
+  /* En el móvil, 16 px: con menos, el iPhone amplía la página al tocar el campo */
+  @media (max-width:500px){ .time-input{ font-size:16px; width:92px; } }
   .time-line{ flex-wrap:wrap; }
   .time-line[hidden]{ display:none; }
   .time-pair{ display:flex; align-items:center; gap:6px; color:var(--text-muted); }
