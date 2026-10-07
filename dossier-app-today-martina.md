@@ -203,6 +203,15 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - **Datos:** en el dispositivo, sin datos de ejemplo. Además de lo que ya guardaba la maqueta (actividades, eventos, tareas, bloques, aspecto, idioma, nombre, direcciones, calendario escolar), ahora se guardan también la **franja horaria**, el **horario escolar**, las **categorías** (nombre, color, prioridad, orden y borradas) y la **exportación a Google Calendar**.
 - **Aún no (llega con el servidor, paso 3 «Firebase»):** conexión con Google (el botón «Conectar» lo avisa), traslados con Maps, lectura con IA, notificaciones con la App cerrada y sincronización entre dispositivos. Al pasar a Firebase cambiará la dirección de la App; los datos del dispositivo se llevarán a la nueva al iniciar sesión por primera vez.
 
+## 2 ter. Firebase (paso 3: servidor)
+
+- **Proyecto:** el mismo de Google Cloud, `ahhhhhh-today` (número 356797407017), con Firebase añadido. Plan **Blaze** a través de la **prueba gratuita de Google Cloud** (264 € de crédito, 90 días, hasta el 6/1/2027). **Antes de esa fecha hay que pulsar «Actualizar»** en la tarjeta de facturación de Firebase para pasar a la cuenta de pago normal; si no, los servicios se paran. Con el uso familiar el coste esperado es 0 €. Pendiente: alerta de presupuesto de 5 €.
+- **App web registrada** («AHHHHHH Today web»): su `firebaseConfig` es público y va dentro de la App.
+- **Firestore** (base de datos) en `europe-southwest1` (Madrid), en modo producción. Reglas en `firestore.rules`: cada persona solo lee y escribe sus propios datos (`users/{su id}/…`) y solo con la sesión iniciada.
+- **Authentication:** inicio de sesión con Google.
+- **Publicación automática:** `.github/workflows/firebase-deploy.yml` publica `docs/app` en **Firebase Hosting** (https://ahhhhhh-today.web.app) cada vez que cambia la App, con la cuenta de servicio `github-deploy` (roles: Administrador de Firebase, Administrador de Cloud Functions, Usuario de cuenta de servicio y Editor). Su llave está guardada como secreto `FIREBASE_SERVICE_ACCOUNT` del repositorio; el archivo descargado se borró.
+- GitHub Pages sigue sirviendo las páginas de inicio, privacidad y condiciones (`docs/`) que usa la pantalla de consentimiento de Google.
+
 ## 3. Flujo de sincronización con Google (Classroom + Gmail)
 
 > **Estado (3/10/2026): la cuenta del colegio está bloqueada para apps externas.**
