@@ -186,7 +186,7 @@
   function placeLine(n){ return [n.place, n.from, n.dist].filter(Boolean).map(esc).join(' · '); }
 
   /* ---- Traslados: punto de partida ----
-     Desde 1 h antes del elemento: la ubicación del móvil. Antes de eso: el lugar del elemento
+     Desde 1 h antes de la hora de salida: la ubicación del móvil. Antes de eso: el lugar del elemento
      anterior de ese día (actividad o evento); si no hay ninguno o no tiene ubicación, casa.
      El cole no cuenta: lo primero después del cole sale de casa.
      Google Maps (con tráfico previsto para la hora de salida) calculará el tiempo desde ahí. */
@@ -214,7 +214,9 @@
   // (sin ubicación, ya empezado o en el mismo sitio que el elemento anterior)
   function travelOrigin(item, d, now){
     if(!item.place || (item.kind !== 'activity' && item.kind !== 'event') || now >= item.t){ return null; }
-    if(item.t - now <= 1){ return { kind:'device' }; }
+    // Hora de salida: la hora del elemento menos el tiempo en coche (si aún no se sabe, la del elemento)
+    var r = ROUTES.day === isoOf(d) && ROUTES.items[item.id], lead = r && r.car ? r.car.min / 60 : 0;
+    if(item.t - lead - now <= 1){ return { kind:'device' }; }
     var prev = placedElements(d).filter(function(p){ return p.id !== item.id && p.t < item.t; })
       .sort(function(p, q){ return q.t - p.t; })[0];
     if(prev && prev.place){ return prev.place === item.place ? null : { kind:'prev', place:prev.place, name:prev.name }; }

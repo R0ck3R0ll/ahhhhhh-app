@@ -170,9 +170,9 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - Si un evento implica desplazamiento, se muestran **dos datos**: el deadline en sí, y la hora de salida calculada según el tiempo de traslado (Google Maps).
   - Distancias menores de 1 km: preguntar al usuario si se va andando.
   - Resto de distancias: calcular en coche.
-  - **Servicio: Google Maps (Routes API)**, con **tráfico**: el tiempo se pide para la **hora de salida prevista** (tráfico previsto para ese día y hora), se ajusta una vez con la nueva hora de salida y se actualiza con el tráfico real a partir de 1 h antes. La clave de la API vive en el servidor, no en el navegador.
+  - **Servicio: Google Maps (Routes API)**, con **tráfico**: el tiempo se pide para la **hora de salida prevista** (tráfico previsto para ese día y hora), se ajusta una vez con la nueva hora de salida y se actualiza con el tráfico real a partir de 1 h antes. La clave de la API va en la App, restringida a su dirección y a Routes API y Places API (New).
   - **Punto de partida** de cada traslado (solo actividades y eventos con ubicación):
-    - **Desde 1 h antes** del elemento: la **ubicación del móvil**.
+    - **Desde 1 h antes de la hora de salida** (hora del elemento menos el tiempo en coche; decidido 7/10/2026, antes era 1 h antes del elemento): la **ubicación del móvil**.
     - Antes de eso, si ese día hay **elementos programados antes** (actividades o eventos): **el lugar del anterior**. Si es el mismo lugar, no hay traslado; si el anterior **no tiene ubicación**, se sale de **casa**.
     - Si no hay ninguno: **casa**. **El cole no cuenta** como punto de partida: lo primero después del cole sale de casa.
     - La dirección de casa se configura en **Configuración > Perfil**.
@@ -226,7 +226,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - **Routes API** activada en el proyecto `ahhhhhh-today`. Clave «Maps App» restringida a los sitios `https://ahhhhhh-today.web.app/*` y `https://ahhhhhh-today.firebaseapp.com/*` y solo a Routes API; va dentro de la App (es pública por naturaleza, la protege la restricción).
 - **Alerta de presupuesto** de 5 € en Facturación > Budgets & caps (avisa por correo, no corta el gasto).
 - **En la App** (`refreshRoutes` / `applyRoute` en `app.js`): cada elemento de hoy con lugar y traslado tiene su tiempo en coche (con tráfico previsto) y, si está a menos de 2,5 km, a pie (si son 45 min o menos). La pantalla Hoy muestra las horas de salida y la distancia del próximo.
-  - Punto de partida según las reglas del punto de traslados (ubicación del móvil desde 1 h antes del elemento; si no se puede saber, casa).
+  - Punto de partida según las reglas del punto de traslados (ubicación del móvil desde 1 h antes de la hora de salida; si no se puede saber, casa).
   - **Cuándo se calcula** (decidido 7/10/2026):
     - la primera vez que se abre la App en el día: todos los de hoy;
     - para cada elemento: cuando falta 1 h para su hora de salida y luego cada 20 min hasta la hora del elemento;
