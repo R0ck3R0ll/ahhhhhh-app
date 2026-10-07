@@ -230,7 +230,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - En coche con tráfico previsto para la hora de salida; si está a menos de 2,5 km, también a pie (si son 45 min o menos).
   - Se muestran las horas de salida (iconos de coche y de andar) y la distancia.
   - Se guarda en el móvil y se vuelve a pedir cada 30 min (10 min desde la ubicación del móvil). Máximo 40 consultas por móvil y día; si Google rechaza la clave o se acaba el cupo, se deja de preguntar 1 h.
-- Pendiente: cuota diaria de Routes API en Google Cloud (unas 150 al día; el nivel gratuito es de unas 10.000 al mes).
+- **Cuota diaria de Routes API: Google no deja cambiarla** (7/10/2026: «Directions - ComputeRoutes per request quota per day» = ilimitado, no ajustable). El control del gasto queda en: el máximo de 40 consultas por móvil y día de la App (con dos móviles, menos de unas 2.400 al mes, frente a unas 10.000 gratis), la restricción de la clave (solo nuestra dirección y solo Routes API) y la alerta de 5 €.
 - Pendiente: el aviso a la hora de salida (Config > Google Calendar > «Aviso a la hora de salida») todavía no usa estos tiempos.
 
 ## 3. Flujo de sincronización con Google (Classroom + Gmail)
