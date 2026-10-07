@@ -1,0 +1,11 @@
+rules_version = '2';
+// Reglas de la base de datos de AHHHHHH Today.
+// Cada persona solo puede leer y escribir sus propios datos (users/{su id}/...),
+// y solo con la sesión iniciada. Todo lo demás está cerrado.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
