@@ -26,7 +26,7 @@ import {
 // Datos compartidos del plan. El idioma, el aspecto y los avisos ya vistos son de cada móvil.
 const SHARED_KEYS = [
   'kid-name', 'app-settings', 'app-activities', 'app-events', 'app-tasks', 'app-blocks',
-  'deleted-cats', 'addresses', 'school-cal', 'school-cal-mode', 'no-school-manual', 'no-school-dates'
+  'deleted-cats', 'addresses', 'places', 'school-cal', 'school-cal-mode', 'no-school-manual', 'no-school-dates'
 ];
 
 // El inicio de sesión solo funciona en la dirección de Firebase (o en local, para probar)

@@ -223,6 +223,120 @@
     return !o ? '' : o.kind === 'device' ? t('from.device') : o.kind === 'home' ? t('from.home') : t('from.prev', { place: o.name });
   }
 
+  /* ---- Lugares: sugerencias al escribir y sitio exacto ----
+     Al escribir un lugar (casa, actividad, evento) salen primero los ya usados. A partir de
+     PLACE_MIN_CHARS caracteres, si no se ha elegido ninguno, se busca el texto en Google Maps
+     (Places API, al dejar de escribir un momento). Al elegir una sugerencia de Google se guarda
+     su identificador, y el botón «Usar mi ubicación actual» guarda el punto exacto de casa:
+     PLACES[texto] = { id } o { ll:[lat, lng] }. Así Maps calcula siempre hacia el sitio correcto. */
+  var PLACE_MIN_CHARS = 10, PLACE_DAY_MAX = 150;
+  var PLACES = {};
+  try{ PLACES = JSON.parse(localStorage.getItem('places') || '{}') || {}; }catch(e){}
+  function savePlaces(){ try{ localStorage.setItem('places', JSON.stringify(PLACES)); }catch(e){} }
+  // Punto para Routes API: el sitio exacto si se conoce, si no el texto tal cual
+  function waypointFor(text){
+    var p = PLACES[text];
+    if(p && p.id){ return { placeId: p.id }; }
+    if(p && p.ll){ return { location: { latLng: { latitude: p.ll[0], longitude: p.ll[1] } } }; }
+    return { address: text };
+  }
+  function usedPlaces(){
+    var seen = {}, out = [];
+    [ADDR.home].concat(USER_ACTS.map(function(a){ return a.place; }), USER_EVENTS.map(function(e){ return e.place; }), Object.keys(PLACES))
+      .forEach(function(p){ p = (p || '').trim(); var k = p.toLowerCase(); if(p && !seen[k]){ seen[k] = true; out.push(p); } });
+    return out;
+  }
+  function fold(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  function placeCount(add){
+    var iso = isoOf(new Date()), c = { d: iso, n: 0 };
+    try{ var s0 = JSON.parse(localStorage.getItem('place-count') || 'null'); if(s0 && s0.d === iso){ c = s0; } }catch(e){}
+    if(add){ c.n += add; try{ localStorage.setItem('place-count', JSON.stringify(c)); }catch(e){} }
+    return c.n;
+  }
+  function searchPlaces(text){
+    var body = { input: text, languageCode: LOCALES[LANG], regionCode: 'es' };
+    var c = GEO ? [GEO.lat, GEO.lng] : (PLACES[ADDR.home] && PLACES[ADDR.home].ll);
+    if(c){ body.locationBias = { circle: { center: { latitude: c[0], longitude: c[1] }, radius: 30000 } }; }
+    placeCount(1);
+    return fetch('https://places.googleapis.com/v1/places:autocomplete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': MAPS_KEY,
+                 'X-Goog-FieldMask': 'suggestions.placePrediction.placeId,suggestions.placePrediction.text' },
+      body: JSON.stringify(body)
+    }).then(function(r){ if(!r.ok){ throw r.status; } return r.json(); })
+      .then(function(j){
+        return (j.suggestions || []).map(function(sg){ return sg.placePrediction; }).filter(Boolean)
+          .map(function(p){ return { text: p.text.text, id: p.placeId }; });
+      });
+  }
+  // Convierte un campo de texto en campo de lugar con su lista de sugerencias
+  function placeField(input, onPick){
+    var box = document.createElement('div');
+    box.className = 'place-field';
+    input.parentNode.insertBefore(box, input);
+    box.appendChild(input);
+    var list = document.createElement('ul');
+    list.className = 'place-sugg'; list.hidden = true; list.setAttribute('role', 'listbox');
+    box.appendChild(list);
+    input.setAttribute('role', 'combobox'); input.setAttribute('aria-autocomplete', 'list'); input.setAttribute('aria-expanded', 'false');
+    var timer = null, asked = '', remote = [], picked = false;
+    function show(){
+      var q = fold(input.value.trim()), local = [];
+      if(q){ local = usedPlaces().filter(function(p){ var f = fold(p); return f.indexOf(q) >= 0 && f !== q; }).slice(0, 5); }
+      var items = local.map(function(p){ return { text: p, mine: true }; })
+        .concat(remote.filter(function(r){ return local.indexOf(r.text) < 0; }));
+      list.innerHTML = items.map(function(it, i){
+        return '<li role="option" data-i="' + i + '" class="' + (it.mine ? 'is-mine' : 'is-google') + '">' + (it.mine ? PIN_SVG : '') + '<span>' + esc(it.text) + '</span></li>';
+      }).join('') + (remote.length ? '<li class="place-src" aria-hidden="true">Google Maps</li>' : '');
+      list._items = items;
+      list.hidden = !items.length;
+      input.setAttribute('aria-expanded', String(!list.hidden));
+    }
+    function pick(it){
+      input.value = it.text;
+      if(it.id){ PLACES[it.text] = { id: it.id }; savePlaces(); }
+      picked = true; remote = []; list.hidden = true; input.setAttribute('aria-expanded', 'false');
+      if(onPick){ onPick(it.text); }
+    }
+    input.addEventListener('input', function(){
+      picked = false;
+      clearTimeout(timer);
+      var v = input.value.trim();
+      if(v.length < PLACE_MIN_CHARS){ remote = []; asked = ''; }
+      show();
+      if(v.length >= PLACE_MIN_CHARS && MAPS_ON && navigator.onLine && v !== asked && placeCount(0) < PLACE_DAY_MAX){
+        timer = setTimeout(function(){
+          asked = v;
+          searchPlaces(v).then(function(r){ if(!picked && input.value.trim() === v){ remote = r.slice(0, 5); show(); } }).catch(function(){});
+        }, 700);
+      }
+    });
+    input.addEventListener('focus', function(){ if(input.value.trim()){ show(); } });
+    input.addEventListener('blur', function(){ setTimeout(function(){ list.hidden = true; input.setAttribute('aria-expanded', 'false'); }, 150); });
+    input.addEventListener('keydown', function(ev){ if(ev.key === 'Escape'){ list.hidden = true; } });
+    // pointerdown en vez de click: así no se pierde el foco antes de elegir
+    list.addEventListener('pointerdown', function(ev){
+      var li = ev.target.closest('li[data-i]');
+      if(!li){ return; }
+      ev.preventDefault();
+      pick(list._items[+li.dataset.i]);
+    });
+  }
+  // Casa = el punto exacto donde está ahora el móvil
+  function useHereAsHome(btn){
+    if(!navigator.geolocation){ toast(t('home.noGeo')); return; }
+    btn.disabled = true;
+    navigator.geolocation.getCurrentPosition(function(p){
+      btn.disabled = false;
+      var label = t('home.saved');
+      PLACES[label] = { ll: [+p.coords.latitude.toFixed(6), +p.coords.longitude.toFixed(6)] };
+      savePlaces();
+      el('addr-home').value = label;
+      setAddress('home', label);
+      toast(t('home.savedToast'));
+    }, function(){ btn.disabled = false; toast(t('home.noGeo')); }, { enableHighAccuracy: true, timeout: 20000 });
+  }
+
   /* ---- Traslados: tiempo real con Google Maps (Routes API) ----
      Solo para el próximo elemento de hoy, que es el que muestra la hora de salida: en coche
      con el tráfico previsto y, si está a menos de 2,5 km, también a pie. Cada resultado se
@@ -265,7 +379,7 @@
   }
 
   function fetchRoute(origin, dest, mode, departMs){
-    var body = { origin: origin, destination: { address: dest }, travelMode: mode, languageCode: LOCALES[LANG], units: 'METRIC' };
+    var body = { origin: origin, destination: waypointFor(dest), travelMode: mode, languageCode: LOCALES[LANG], units: 'METRIC' };
     if(mode === 'DRIVE'){
       body.routingPreference = 'TRAFFIC_AWARE';
       if(departMs > Date.now() + 60000){ body.departureTime = new Date(departMs).toISOString(); }
@@ -298,9 +412,9 @@
     }
     if(!origin){
       if(!o.place){ return; }
-      origin = { address: o.place }; okey = 'addr:' + o.place;
+      origin = waypointFor(o.place); okey = 'addr:' + o.place;
     }
-    var key = [isoOf(TODAY_DATE), item.id, item.t, item.place, okey].join('|');
+    var key = [isoOf(TODAY_DATE), item.id, item.t, item.place, JSON.stringify(PLACES[item.place] || ''), okey, JSON.stringify(PLACES[o.place] || '')].join('|');
     var hit = ROUTES[key];
     if(hit){
       var leaves = {};
@@ -3231,6 +3345,9 @@
     }
   });
 
+  placeField(el('addr-home'), function(v){ setAddress('home', v); });
+  placeField(el('act-place'));
+  placeField(el('evt-place'));
   loadAppearance();
   loadLanguage();
   loadKidName();
