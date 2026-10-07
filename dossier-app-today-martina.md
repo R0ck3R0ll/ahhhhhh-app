@@ -231,6 +231,8 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Se muestran las horas de salida (iconos de coche y de andar) y la distancia.
   - Se guarda en el móvil y se vuelve a pedir cada 30 min (10 min desde la ubicación del móvil). Máximo 40 consultas por móvil y día; si Google rechaza la clave o se acaba el cupo, se deja de preguntar 1 h.
 - **Cuota diaria de Routes API: Google no deja cambiarla** (7/10/2026: «Directions - ComputeRoutes per request quota per day» = ilimitado, no ajustable). El control del gasto queda en: el máximo de 40 consultas por móvil y día de la App (con dos móviles, menos de unas 2.400 al mes, frente a unas 10.000 gratis), la restricción de la clave (solo nuestra dirección y solo Routes API) y la alerta de 5 €.
+- **Lugares** (casa, actividades, eventos): al escribir salen primero los ya usados; a partir de 10 caracteres, si no se ha elegido ninguno, se busca el texto en Google Maps (**Places API (New)**, Autocomplete) al dejar de escribir 0,7 s, máximo 150 búsquedas por móvil y día. Al elegir una sugerencia de Google se guarda su identificador (`places`, compartido por el plan) y las rutas van a ese sitio exacto. En Perfil, «Usar mi ubicación actual» guarda el punto exacto de casa.
+  - Requiere **Places API (New)** activada y añadida a las restricciones de la clave «Maps App».
 - Pendiente: el aviso a la hora de salida (Config > Google Calendar > «Aviso a la hora de salida») todavía no usa estos tiempos.
 
 ## 3. Flujo de sincronización con Google (Classroom + Gmail)
