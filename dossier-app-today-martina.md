@@ -216,7 +216,8 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Primera vez sin invitación: se crea un plan y se suben los datos del móvil. Con invitación (el dueño ha añadido ese correo): se entra en su plan y los datos del plan sustituyen a los del móvil, tras confirmarlo.
   - Un cambio en un móvil llega a los demás al momento; la App se vuelve a cargar sola (nunca con un formulario a medias).
   - Reglas en `firestore.rules`, publicadas por el mismo flujo de GitHub: cada uno solo ve sus planes; solo los miembros leen y escriben los datos.
-  - El inicio de sesión funciona solo en https://ahhhhhh-today.web.app (en GitHub Pages la sección Cuenta lo indica). Necesita la dirección `https://ahhhhhh-today.web.app/__/auth/handler` autorizada en el cliente OAuth web de Firebase en Google Cloud.
+  - El inicio de sesión funciona solo en https://ahhhhhh-today.web.app (en GitHub Pages la sección Cuenta lo indica). La dirección `https://ahhhhhh-today.web.app/__/auth/handler` está autorizada en el cliente OAuth web de Firebase en Google Cloud.
+  - **Probado (7/10/2026):** inicio de sesión y sincronización funcionan entre móviles.
 - **Publicación automática:** `.github/workflows/firebase-deploy.yml` publica `docs/app` en **Firebase Hosting** (https://ahhhhhh-today.web.app) cada vez que cambia la App, con la cuenta de servicio `github-deploy` (roles: Administrador de Firebase, Administrador de Cloud Functions, Usuario de cuenta de servicio y Editor). Su llave está guardada como secreto `FIREBASE_SERVICE_ACCOUNT` del repositorio; el archivo descargado se borró.
 - GitHub Pages sigue sirviendo las páginas de inicio, privacidad y condiciones (`docs/`) que usa la pantalla de consentimiento de Google.
 
