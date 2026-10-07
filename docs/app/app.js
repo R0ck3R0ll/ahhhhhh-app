@@ -732,6 +732,8 @@
     if(sum){ sum.textContent = S.status === 'in' ? S.email : (S.status === 'loading' ? t('sync.loading') : t('sum.signedOut')); }
     var hint = el('setup-signin');
     if(hint){ hint.hidden = S.status !== 'out'; }
+    // La lectura del calendario escolar con IA necesita la sesión iniciada
+    renderSchoolCal();
   }
   function addMember(ev){
     ev.preventDefault();
@@ -1305,17 +1307,17 @@
     if(day === 5){ return SCHOOL.sat.on && SCHOOL.sat.entry && SCHOOL.sat.exit ? SCHOOL.sat : {on:false}; }
     return {on:false};
   }
-  // Festivos y días no lectivos (fechas ISO). Salen del calendario escolar de Config de una de dos formas:
-  //  - 'source': leídos del archivo o enlace (en la maqueta esa lectura aún no existe: lista vacía);
+  // Festivos y días no lectivos. Salen del calendario escolar de Config de una de dos formas:
+  //  - 'source': leídos del archivo o enlace con IA y revisados antes de guardarlos (NO_SCHOOL_READ);
   //  - 'manual': insertados a mano, como días sueltos o periodos; entonces el archivo o enlace no se lee.
+  // Las dos listas son periodos { id, from, to, name } con fechas ISO; NO_SCHOOL_DATES son los días sueltos.
   var NO_SCHOOL_READ = [], NSD_MANUAL = [], SCHOOL_MODE = 'source', NO_SCHOOL_DATES = [];
-  try{ NO_SCHOOL_READ = JSON.parse(localStorage.getItem('no-school-dates') || '[]') || []; }catch(e){ NO_SCHOOL_READ = []; }
+  try{ NO_SCHOOL_READ = JSON.parse(localStorage.getItem('no-school-read') || '[]') || []; }catch(e){ NO_SCHOOL_READ = []; }
   try{ NSD_MANUAL = JSON.parse(localStorage.getItem('no-school-manual') || '[]') || []; }catch(e){ NSD_MANUAL = []; }
   try{ if(localStorage.getItem('school-cal-mode') === 'manual'){ SCHOOL_MODE = 'manual'; } }catch(e){}
   function refreshNoSchool(){
-    if(SCHOOL_MODE !== 'manual'){ NO_SCHOOL_DATES = NO_SCHOOL_READ.slice(); return; }
     var out = [];
-    NSD_MANUAL.forEach(function(r){
+    (SCHOOL_MODE === 'manual' ? NSD_MANUAL : NO_SCHOOL_READ).forEach(function(r){
       for(var d = isoDate(r.from), z = isoDate(r.to); d <= z; d.setDate(d.getDate() + 1)){
         var k = isoOf(d);
         if(out.indexOf(k) < 0){ out.push(k); }
@@ -1325,14 +1327,19 @@
   }
   refreshNoSchool();
   // De dónde sale el calendario escolar (Config > Enlaces): un archivo subido (PDF, Word o imagen)
-  // o un enlace (p. ej. un archivo en Google Drive). En la maqueta solo se guardan sus datos;
-  // la lectura de los festivos con IA llega en la fase de integraciones.
-  //   { kind:'file', name, size, ext }  ·  { kind:'link', url }
-  var SCHOOL_CAL = null;
+  // o un enlace (p. ej. un archivo en Google Drive). Se guardan sus datos, no el archivo: el archivo
+  // se lee con IA en el servidor (functions/) nada más subirlo, mientras sigue en memoria (SCHOOL_FILE).
+  //   { kind:'file', name, size, ext, read? }  ·  { kind:'link', url, read? }
+  //   read = { at, year, notes }: cuándo se guardó lo leído, el curso y los avisos de la IA
+  var SCHOOL_CAL = null, SCHOOL_FILE = null;
   try{ SCHOOL_CAL = JSON.parse(localStorage.getItem('school-cal') || 'null'); }catch(e){ SCHOOL_CAL = null; }
-  var SCHOOL_CAL_MAX = 20 * 1024 * 1024;
-  var SCHOOL_CAL_EXT = { pdf:'PDF', doc:'DOC', docx:'DOC', png:'IMG', jpg:'IMG', jpeg:'IMG', gif:'IMG', webp:'IMG', heic:'IMG', heif:'IMG' };
+  var SCHOOL_CAL_MAX = 10 * 1024 * 1024;
+  var SCHOOL_CAL_EXT = { pdf:'PDF', docx:'DOC', png:'IMG', jpg:'IMG', jpeg:'IMG', gif:'IMG', webp:'IMG', heic:'IMG', heif:'IMG' };
   var LINK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+  // Lectura en curso (READING: el número de lectura, para ignorar la respuesta si entretanto cambia
+  // la fuente) y resultado pendiente de revisar, guardado solo en este móvil.
+  var READING = 0, READ_SEQ = 0, READ_PENDING = null;
+  try{ READ_PENDING = JSON.parse(localStorage.getItem('school-read-pending') || 'null'); }catch(e){ READ_PENDING = null; }
 
   function setSchoolCal(v){
     SCHOOL_CAL = v;
@@ -1340,11 +1347,19 @@
     renderSchoolCal();
     updateConfigSummaries();
   }
+  function setReadPending(v){
+    READ_PENDING = v;
+    try{ if(v){ localStorage.setItem('school-read-pending', JSON.stringify(v)); } else { localStorage.removeItem('school-read-pending'); } }catch(e){}
+  }
+  function storeNoSchoolRead(){ try{ localStorage.setItem('no-school-read', JSON.stringify(NO_SCHOOL_READ)); }catch(e){} }
   function isDriveUrl(u){ return /(^|\.)(drive|docs)\.google\.com$/i.test(u.hostname); }
   function fmtSize(b){
     var mb = b >= 1024 * 1024, n = mb ? b / 1048576 : Math.max(1, Math.round(b / 1024));
     return new Intl.NumberFormat(LOCALES[LANG], { maximumFractionDigits: mb ? 1 : 0 }).format(n) + (mb ? ' MB' : ' KB');
   }
+  function signedIn(){ return !!(window.SYNC && window.SYNC.status === 'in'); }
+  // Se puede leer (o volver a leer) un enlace siempre; un archivo, solo mientras sigue en memoria
+  function canRead(){ return !!SCHOOL_CAL && (SCHOOL_CAL.kind === 'link' || !!SCHOOL_FILE); }
 
   function renderSchoolCal(){
     var c = SCHOOL_CAL, chip = el('school-cal-chip'), manual = SCHOOL_MODE === 'manual';
@@ -1354,20 +1369,48 @@
       b.classList.toggle('is-active', on);
       b.setAttribute('aria-pressed', String(on));
     });
+    var reviewing = !!(c && !manual && READ_PENDING && !READING);
+    var read = !!(c && c.read);
     // A mano: el archivo o enlace (si lo hay) se ve tachado y con «Lectura desactivada»; no se puede cambiar
-    chip.className = 'status-chip ' + (c && !manual ? 'pending' : 'off');
-    chip.textContent = t(manual ? 'schoolCal.off' : (c ? (c.kind === 'file' ? 'schoolCal.chipFile' : 'schoolCal.chipLink') : 'schoolCal.none'));
+    chip.className = 'status-chip ' + (manual || !c ? 'off' : READING || reviewing ? 'pending' : read ? 'ok' : 'off');
+    chip.textContent = manual ? t('schoolCal.off') : !c ? t('schoolCal.none') :
+      READING ? t('read.chipReading') : reviewing ? t('read.chipReview') :
+      read ? (NO_SCHOOL_READ.length === 1 ? t('read.chipOne') : t('read.chipN', { n: NO_SCHOOL_READ.length })) : t('read.chipUnread');
     el('school-cal-line').hidden = manual && !c;
     el('school-cal-src').hidden = !c;
     el('school-cal-src').classList.toggle('is-off', manual);
-    el('school-cal-hint').hidden = manual;
-    el('school-cal-pending').hidden = !c || manual;
+    el('school-cal-hint').hidden = manual || !!c;
     el('school-manual').hidden = !manual;
     if(manual){ closeSchoolCalLink(); }
     el('school-cal-actions').hidden = manual || !el('school-cal-linkbox').hidden;
+    // Estado de la lectura: leyendo, falta iniciar sesión, hay que volver a subir el archivo…
+    var st = el('school-cal-pending'), msg = '';
+    if(c && !manual && !reviewing){
+      if(READING){ msg = t('read.reading'); }
+      else if(!signedIn()){ msg = t('read.needSignIn'); }
+      else if(!read && !canRead()){ msg = t('read.reupload'); }
+      else if(read){
+        msg = t('read.savedOn', { date: fmtDate(new Date(c.read.at), { day:'numeric', month:'short', year:'numeric' }) }) +
+          (c.read.year ? ' · ' + t('read.year', { year: c.read.year }) : '');
+      }
+    }
+    st.textContent = msg; st.hidden = !msg;
+    st.classList.toggle('is-busy', !!READING);
+    var notes = el('school-cal-notes');
+    notes.textContent = c && read && !manual && !reviewing && c.read.notes ? c.read.notes : '';
+    notes.hidden = !notes.textContent;
+    var rb = el('school-cal-read');
+    rb.hidden = !c || READING || reviewing || !canRead();
+    rb.disabled = !signedIn();
+    rb.textContent = t(read ? 'read.again' : 'read.now');
     var rm = el('school-cal-remove');
     rm.hidden = !c; rm.classList.remove('is-confirm'); rm.textContent = t('schoolCal.remove');
+    el('school-cal-actions').querySelectorAll('button').forEach(function(b){ if(b !== rb){ b.disabled = !!READING; } });
+    // Con el botón de leer a la vista, subir otro archivo pasa a segundo plano
+    el('school-cal-upload').className = rb.hidden ? 'btn-primary' : 'btn-ghost';
+    renderSchoolReview(reviewing);
     renderNoSchoolList();
+    renderNoSchoolReadList(!!c && read && !manual && !reviewing);
     if(!c){ return; }
     var icon = el('school-cal-icon');
     if(c.kind === 'file'){
@@ -1402,25 +1445,31 @@
     var d = isoDate(iso);
     return cap(fmtDate(d, { weekday:'short' }).replace('.', '')) + ' ' + fmtDate(d, { day:'numeric', month:'short', year:'numeric' });
   }
-  function renderNoSchoolList(){
-    var ul = el('nsd-list');
+  function nsdWhen(r){ return r.from === r.to ? nsdDay(r.from) : nsdDay(r.from) + ' – ' + nsdDay(r.to); }
+  function nsdMeta(r){
+    var n = Math.round((isoDate(r.to) - isoDate(r.from)) / 864e5) + 1;
+    return (r.name ? r.name + ' · ' : '') + (n === 1 ? t('nsd.day') : t('nsd.days', { n: n }));
+  }
+  function nsdText(r){
+    var tx = document.createElement('span'); tx.className = 'nsd-text';
+    var w = document.createElement('span'); w.className = 'nsd-when'; w.textContent = nsdWhen(r);
+    var m = document.createElement('span'); m.className = 'nsd-meta'; m.textContent = nsdMeta(r);
+    tx.appendChild(w); tx.appendChild(m);
+    return tx;
+  }
+  function nsdItems(ul, list, onRemove){
     ul.innerHTML = '';
-    NSD_MANUAL.slice().sort(function(a, b){ return a.from < b.from ? -1 : 1; }).forEach(function(r){
-      var n = Math.round((isoDate(r.to) - isoDate(r.from)) / 864e5) + 1;
+    list.slice().sort(function(a, b){ return a.from < b.from ? -1 : 1; }).forEach(function(r){
       var li = document.createElement('li'); li.className = 'nsd-item';
-      var tx = document.createElement('span'); tx.className = 'nsd-text';
-      var w = document.createElement('span'); w.className = 'nsd-when';
-      w.textContent = r.from === r.to ? nsdDay(r.from) : nsdDay(r.from) + ' – ' + nsdDay(r.to);
-      var m = document.createElement('span'); m.className = 'nsd-meta';
-      m.textContent = (r.name ? r.name + ' · ' : '') + (n === 1 ? t('nsd.day') : t('nsd.days', { n: n }));
-      tx.appendChild(w); tx.appendChild(m);
       var x = document.createElement('button');
       x.type = 'button'; x.className = 'row-delete'; x.textContent = '×';
       x.setAttribute('aria-label', t('nsd.remove')); x.title = t('nsd.remove');
-      x.onclick = function(){ removeNoSchool(r.id, x); };
-      li.appendChild(tx); li.appendChild(x); ul.appendChild(li);
+      x.onclick = function(){ onRemove(r.id, x); };
+      li.appendChild(nsdText(r)); li.appendChild(x); ul.appendChild(li);
     });
   }
+  function renderNoSchoolList(){ nsdItems(el('nsd-list'), NSD_MANUAL, removeNoSchool); }
+  function renderNoSchoolReadList(show){ nsdItems(el('nsd-read-list'), show ? NO_SCHOOL_READ : [], removeNoSchoolRead); }
   function storeNoSchool(){ try{ localStorage.setItem('no-school-manual', JSON.stringify(NSD_MANUAL)); }catch(e){} }
   function addNoSchool(){
     var f = el('nsd-from'), z = el('nsd-to'), from = f.value, to = z.value || from;
@@ -1435,15 +1484,25 @@
     toast(t(from === to ? 'toast.nsdAdded' : 'toast.nsdRangeAdded'));
   }
   // Quitar pide una segunda pulsación
+  function confirmRemove(btn){
+    if(btn.classList.contains('is-confirm')){ return true; }
+    btn.classList.add('is-confirm');
+    btn.title = t('nsd.removeConfirm'); btn.setAttribute('aria-label', t('nsd.removeConfirm'));
+    return false;
+  }
   function removeNoSchool(id, btn){
-    if(!btn.classList.contains('is-confirm')){
-      btn.classList.add('is-confirm');
-      btn.title = t('nsd.removeConfirm'); btn.setAttribute('aria-label', t('nsd.removeConfirm'));
-      return;
-    }
+    if(!confirmRemove(btn)){ return; }
     NSD_MANUAL = NSD_MANUAL.filter(function(r){ return r.id !== id; });
     storeNoSchool();
     renderNoSchoolList();
+    noSchoolChanged();
+    toast(t('toast.nsdRemoved'));
+  }
+  function removeNoSchoolRead(id, btn){
+    if(!confirmRemove(btn)){ return; }
+    NO_SCHOOL_READ = NO_SCHOOL_READ.filter(function(r){ return r.id !== id; });
+    storeNoSchoolRead();
+    renderSchoolCal();
     noSchoolChanged();
     toast(t('toast.nsdRemoved'));
   }
@@ -1453,12 +1512,15 @@
     var f = input.files && input.files[0];
     input.value = '';
     if(!f){ return; }
-    var m = /\.([a-z0-9]+)$/i.exec(f.name), ext = m && SCHOOL_CAL_EXT[m[1].toLowerCase()];
+    var m = /\.([a-z0-9]+)$/i.exec(f.name), low = m && m[1].toLowerCase(), ext = low && SCHOOL_CAL_EXT[low];
+    if(low === 'doc'){ toast(t('read.err.oldWord')); return; }
     if(!ext && /^image\//.test(f.type)){ ext = 'IMG'; }
     if(!ext){ toast(t('toast.schoolBadType')); return; }
     if(f.size > SCHOOL_CAL_MAX){ toast(t('toast.schoolTooBig')); return; }
-    setSchoolCal({ kind:'file', name:f.name, size:f.size, ext:ext });
+    SCHOOL_FILE = f;
+    newSchoolCal({ kind:'file', name:f.name, size:f.size, ext:ext });
     toast(t('toast.schoolFile'));
+    readSchoolCal();
   }
 
   function openSchoolCalLink(){
@@ -1485,8 +1547,20 @@
       return;
     }
     closeSchoolCalLink();
-    setSchoolCal({ kind:'link', url:u.href });
+    SCHOOL_FILE = null;
+    newSchoolCal({ kind:'link', url:u.href });
     toast(t('toast.schoolLink'));
+    readSchoolCal();
+  }
+  // Otro calendario (o ninguno) empieza de cero: se olvida la lectura en curso, la pendiente de
+  // revisar y los días leídos del anterior
+  function newSchoolCal(v){
+    READ_SEQ++; READING = 0;
+    setReadPending(null);
+    var had = NO_SCHOOL_READ.length;
+    NO_SCHOOL_READ = []; storeNoSchoolRead();
+    setSchoolCal(v);
+    if(had){ noSchoolChanged(); }
   }
   // Quitar pide una segunda pulsación
   function removeSchoolCal(btn){
@@ -1495,8 +1569,134 @@
       btn.textContent = t('schoolCal.removeConfirm');
       return;
     }
-    setSchoolCal(null);
+    SCHOOL_FILE = null;
+    newSchoolCal(null);
     toast(t('toast.schoolRemoved'));
+  }
+
+  /* ---- Lectura del calendario escolar con IA ----
+     La hace la función readSchoolCalendar del servidor (functions/index.js) con Claude: recibe el
+     archivo (en base64) o el enlace y devuelve { isCalendar, schoolYear, periods:[{from,to,name}], notes }.
+     Lo leído no se aplica solo: se enseña para revisarlo y se guarda con «Guardar». */
+  function fileToBase64(blob){
+    return new Promise(function(ok, ko){
+      var r = new FileReader();
+      r.onload = function(){ ok(String(r.result).replace(/^data:[^,]*,/, '')); };
+      r.onerror = function(){ ko(r.error); };
+      r.readAsDataURL(blob);
+    });
+  }
+  // Las fotos se pasan a JPEG de 2400 px como mucho: pesan menos y así también vale una foto HEIC
+  // del iPhone. Si el navegador no sabe abrir la imagen, se manda tal cual.
+  function shrinkImage(f){
+    return new Promise(function(ok){
+      var url = URL.createObjectURL(f), img = new Image();
+      img.onload = function(){
+        var k = Math.min(1, 2400 / Math.max(img.naturalWidth, img.naturalHeight));
+        var cv = document.createElement('canvas');
+        cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+        var g = cv.getContext('2d');
+        g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height);
+        g.drawImage(img, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(url);
+        cv.toBlob(function(b){ ok(b ? { blob:b, type:'image/jpeg' } : { blob:f, type:f.type }); }, 'image/jpeg', 0.9);
+      };
+      img.onerror = function(){ URL.revokeObjectURL(url); ok({ blob:f, type:f.type }); };
+      img.src = url;
+    });
+  }
+  function readPayload(){
+    var base = { lang: LANG, today: isoOf(new Date()) };
+    if(SCHOOL_CAL.kind === 'link'){ base.url = SCHOOL_CAL.url; return Promise.resolve(base); }
+    var f = SCHOOL_FILE;
+    return (SCHOOL_CAL.ext === 'IMG' ? shrinkImage(f) : Promise.resolve({ blob:f, type:f.type })).then(function(x){
+      return fileToBase64(x.blob).then(function(data){
+        base.file = { name: f.name, type: x.type || '', data: data };
+        return base;
+      });
+    });
+  }
+  // Mensaje para cada error de la función (su message es el motivo: 'signIn', 'private', 'busy'…)
+  var READ_ERRORS = ['signIn', 'noPlan', 'limit', 'busy', 'ai', 'format', 'oldWord', 'empty', 'tooBig', 'private', 'fetch', 'badUrl'];
+  function readErrorText(e){
+    var code = String(e && e.code || ''), msg = String(e && e.message || '');
+    if(READ_ERRORS.indexOf(msg) >= 0){ return t('read.err.' + msg); }
+    if(!navigator.onLine){ return t('read.err.offline'); }
+    if(code === 'functions/not-found'){ return t('read.err.notReady'); }
+    if(code === 'functions/deadline-exceeded'){ return t('read.err.busy'); }
+    return t('read.err.other', { code: code.replace(/^functions\//, '') || msg });
+  }
+  function readSchoolCal(){
+    if(!SCHOOL_CAL || SCHOOL_MODE === 'manual' || READING || !canRead()){ return; }
+    if(!signedIn() || typeof window.syncCall !== 'function'){ renderSchoolCal(); return; }
+    var seq = ++READ_SEQ;
+    READING = seq;
+    renderSchoolCal();
+    readPayload().then(function(payload){
+      return window.syncCall('readSchoolCalendar', payload);
+    }).then(function(res){
+      if(seq !== READ_SEQ){ return; }
+      var periods = (res && res.periods || []).map(function(p, i){
+        return { id:'nsr' + Date.now() + '-' + i, from:p.from, to:p.to, name:p.name || '' };
+      }).sort(function(a, b){ return a.from < b.from ? -1 : 1; });
+      setReadPending({ isCalendar: !!res.isCalendar, year: res.schoolYear || '', notes: res.notes || '', periods: periods, sel: periods.map(function(){ return true; }) });
+      toast(t('read.done'));
+    }).catch(function(e){
+      if(seq !== READ_SEQ){ return; }
+      toast(readErrorText(e));
+    }).then(function(){
+      if(seq !== READ_SEQ){ return; }
+      READING = 0;
+      renderSchoolCal();
+    });
+  }
+
+  // Revisión de lo leído: cada periodo con su casilla (todas marcadas); «Guardar» se queda con las marcadas
+  function renderSchoolReview(show){
+    var box = el('school-review');
+    box.hidden = !show;
+    if(!show){ return; }
+    var p = READ_PENDING, list = el('school-review-list');
+    var meta = !p.isCalendar ? t('read.notCalendar') :
+      !p.periods.length ? t('read.noneFound') :
+      (p.periods.length === 1 ? t('read.foundOne') : t('read.foundN', { n: p.periods.length })) +
+      (p.year ? ' · ' + t('read.year', { year: p.year }) : '');
+    el('school-review-meta').textContent = meta;
+    el('school-review-notes').textContent = p.notes;
+    el('school-review-notes').hidden = !p.notes;
+    el('school-review-replace').hidden = !(NO_SCHOOL_READ.length && p.periods.length);
+    list.innerHTML = '';
+    p.periods.forEach(function(r, i){
+      var label = document.createElement('label'); label.className = 'check-row review-row';
+      var box = document.createElement('input'); box.type = 'checkbox'; box.checked = p.sel[i] !== false;
+      box.onchange = function(){ p.sel[i] = box.checked; setReadPending(p); updateReviewSave(); };
+      label.appendChild(box); label.appendChild(nsdText(r));
+      list.appendChild(label);
+    });
+    updateReviewSave();
+  }
+  function reviewCount(){ return READ_PENDING.sel.filter(function(s){ return s !== false; }).length; }
+  function updateReviewSave(){
+    var b = el('school-review-save'), n = reviewCount();
+    b.hidden = !READ_PENDING.periods.length;
+    b.textContent = t('read.save', { n: n });
+    b.disabled = !n;
+    el('school-review-discard').textContent = t(READ_PENDING.periods.length ? 'read.discard' : 'read.close');
+  }
+  function saveSchoolRead(){
+    var p = READ_PENDING;
+    if(!p || !reviewCount()){ return; }
+    NO_SCHOOL_READ = p.periods.filter(function(r, i){ return p.sel[i] !== false; });
+    storeNoSchoolRead();
+    var c = Object.assign({}, SCHOOL_CAL, { read: { at: new Date().toISOString(), year: p.year, notes: p.notes } });
+    setReadPending(null);
+    setSchoolCal(c);
+    noSchoolChanged();
+    toast(t('read.saved'));
+  }
+  function discardSchoolRead(){
+    setReadPending(null);
+    renderSchoolCal();
   }
 
   // Horario del cole para una fecha concreta: un día no lectivo se trata como un domingo

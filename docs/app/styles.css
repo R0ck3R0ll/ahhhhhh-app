@@ -888,6 +888,18 @@
   .nsd-when{ font-size:13.5px; font-weight:600; font-variant-numeric:tabular-nums; }
   .nsd-meta{ font-size:12px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .nsd-item .row-delete.is-confirm{ background:var(--danger-bg); border-color:var(--danger-bg); color:var(--danger-text); }
+  /* Lectura con IA: estado, avisos de la IA y revisión de lo leído antes de guardarlo */
+  .status-chip.ok{ background:var(--accent-strong); color:var(--surface); border:1px solid var(--accent-strong); }
+  .school-read-status.is-busy::after{ content:'…'; display:inline-block; width:1.2em; animation:readDots 1.2s steps(4, end) infinite; overflow:hidden; vertical-align:bottom; }
+  @keyframes readDots{ from{ width:0; } to{ width:1.2em; } }
+  @media (prefers-reduced-motion: reduce){ .school-read-status.is-busy::after{ animation:none; } }
+  .school-notes{ white-space:pre-line; border-left:3px solid var(--accent); padding-left:9px; }
+  .school-review{ display:flex; flex-direction:column; gap:8px; padding:12px; border:1px solid var(--accent); border-radius:12px; background:var(--accent-soft); }
+  .school-review[hidden], .school-read-status[hidden], .school-notes[hidden]{ display:none; }
+  .school-review-title{ font-size:13.5px; font-weight:700; }
+  .school-review .check-list{ display:flex; flex-direction:column; gap:6px; }
+  .review-row{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
+  .review-row:has(input:not(:checked)) .nsd-text{ opacity:.5; text-decoration:line-through; }
 
   /* ---- Editable categories ---- */
   .cat-row{ align-items:center; }

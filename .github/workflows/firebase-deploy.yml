@@ -1,5 +1,6 @@
 # Publica la App en Firebase Hosting (https://ahhhhhh-today.web.app) cada vez que cambia.
-# También publica las reglas de la base de datos (firestore.rules).
+# También publica las reglas de la base de datos (firestore.rules) y, si han cambiado, las funciones
+# del servidor (carpeta functions: lectura del calendario escolar con IA).
 # Usa la llave de la cuenta de servicio github-deploy, guardada en el secreto FIREBASE_SERVICE_ACCOUNT.
 name: Publicar en Firebase
 
@@ -8,10 +9,12 @@ on:
     branches:
       - main
       - claude/hopeful-lovelace-18fa2k
+      - ccr-7f2b2179-0pay8k
     paths:
       - 'docs/app/**'
       - 'firebase.json'
       - 'firestore.rules'
+      - 'functions/**'
       - '.github/workflows/firebase-deploy.yml'
   workflow_dispatch:
 
@@ -37,4 +40,42 @@ jobs:
           printf '%s' "$SA_KEY" > "$RUNNER_TEMP/sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
           npx --yes firebase-tools@13 deploy --only firestore:rules --project ahhhhhh-today --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"
+
+  # Funciones del servidor: solo cuando cambia la carpeta functions (o al lanzarlo a mano).
+  # Van aparte para que un fallo aquí no impida publicar la App.
+  functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: ¿Han cambiado las funciones?
+        id: changed
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "${{ github.event_name }}" != "push" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null \
+             || git diff --name-only "$BEFORE" HEAD | grep -q '^functions/'; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@v4
+        if: steps.changed.outputs.deploy == 'true'
+        with:
+          node-version: 22
+      - name: Instalar y probar
+        if: steps.changed.outputs.deploy == 'true'
+        run: |
+          npm ci --prefix functions
+          npm test --prefix functions
+      - name: Publicar funciones
+        if: steps.changed.outputs.deploy == 'true'
+        env:
+          SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SA_KEY" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx --yes firebase-tools@15 deploy --only functions --project ahhhhhh-today --non-interactive --force
           rm -f "$RUNNER_TEMP/sa.json"

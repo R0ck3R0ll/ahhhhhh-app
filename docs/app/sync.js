@@ -22,11 +22,12 @@ import {
   doc, getDoc, setDoc, updateDoc, collection, query, where, limit, getDocs, onSnapshot,
   serverTimestamp, arrayUnion, arrayRemove, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
 
 // Datos compartidos del plan. El idioma, el aspecto y los avisos ya vistos son de cada móvil.
 const SHARED_KEYS = [
   'kid-name', 'app-settings', 'app-activities', 'app-events', 'app-tasks', 'app-blocks',
-  'deleted-cats', 'addresses', 'places', 'school-cal', 'school-cal-mode', 'no-school-manual', 'no-school-dates'
+  'deleted-cats', 'addresses', 'places', 'school-cal', 'school-cal-mode', 'no-school-manual', 'no-school-read'
 ];
 
 // El inicio de sesión solo funciona en la dirección de Firebase (o en local, para probar)
@@ -198,6 +199,15 @@ async function start(){
 
   // ---- Lo que usa la App ----
   const mobile = window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(display-mode: standalone)').matches;
+  // Funciones del servidor (carpeta functions), p. ej. la lectura del calendario escolar con IA.
+  // Devuelve lo que devuelve la función; si falla, el error lleva code (p. ej. 'functions/unauthenticated')
+  // y message con el motivo que la App traduce.
+  const functions = getFunctions(app, 'europe-west1');
+  window.syncCall = async function(name, data){
+    const res = await httpsCallable(functions, name, { timeout: 300000 })(data);
+    return res.data;
+  };
+
   window.syncSignIn = async function(){
     SYNC.error = '';
     const provider = new GoogleAuthProvider();

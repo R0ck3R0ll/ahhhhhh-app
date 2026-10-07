@@ -446,13 +446,30 @@
             </span>
           </div>
           <p class="card-hint" id="school-cal-hint" data-i18n-html="hint.schoolCal"></p>
-          <p class="card-hint" id="school-cal-pending" data-i18n="schoolCal.pending" hidden></p>
+          <!-- Lectura con IA: en curso, falta iniciar sesión, cuándo se leyó… (lo pone renderSchoolCal) -->
+          <p class="card-hint school-read-status" id="school-cal-pending" hidden></p>
+          <p class="card-hint school-notes" id="school-cal-notes" hidden></p>
+          <!-- Revisión de lo que ha leído la IA: nada se guarda hasta pulsar «Guardar» -->
+          <div class="school-review" id="school-review" hidden>
+            <div class="school-review-title" data-i18n="read.reviewTitle"></div>
+            <p class="card-hint" id="school-review-meta"></p>
+            <p class="card-hint school-notes" id="school-review-notes" hidden></p>
+            <div class="check-list" id="school-review-list"></div>
+            <p class="card-hint" id="school-review-replace" data-i18n="read.replaces" hidden></p>
+            <div class="cat-new-actions">
+              <button type="button" class="btn-ghost" id="school-review-discard" onclick="discardSchoolRead()"></button>
+              <button type="button" class="btn-primary" id="school-review-save" onclick="saveSchoolRead()"></button>
+            </div>
+          </div>
+          <!-- Días sin cole leídos y guardados (se pueden quitar uno a uno) -->
+          <ul class="nsd-list" id="nsd-read-list"></ul>
           <div class="school-actions" id="school-cal-actions">
-            <button type="button" class="btn-primary" onclick="pickSchoolCalFile()" data-i18n="schoolCal.upload"></button>
+            <button type="button" class="btn-primary" id="school-cal-read" onclick="readSchoolCal()" hidden></button>
+            <button type="button" class="btn-primary" id="school-cal-upload" onclick="pickSchoolCalFile()" data-i18n="schoolCal.upload"></button>
             <button type="button" class="btn-ghost" onclick="openSchoolCalLink()" data-i18n="schoolCal.link"></button>
             <button type="button" class="btn-ghost school-remove" id="school-cal-remove" onclick="removeSchoolCal(this)" data-i18n="schoolCal.remove" hidden></button>
           </div>
-          <input type="file" id="school-cal-file" accept=".pdf,.doc,.docx,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onchange="onSchoolCalFile(this)">
+          <input type="file" id="school-cal-file" accept=".pdf,.docx,image/*,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onchange="onSchoolCalFile(this)">
           <!-- Pegar un enlace (p. ej. un archivo en Google Drive o la página del colegio) -->
           <div class="school-link" id="school-cal-linkbox" hidden>
             <label class="fld">
