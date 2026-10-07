@@ -437,6 +437,61 @@
     if(!noScroll){ g.scrollIntoView({ block:'start', behavior:'smooth' }); }
   }
 
+  /* ---- Cuenta (Configuración): inicio de sesión con Google y personas del plan ----
+     El estado lo lleva sync.js en window.SYNC y avisa con renderAccount() en cada cambio. */
+  // Sin conexión la primera vez, la parte de Firebase no llega a cargar: se avisa en vez de esperar
+  var SYNC_FAILED = false;
+  setTimeout(function(){ if(!window.SYNC){ SYNC_FAILED = true; renderAccount(); } }, 10000);
+  function renderAccount(){
+    var box = el('account-body');
+    if(!box){ return; }
+    var S = window.SYNC || { status: SYNC_FAILED ? 'offline' : 'loading' };
+    var h = '';
+    if(S.status === 'offline'){
+      h = '<p class="card-hint">' + t('sync.why') + '</p><p class="card-hint">' + t('sync.offline') + '</p>';
+    } else if(S.status === 'unavailable'){
+      h = '<p class="card-hint">' + t('sync.why') + '</p><p class="card-hint">' + t('sync.unavailable') + '</p>';
+    } else if(S.status === 'loading'){
+      h = '<p class="card-hint">' + t('sync.loading') + '</p>';
+    } else if(S.status === 'out'){
+      h = '<p class="card-hint">' + t('sync.why') + '</p>' +
+          '<div><button type="button" class="btn-primary" onclick="syncSignIn()">' + t('sync.signIn') + '</button></div>';
+    } else {
+      h = '<div class="config-line"><span class="config-label">' + t('sync.signedAs') + ' <strong>' + esc(S.email) + '</strong></span></div>' +
+          '<p class="card-hint">' + t('sync.synced') + '</p>' +
+          '<span class="field-label">' + t('sync.members') + '</span>' +
+          '<ul class="member-list">' + (S.members || []).map(function(m){
+            var own = m === S.owner;
+            return '<li><span class="member-email">' + esc(m) + (own ? ' <span class="muted">· ' + t('sync.owner') + '</span>' : '') + '</span>' +
+              (S.isOwner && !own ? '<button type="button" class="btn-ghost" data-email="' + esc(m) + '" onclick="removeMember(this)">' + t('sync.remove') + '</button>' : '') + '</li>';
+          }).join('') + '</ul>' +
+          (S.isOwner
+            ? '<form class="member-add" onsubmit="addMember(event)"><input class="txt-input" id="member-email" type="email" autocomplete="off" inputmode="email" placeholder="' + esc(t('sync.addPh')) + '">' +
+              '<button type="submit" class="btn-primary">' + t('sync.add') + '</button></form>' +
+              '<p class="card-hint">' + t('sync.membersHint') + '</p>'
+            : '<p class="card-hint">' + esc(t('sync.sharedBy', { owner: S.owner })) + '</p>') +
+          '<div><button type="button" class="btn-ghost" onclick="syncSignOut()">' + t('sync.signOut') + '</button></div>';
+    }
+    if(S.error){ h += '<p class="card-hint sync-error">' + esc(t('sync.error', { code: S.error })) + '</p>'; }
+    box.innerHTML = h;
+    var sum = el('sum-account');
+    if(sum){ sum.textContent = S.status === 'in' ? S.email : (S.status === 'loading' ? t('sync.loading') : t('sum.signedOut')); }
+    var hint = el('setup-signin');
+    if(hint){ hint.hidden = S.status !== 'out'; }
+  }
+  function addMember(ev){
+    ev.preventDefault();
+    var inp = el('member-email');
+    var v = inp.value.trim().toLowerCase();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){ toast(t('sync.badEmail')); inp.focus(); return; }
+    window.syncAddMember(v).then(function(ok){ if(ok){ inp.value = ''; toast(t('sync.added')); } })
+      .catch(function(e){ toast(t('sync.error', { code: e && e.code || e })); });
+  }
+  function removeMember(btn){
+    window.syncRemoveMember(btn.dataset.email).then(function(ok){ if(ok){ toast(t('sync.removed')); } })
+      .catch(function(e){ toast(t('sync.error', { code: e && e.code || e })); });
+  }
+
   function renderToday(){
     loadTodayItems();
     var screen = document.getElementById('screen-today');
@@ -1330,6 +1385,7 @@
   function updateConfigSummaries(){
     function put(id, text){ var el = document.getElementById('sum-' + id); if(el){ el.textContent = text; } }
     put('profile', KID || t('sum.notSet'));
+    renderAccount();
     renderSetup();
     put('language', LANGS[LANG]);
     put('look', [t(APPEARANCE.layout === 'list' ? 'layout.list' : (APPEARANCE.layout === 'postit1' ? 'Post-it 1' : 'Post-it 2')),

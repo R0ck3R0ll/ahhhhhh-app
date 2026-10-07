@@ -207,8 +207,16 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 - **Proyecto:** el mismo de Google Cloud, `ahhhhhh-today` (número 356797407017), con Firebase añadido. Plan **Blaze** a través de la **prueba gratuita de Google Cloud** (264 € de crédito, 90 días, hasta el 6/1/2027). **Antes de esa fecha hay que pulsar «Actualizar»** en la tarjeta de facturación de Firebase para pasar a la cuenta de pago normal; si no, los servicios se paran. Con el uso familiar el coste esperado es 0 €. Pendiente: alerta de presupuesto de 5 €.
 - **App web registrada** («AHHHHHH Today web»): su `firebaseConfig` es público y va dentro de la App.
-- **Firestore** (base de datos) en `europe-southwest1` (Madrid), en modo producción. Reglas en `firestore.rules`: cada persona solo lee y escribe sus propios datos (`users/{su id}/…`) y solo con la sesión iniciada.
+- **Firestore** (base de datos) en `europe-southwest1` (Madrid), en modo producción.
 - **Authentication:** inicio de sesión con Google.
+- **Sincronización (Config > Cuenta, `docs/app/sync.js`):** el inicio de sesión es opcional; sin él la App funciona solo en el móvil. Al iniciar sesión, los datos se guardan en un **plan** compartido:
+  - `plans/{id}`: dueño y lista de correos que comparten el plan (`memberEmails`). Solo el dueño añade o quita personas.
+  - `plans/{id}/kv/{clave}`: los datos (nombre, ajustes, actividades, eventos, tareas, bloques, direcciones, calendario escolar…). El idioma y el aspecto son de cada móvil.
+  - `users/{uid}`: a qué plan pertenece cada persona.
+  - Primera vez sin invitación: se crea un plan y se suben los datos del móvil. Con invitación (el dueño ha añadido ese correo): se entra en su plan y los datos del plan sustituyen a los del móvil, tras confirmarlo.
+  - Un cambio en un móvil llega a los demás al momento; la App se vuelve a cargar sola (nunca con un formulario a medias).
+  - Reglas en `firestore.rules`, publicadas por el mismo flujo de GitHub: cada uno solo ve sus planes; solo los miembros leen y escriben los datos.
+  - El inicio de sesión funciona solo en https://ahhhhhh-today.web.app (en GitHub Pages la sección Cuenta lo indica). Necesita la dirección `https://ahhhhhh-today.web.app/__/auth/handler` autorizada en el cliente OAuth web de Firebase en Google Cloud.
 - **Publicación automática:** `.github/workflows/firebase-deploy.yml` publica `docs/app` en **Firebase Hosting** (https://ahhhhhh-today.web.app) cada vez que cambia la App, con la cuenta de servicio `github-deploy` (roles: Administrador de Firebase, Administrador de Cloud Functions, Usuario de cuenta de servicio y Editor). Su llave está guardada como secreto `FIREBASE_SERVICE_ACCOUNT` del repositorio; el archivo descargado se borró.
 - GitHub Pages sigue sirviendo las páginas de inicio, privacidad y condiciones (`docs/`) que usa la pantalla de consentimiento de Google.
 

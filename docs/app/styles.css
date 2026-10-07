@@ -1048,3 +1048,13 @@
   @media (prefers-reduced-motion: reduce){
     .toast{ transition:none; }
   }
+
+  /* ---- Cuenta: personas del plan ---- */
+  .member-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .member-list li{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:13.5px; }
+  .member-email{ min-width:0; overflow-wrap:anywhere; }
+  .member-add{ display:flex; gap:8px; }
+  .member-add .txt-input{ flex:1; min-width:0; }
+  .sync-error{ color:var(--danger-bg); }
+  .member-email .muted{ color:var(--text-muted); }
+  .card-hint a{ color:var(--accent-strong); }

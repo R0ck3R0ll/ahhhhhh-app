@@ -281,9 +281,17 @@
         <div class="setup-title" data-i18n="setup.title"></div>
         <ul class="setup-list" id="setup-list"></ul>
         <p class="card-hint" data-i18n="setup.hint"></p>
+        <p class="card-hint" id="setup-signin" hidden><button type="button" class="setup-link" onclick="openCfgGroup('account')" data-i18n="setup.signIn"></button></p>
       </div>
 
       <div class="cfg-groups">
+      <details class="cfg-group" data-group="account">
+        <summary><span class="cfg-group-title" data-i18n="grp.account"></span><span class="cfg-group-sum" id="sum-account"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cfg-group-body">
+        <!-- Inicio de sesión y personas del plan: lo dibuja renderAccount() con el estado de sync.js -->
+        <div class="config-card" id="account-body"></div>
+        </div>
+      </details>
       <details class="cfg-group" data-group="profile">
         <summary><span class="cfg-group-title" data-i18n="grp.profile"></span><span class="cfg-group-sum" id="sum-profile"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="cfg-group-body">
@@ -790,6 +798,7 @@
 
 <script src="i18n.js"></script>
 <script src="app.js"></script>
+<script type="module" src="sync.js" onerror="SYNC_FAILED = true; renderAccount();"></script>
 <script>
   // Funciona sin conexión y se puede instalar: el service worker guarda la App en el dispositivo
   if('serviceWorker' in navigator){
