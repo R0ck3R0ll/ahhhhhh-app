@@ -221,6 +221,18 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - **Publicación automática:** `.github/workflows/firebase-deploy.yml` publica `docs/app` en **Firebase Hosting** (https://ahhhhhh-today.web.app) cada vez que cambia la App, con la cuenta de servicio `github-deploy` (roles: Administrador de Firebase, Administrador de Cloud Functions, Usuario de cuenta de servicio y Editor). Su llave está guardada como secreto `FIREBASE_SERVICE_ACCOUNT` del repositorio; el archivo descargado se borró.
 - GitHub Pages sigue sirviendo las páginas de inicio, privacidad y condiciones (`docs/`) que usa la pantalla de consentimiento de Google.
 
+## 2 quater. Google Maps (paso 2: traslados con tráfico)
+
+- **Routes API** activada en el proyecto `ahhhhhh-today`. Clave «Maps App» restringida a los sitios `https://ahhhhhh-today.web.app/*` y `https://ahhhhhh-today.firebaseapp.com/*` y solo a Routes API; va dentro de la App (es pública por naturaleza, la protege la restricción).
+- **Alerta de presupuesto** de 5 € en Facturación > Budgets & caps (avisa por correo, no corta el gasto).
+- **En la App** (`applyRoute` en `app.js`): solo para el **próximo** elemento de hoy con lugar y traslado.
+  - Punto de partida según las reglas del punto de traslados (ubicación del móvil desde 1 h antes; si no se puede saber, casa).
+  - En coche con tráfico previsto para la hora de salida; si está a menos de 2,5 km, también a pie (si son 45 min o menos).
+  - Se muestran las horas de salida (iconos de coche y de andar) y la distancia.
+  - Se guarda en el móvil y se vuelve a pedir cada 30 min (10 min desde la ubicación del móvil). Máximo 40 consultas por móvil y día; si Google rechaza la clave o se acaba el cupo, se deja de preguntar 1 h.
+- Pendiente: cuota diaria de Routes API en Google Cloud (unas 150 al día; el nivel gratuito es de unas 10.000 al mes).
+- Pendiente: el aviso a la hora de salida (Config > Google Calendar > «Aviso a la hora de salida») todavía no usa estos tiempos.
+
 ## 3. Flujo de sincronización con Google (Classroom + Gmail)
 
 > **Estado (3/10/2026): la cuenta del colegio está bloqueada para apps externas.**

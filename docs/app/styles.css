@@ -1058,3 +1058,4 @@
   .sync-error{ color:var(--danger-bg); }
   .member-email .muted{ color:var(--text-muted); }
   .card-hint a{ color:var(--accent-strong); }
+  .up-next-card .hero-leave{ justify-content:flex-start; }
