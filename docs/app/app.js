@@ -172,6 +172,7 @@
   function loadTodayItems(){
     var items = todayItems();
     TODAY_NEXT = items[0] || null;
+    refreshRoutes(items);
     applyRoute(TODAY_NEXT);
     TODAY_LATER_ALL = items.slice(1);
     TODAY_LATER = TODAY_LATER_ALL.slice(0, TODAY_MAX - 1);
@@ -338,21 +339,21 @@
   }
 
   /* ---- Traslados: tiempo real con Google Maps (Routes API) ----
-     Solo para el próximo elemento de hoy, que es el que muestra la hora de salida: en coche
-     con el tráfico previsto y, si está a menos de 2,5 km, también a pie. Cada resultado se
-     guarda en el móvil y se vuelve a pedir cada 30 min (cada 10 min si se sale desde la
-     ubicación del móvil), con un máximo de MAPS_DAY_MAX consultas por móvil y día. El límite
-     diario de verdad está en Google Cloud (cuota de Routes API).
+     Cada elemento de hoy con lugar y traslado tiene su tiempo en coche (con el tráfico previsto)
+     y, si está a menos de 2,5 km, a pie. Cuándo se calcula, para pedir lo justo:
+       - la primera vez que se abre la App en el día: todos;
+       - para cada elemento, cuando falta 1 h para su hora de salida y después cada 20 min,
+         hasta la hora del elemento (ROUTE_SLOT_MIN);
+       - si cambia algo de hoy (una actividad o un evento, la casa o el sitio exacto de un
+         lugar): todos, porque el punto de partida de cada uno depende del anterior.
+     Los resultados se guardan en el móvil (route-cache). Máximo MAPS_DAY_MAX consultas por móvil
+     y día; si Google rechaza la clave o el cupo, se deja de preguntar 1 h.
      La clave solo funciona desde la dirección de la App (restricción por sitio web). */
   var MAPS_KEY = 'AIzaSyAVY7P4ZP89mUGi_0cQy-jNY7gXLO8L9Mw';
   var MAPS_ON = /(^|\.)ahhhhhh-today\.(web\.app|firebaseapp\.com)$/.test(location.hostname);
-  var MAPS_DAY_MAX = 40, WALK_MAX_M = 2500, WALK_MAX_MIN = 45;
-  var ROUTES = {}, ROUTE_BUSY = {}, ROUTE_PAUSE = 0;
-  try{ ROUTES = JSON.parse(localStorage.getItem('route-cache') || '{}') || {}; }catch(e){}
-  (function(){   // solo se guardan los de hoy
-    var iso = isoOf(new Date());
-    Object.keys(ROUTES).forEach(function(k){ if(k.indexOf(iso + '|') !== 0){ delete ROUTES[k]; } });
-  })();
+  var MAPS_DAY_MAX = 60, WALK_MAX_M = 2500, WALK_MAX_MIN = 45, ROUTE_SLOT_MIN = 20;
+  var ROUTES = { day: '', sig: '', items: {} }, ROUTE_BUSY = false, ROUTE_PAUSE = 0;
+  try{ var r0 = JSON.parse(localStorage.getItem('route-cache') || 'null'); if(r0 && r0.items){ ROUTES = r0; } }catch(e){}
   function saveRoutes(){ try{ localStorage.setItem('route-cache', JSON.stringify(ROUTES)); }catch(e){} }
   function routeCount(add){
     var iso = isoOf(new Date()), c = { d: iso, n: 0 };
@@ -398,52 +399,79 @@
     });
   }
 
-  // Pone en el elemento las horas de salida (leaves), la distancia y, si hace falta, el origen
-  function applyRoute(item){
-    if(!MAPS_ON || !item || !item.place){ return; }
+  // Firma de lo que influye en los trayectos de hoy: si cambia, se recalculan todos
+  function routeSig(){
+    return JSON.stringify([ADDR.home, PLACES[ADDR.home] || ''].concat(placedElements(TODAY_DATE)
+      .sort(function(p, q){ return p.t - q.t || (p.id < q.id ? -1 : 1); })
+      .map(function(p){ return [p.id, p.t, p.place, PLACES[p.place] || '']; })));
+  }
+  // Tramo de 20 min en el que estamos para un elemento: -1 antes de 1 h de la salida o ya
+  // empezado; 0 desde 1 h antes de la salida, 1 a los 20 min, etc.
+  function routeSlot(item, r){
+    var now = NOW * 60, start = item.t * 60;
+    if(now >= start || !r || !r.car){ return -1; }
+    var from = start - r.car.min - 60;
+    return now < from ? -1 : Math.floor((now - from) / ROUTE_SLOT_MIN);
+  }
+  function routeOrigin(item){
     var o = travelOrigin(item, TODAY_DATE, NOW);
-    if(!o){ return; }
-    var origin, okey;
+    if(!o){ return null; }
     if(o.kind === 'device'){
       ensureGeo();
-      if(GEO){ origin = { location: { latLng: { latitude: GEO.lat, longitude: GEO.lng } } }; okey = 'gps:' + GEO.lat.toFixed(3) + ',' + GEO.lng.toFixed(3); }
-      else if(GEO_DENIED || GEO_RETRY > Date.now()){ o = { kind: 'home', place: ADDR.home }; item.from = t('from.home'); }
-      else { return; }   // esperando la ubicación
+      if(GEO){ return { o: o, wp: { location: { latLng: { latitude: GEO.lat, longitude: GEO.lng } } } }; }
+      if(GEO_DENIED || GEO_RETRY > Date.now()){ o = { kind: 'home', place: ADDR.home, fallback: true }; }
+      else { return { wait: true }; }   // esperando la ubicación
     }
-    if(!origin){
-      if(!o.place){ return; }
-      origin = waypointFor(o.place); okey = 'addr:' + o.place;
-    }
-    var key = [isoOf(TODAY_DATE), item.id, item.t, item.place, JSON.stringify(PLACES[item.place] || ''), okey, JSON.stringify(PLACES[o.place] || '')].join('|');
-    var hit = ROUTES[key];
-    if(hit){
-      var leaves = {};
-      if(hit.car){ leaves.car = fmtHour(Math.floor(item.t * 60 - hit.car.min) / 60); }
-      if(hit.walk){ leaves.walk = fmtHour(Math.floor(item.t * 60 - hit.walk.min) / 60); }
-      if(leaves.car || leaves.walk){ item.leaves = leaves; }
-      if(hit.car && hit.car.m){ item.dist = new Intl.NumberFormat(LOCALES[LANG], { maximumFractionDigits: 1 }).format(hit.car.m / 1000) + ' km'; }
-    }
-    var maxAge = (o.kind === 'device' ? 10 : 30) * 60000;
-    if(hit && Date.now() - hit.at < maxAge){ return; }
-    if(ROUTE_BUSY[key] || Date.now() < ROUTE_PAUSE || routeCount(0) >= MAPS_DAY_MAX || !navigator.onLine){ return; }
-    ROUTE_BUSY[key] = true;
+    return o.place ? { o: o, wp: waypointFor(o.place) } : null;
+  }
+  // Repasa los elementos de hoy y calcula (de uno en uno) los que tocan
+  function refreshRoutes(items){
+    if(!MAPS_ON || ROUTE_BUSY || Date.now() < ROUTE_PAUSE || !navigator.onLine){ return; }
+    var iso = isoOf(TODAY_DATE), sig = routeSig();
+    if(ROUTES.day !== iso || ROUTES.sig !== sig){ ROUTES = { day: iso, sig: sig, items: {} }; saveRoutes(); }
+    var due = null, dueOrigin = null;
+    items.some(function(item){
+      if(!item.place || (item.kind !== 'activity' && item.kind !== 'event')){ return false; }
+      var r = ROUTES.items[item.id];
+      if(r && r.failAt && Date.now() - r.failAt < 10 * 60000){ return false; }
+      if(r && !r.failAt && routeSlot(item, r) <= r.slot){ return false; }
+      var org = routeOrigin(item);
+      if(!org || org.wait){ return false; }
+      due = item; dueOrigin = org; return true;
+    });
+    if(!due || routeCount(0) >= MAPS_DAY_MAX){ return; }
+    ROUTE_BUSY = true;
+    var item = due, prev = ROUTES.items[item.id];
     var arrive = TODAY_DATE.getTime() + item.t * 3600000;
-    var guess = hit && hit.car ? hit.car.min : 20;
-    var res = { at: Date.now() };
-    fetchRoute(origin, item.place, 'DRIVE', arrive - guess * 60000).then(function(car){
+    var guess = prev && prev.car ? prev.car.min : 20;
+    var res = { at: Date.now(), from: dueOrigin.o.kind, fallback: !!dueOrigin.o.fallback };
+    fetchRoute(dueOrigin.wp, item.place, 'DRIVE', arrive - guess * 60000).then(function(car){
       res.car = car;
       if(car && car.m && car.m <= WALK_MAX_M){
-        return fetchRoute(origin, item.place, 'WALK', 0).then(function(w){ if(w && w.min <= WALK_MAX_MIN){ res.walk = w; } });
+        return fetchRoute(dueOrigin.wp, item.place, 'WALK', 0).then(function(w){ if(w && w.min <= WALK_MAX_MIN){ res.walk = w; } });
       }
     }).then(function(){
-      ROUTES[key] = res; saveRoutes();
-      delete ROUTE_BUSY[key];
-      renderToday();
+      res.slot = routeSlot(item, res);
+      if(ROUTES.day === iso && ROUTES.sig === sig){ ROUTES.items[item.id] = res; saveRoutes(); }
+      ROUTE_BUSY = false;
+      renderToday();   // pinta el resultado y sigue con el siguiente que toque
     }).catch(function(code){
-      delete ROUTE_BUSY[key];
-      // Clave rechazada o cupo agotado: se deja de preguntar durante 1 h
-      ROUTE_PAUSE = Date.now() + (code === 403 || code === 429 ? 60 : 10) * 60000;
+      ROUTE_BUSY = false;
+      if(code === 403 || code === 429){ ROUTE_PAUSE = Date.now() + 60 * 60000; }   // clave rechazada o cupo agotado
+      else { ROUTES.items[item.id] = { failAt: Date.now(), slot: -2 }; saveRoutes(); }
     });
+  }
+  // Pone en el elemento las horas de salida (leaves), la distancia y, si se salió de casa en
+  // vez de la ubicación del móvil, el origen
+  function applyRoute(item){
+    var r = item && ROUTES.items[item.id];
+    if(!r || !r.car || ROUTES.day !== isoOf(TODAY_DATE)){ return; }
+    var leaves = {};
+    leaves.car = fmtHour(Math.floor(item.t * 60 - r.car.min) / 60);
+    if(r.walk){ leaves.walk = fmtHour(Math.floor(item.t * 60 - r.walk.min) / 60); }
+    item.leaves = leaves;
+    if(r.car.m){ item.dist = new Intl.NumberFormat(LOCALES[LANG], { maximumFractionDigits: 1 }).format(r.car.m / 1000) + ' km'; }
+    if(r.fallback){ item.from = t('from.home'); }
   }
 
   /* ---- Apariencia (Configuración) ---- */
