@@ -112,10 +112,15 @@
 
   /* En el móvil la App ocupa toda la pantalla (sin el marco de teléfono de la maqueta):
      cabecera y barra de pestañas fijas, y solo el contenido de cada pantalla se desplaza. */
+  /* La altura es la de la ventana medida por la App (--app-h, ver fitShell en app.js); 100dvh y 100vh
+     solo como respaldo, porque algunos navegadores y Apps instaladas la calculan mal y sobra un poco.
+     La página nunca se desplaza: solo el contenido (main), sin arrastrar la App con el rebote. */
   @media (max-width:500px){
-    body{ margin:0; min-height:100dvh; }
-    .page-pad{ padding:0; }
-    .app-shell{ max-width:none; height:100dvh; min-height:0; border:none; border-radius:0; box-shadow:none; }
+    html, body{ height:100%; overflow:hidden; overscroll-behavior:none; }
+    body{ margin:0; min-height:0; }
+    .page-pad{ padding:0; height:100%; }
+    .app-shell{ max-width:none; height:100vh; height:100dvh; height:var(--app-h, 100dvh); min-height:0; border:none; border-radius:0; box-shadow:none; }
+    main.screen-container{ overscroll-behavior:contain; }
     /* Instalada en la pantalla de inicio: la cabecera deja sitio a la barra de estado (muesca) */
     .topbar{ padding-top:calc(20px + env(safe-area-inset-top)); }
     main.screen-container{ min-height:0; padding-bottom:18px; }

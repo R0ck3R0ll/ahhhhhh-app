@@ -632,6 +632,13 @@
     el('load-toggle').setAttribute('aria-label', t('load.title') + ' · ' + t(open ? 'load.hide' : 'load.show'));
   }
   function toggleLoad(){ setLoadOpen(document.querySelector('.load-card').classList.contains('is-collapsed')); }
+  // Altura de la App = la de la ventana tal como la ve el móvil (sin barras del navegador ni del
+  // sistema): así cabecera y pestañas quedan siempre a la vista y solo se desplaza el contenido
+  function fitShell(){ document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px'); }
+  fitShell();
+  window.addEventListener('resize', fitShell);
+  window.addEventListener('orientationchange', function(){ setTimeout(fitShell, 300); });
+  window.addEventListener('pageshow', fitShell);
   window.addEventListener('resize', fitLoad);
   window.addEventListener('load', fitLoad);
   /* ---- Pulsar una tarjeta de «Hoy»: se abre la ficha del elemento en la pantalla que le
