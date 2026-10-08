@@ -42,7 +42,7 @@ jobs:
           npx --yes firebase-tools@13 deploy --only firestore:rules --project ahhhhhh-today --non-interactive
           rm -f "$RUNNER_TEMP/sa.json"
 
-  # Funciones del servidor: solo cuando cambia la carpeta functions (o al lanzarlo a mano).
+  # Funciones del servidor: solo cuando cambia la carpeta functions o este flujo (o al lanzarlo a mano).
   # Van aparte para que un fallo aquí no impida publicar la App.
   functions:
     runs-on: ubuntu-latest
@@ -56,7 +56,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
         run: |
           if [ "${{ github.event_name }}" != "push" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null \
-             || git diff --name-only "$BEFORE" HEAD | grep -q '^functions/'; then
+             || git diff --name-only "$BEFORE" HEAD | grep -qE '^(functions/|\.github/workflows/)'; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=false" >> "$GITHUB_OUTPUT"
