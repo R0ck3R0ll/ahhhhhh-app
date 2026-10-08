@@ -234,9 +234,8 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Pruebas: `npm test` en `functions/` (lectura de archivos y enlaces, y comprobación de fechas); probado también con los emuladores de Firebase (sesión, plan, límite diario, enlaces) y la petición a Gemini contra un servidor simulado. **Pendiente: probarlo con Gemini de verdad y el calendario real del colegio** una vez publicada la función.
   - Publicación: el mismo flujo de GitHub publica las funciones cuando cambia la carpeta `functions` (trabajo aparte del de la App, para que un fallo aquí no impida publicar la App).
   - **Para activarla (una vez):**
-    1. En Google Cloud (proyecto `ahhhhhh-today`), activar la **Vertex AI API**: https://console.cloud.google.com/apis/library/aiplatform.googleapis.com?project=ahhhhhh-today > «Habilitar».
-    2. En **IAM y administración > IAM** > «Conceder acceso»: principal `356797407017-compute@developer.gserviceaccount.com` (la cuenta con la que corre la función), rol **Usuario de Vertex AI**.
-    3. En GitHub > Actions > «Publicar en Firebase» > «Run workflow» para publicar la función (o se publica sola con el próximo cambio en `functions/`).
+    1. La **Vertex AI API** la activa sola la publicación automática (si no pudiera, avisa en GitHub y hay que activarla a mano en https://console.cloud.google.com/apis/library/aiplatform.googleapis.com?project=ahhhhhh-today > «Habilitar»).
+    2. Comprobar en **IAM y administración > IAM** que la cuenta `356797407017-compute@developer.gserviceaccount.com` (con la que corre la función) tiene el rol **Editor** o **Usuario de Vertex AI**; si no, «Conceder acceso» con el rol **Usuario de Vertex AI**. Si falta, la App avisa de que la lectura con IA aún no está activada.
 - GitHub Pages sigue sirviendo las páginas de inicio, privacidad y condiciones (`docs/`) que usa la pantalla de consentimiento de Google.
 
 ## 2 quater. Google Maps (paso 2: traslados con tráfico)
