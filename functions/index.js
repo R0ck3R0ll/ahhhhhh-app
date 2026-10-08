@@ -115,7 +115,7 @@ export const readSchoolCalendar = onCall({
   const text = res.text || '';
   let out;
   try{ out = JSON.parse(text); }catch(e){ throw new HttpsError('internal', 'ai'); }
-  const result = cleanResult(out, today);
+  const result = cleanResult(out, today, lang);
   logger.info('readSchoolCalendar: leído', { model: GEMINI_MODEL.value(), periods: result.periods.length, questions: result.questions.length, answers: answers.length, usage: res.usageMetadata });
   return result;
 });

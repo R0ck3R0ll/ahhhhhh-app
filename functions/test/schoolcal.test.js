@@ -174,3 +174,16 @@ test('respuestas de la familia: se limpian y van en la petición', function(){
   assert.match(p, /¿Sistema\? → British System/);
   assert.doesNotMatch(userPrompt({ lang: 'es', today: '2026-10-08' }), /answers about the student/);
 });
+
+test('red de seguridad: variantes sin días ni preguntas → la función pregunta', function(){
+  const r = cleanResult({ is_school_calendar: true, school_year: '2026-2027', variants: ['British System', 'Spanish System'],
+    questions: [], periods: [], notes: 'Varía según el sistema' }, '2026-10-08', 'es');
+  assert.deepEqual(r.questions, [{ question: '¿Qué parte del calendario se aplica a la alumna?', options: ['British System', 'Spanish System'] }]);
+  // Con días (la IA ya ha usado las respuestas) no se pregunta
+  const ok = cleanResult({ is_school_calendar: true, variants: ['British System', 'Spanish System'], questions: [],
+    periods: [{ from: '2026-11-02', to: '2026-11-06', name: 'Half term' }] }, '2026-10-08', 'en');
+  assert.deepEqual(ok.questions, []);
+  assert.equal(ok.periods.length, 1);
+  // Una sola variante: nada que preguntar
+  assert.deepEqual(cleanResult({ is_school_calendar: true, variants: ['Primary'], questions: [], periods: [] }, '2026-10-08', 'es').questions, []);
+});

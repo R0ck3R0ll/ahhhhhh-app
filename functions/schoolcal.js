@@ -224,8 +224,10 @@ export const SYSTEM = [
   'changes which days have no classes (for example two school systems, several stages, courses, groups',
   'or campuses with different holidays), or something ambiguous that you cannot resolve from the',
   'calendar itself, and the family\'s answers below do not already settle it, ask instead of choosing:',
-  'return the questions (at most 3, short, each with 2 to 6 options taken from the calendar\'s own',
-  'wording) and no periods. Do not ask about anything that does not change the result.',
+  'list those groups in "variants", return the questions (at most 3, short, each with 2 to 6 options',
+  'taken from the calendar\'s own wording) and no periods. Never settle it yourself by keeping only',
+  'what the variants have in common, and never put the question in the notes instead of "questions".',
+  'Do not ask about anything that does not change the result.',
   'When the family\'s answers settle it, use only the days that apply to the student.',
   'Merge consecutive days with the same reason into one period. Dates are ISO (YYYY-MM-DD).',
   'Work out the year of each date from the school year shown in the calendar; if the calendar does not',
@@ -244,13 +246,33 @@ export function userPrompt({ lang, today, answers }){
     'List the days without classes in the attached school calendar.';
 }
 
+// El orden importa: Gemini escribe los campos en este orden, así que primero dice qué variantes
+// tiene el calendario y qué preguntaría, y solo después saca los días
 export const SCHEMA = {
   type: 'object',
   properties: {
     is_school_calendar: { type: 'boolean' },
     school_year: { type: 'string', description: 'For example "2026-2027"; empty if not shown' },
+    variants: {
+      type: 'array',
+      description: 'Groups the calendar distinguishes that have different days without classes (school systems, stages, courses, groups, campuses), with the calendar\'s own names; empty if the days are the same for everyone',
+      items: { type: 'string' }
+    },
+    questions: {
+      type: 'array',
+      description: 'Questions for the family when the result depends on the student and their answers do not settle it yet (always when there are 2 or more variants and no answer says which one applies); empty otherwise',
+      items: {
+        type: 'object',
+        properties: {
+          question: { type: 'string' },
+          options: { type: 'array', items: { type: 'string' } }
+        },
+        required: ['question', 'options']
+      }
+    },
     periods: {
       type: 'array',
+      description: 'Days without classes for the student; empty while there are questions',
       items: {
         type: 'object',
         properties: {
@@ -261,21 +283,18 @@ export const SCHEMA = {
         required: ['from', 'to', 'name']
       }
     },
-    notes: { type: 'string', description: 'Anything the family should check by hand; empty if nothing' },
-    questions: {
-      type: 'array',
-      description: 'Questions for the family when the result depends on the student; empty when none are needed',
-      items: {
-        type: 'object',
-        properties: {
-          question: { type: 'string' },
-          options: { type: 'array', items: { type: 'string' } }
-        },
-        required: ['question', 'options']
-      }
-    }
+    notes: { type: 'string', description: 'Anything the family should check by hand; empty if nothing' }
   },
-  required: ['is_school_calendar', 'school_year', 'periods', 'notes', 'questions']
+  required: ['is_school_calendar', 'school_year', 'variants', 'questions', 'periods', 'notes']
+};
+
+// Pregunta que se hace la propia función si la IA ve variantes pero no pregunta ni da días
+const VARIANT_Q = {
+  es: '¿Qué parte del calendario se aplica a la alumna?',
+  en: 'Which part of the calendar applies to the student?',
+  it: 'Quale parte del calendario vale per l’alunna?',
+  fr: 'Quelle partie du calendrier s’applique à l’élève ?',
+  de: 'Welcher Teil des Kalenders gilt für die Schülerin?'
 };
 
 // Respuestas de la familia que manda la App: [{ q, a }], como mucho 8, textos cortos
@@ -296,7 +315,7 @@ function validDate(s){
 
 // Fechas válidas, en orden, sin periodos de más de 120 días (lo mismo que se permite a mano)
 // y dentro de unos años alrededor de hoy
-export function cleanResult(out, today){
+export function cleanResult(out, today, lang){
   const y = Number(today.slice(0, 4));
   const periods = [];
   (out && Array.isArray(out.periods) ? out.periods : []).forEach(function(p){
@@ -319,6 +338,12 @@ export function cleanResult(out, today){
       .filter(function(o, i, all){ return o && all.indexOf(o) === i; }).slice(0, 6);
     if(question && options.length >= 2){ questions.push({ question, options }); }
   });
+  // Red de seguridad: con 2 o más variantes y sin días ni preguntas, la IA ha dudado sin preguntar
+  const variants = (out && Array.isArray(out.variants) ? out.variants : []).map(function(v){ return String(v || '').trim().slice(0, 80); })
+    .filter(function(v, i, all){ return v && all.indexOf(v) === i; }).slice(0, 6);
+  if(!questions.length && !periods.length && variants.length >= 2){
+    questions.push({ question: VARIANT_Q[lang] || VARIANT_Q.es, options: variants });
+  }
   return {
     questions,
     isCalendar: !!(out && out.is_school_calendar),
