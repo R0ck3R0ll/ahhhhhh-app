@@ -77,9 +77,10 @@ jobs:
         run: |
           printf '%s' "$SA_KEY" > "$RUNNER_TEMP/sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
-          # La lectura con IA usa Gemini en Vertex AI: su API tiene que estar activada en el proyecto
+          # La lectura con IA usa Gemini en Vertex AI y lee los enlaces de Drive con la API de Drive:
+          # las dos APIs tienen que estar activadas en el proyecto
           gcloud auth activate-service-account --key-file="$RUNNER_TEMP/sa.json" --quiet
-          gcloud services enable aiplatform.googleapis.com --project ahhhhhh-today --quiet \
-            || echo "::warning::No se pudo activar la Vertex AI API; actívala a mano en Google Cloud"
+          gcloud services enable aiplatform.googleapis.com drive.googleapis.com --project ahhhhhh-today --quiet \
+            || echo "::warning::No se pudieron activar las APIs de Vertex AI y Drive; actívalas a mano en Google Cloud"
           npx --yes firebase-tools@15 deploy --only functions --project ahhhhhh-today --non-interactive --force
           rm -f "$RUNNER_TEMP/sa.json"

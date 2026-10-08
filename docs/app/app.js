@@ -1617,10 +1617,12 @@
     });
   }
   // Mensaje para cada error de la función (su message es el motivo: 'signIn', 'private', 'busy'…)
-  var READ_ERRORS = ['signIn', 'noPlan', 'limit', 'busy', 'ai', 'format', 'oldWord', 'empty', 'tooBig', 'private', 'fetch', 'badUrl', 'notReady'];
+  var READ_ERRORS = ['signIn', 'noPlan', 'limit', 'busy', 'ai', 'format', 'oldWord', 'empty', 'tooBig', 'private', 'fetch', 'badUrl', 'notReady', 'noDownload'];
   function readErrorText(e){
     var code = String(e && e.code || ''), msg = String(e && e.message || '');
-    if(READ_ERRORS.indexOf(msg) >= 0){ return t('read.err.' + msg); }
+    // Con un enlace que no se puede abrir, el motivo exacto (p. ej. «HTTP 403 …») ayuda a saber qué pasa
+    var detail = e && e.details && e.details.detail;
+    if(READ_ERRORS.indexOf(msg) >= 0){ return t('read.err.' + msg) + (detail && (msg === 'private' || msg === 'fetch') ? ' (' + detail + ')' : ''); }
     if(!navigator.onLine){ return t('read.err.offline'); }
     if(code === 'functions/not-found'){ return t('read.err.notReady'); }
     if(code === 'functions/deadline-exceeded'){ return t('read.err.busy'); }

@@ -3,9 +3,10 @@
    petición para Gemini y comprobar lo que devuelve. index.js lo usa desde la función del servidor.
 
    Formatos: PDF e imágenes van tal cual a Gemini; Word (.docx) se pasa a texto; de una página
-   web se queda el texto. Los enlaces de Google Drive y Google Docs/Sheets se convierten en su
-   dirección de descarga (el archivo tiene que estar compartido con «cualquier persona con el
-   enlace»). */
+   web se queda el texto. Los archivos de Google Drive y Google Docs/Sheets se leen con la API de
+   Drive (entrando con la cuenta de servicio del proyecto) y, si eso falla, con su dirección de
+   descarga pública; en los dos casos tienen que estar compartidos con «cualquier persona con el
+   enlace». */
 
 import dns from 'node:dns/promises';
 import net from 'node:net';
@@ -21,6 +22,21 @@ export class ReadError extends Error {
 }
 
 /* ---- Enlaces ---- */
+
+// Identificador de un archivo de Drive / Docs / Sheets / Slides, o null si el enlace no es de Drive
+export function driveId(raw){
+  const u = new URL(raw);
+  const host = u.hostname.replace(/^www\./, '');
+  if(host === 'drive.google.com' || host === 'drive.usercontent.google.com'){
+    const m = /\/file\/(?:u\/\d+\/)?d\/([\w-]+)/.exec(u.pathname);
+    return m ? m[1] : u.searchParams.get('id');
+  }
+  if(host === 'docs.google.com'){
+    const m = /^\/(?:document|spreadsheets|presentation)\/(?:u\/\d+\/)?d\/([\w-]+)/.exec(u.pathname);
+    return m ? m[1] : null;
+  }
+  return null;
+}
 
 // Drive / Docs / Sheets / Slides: la dirección que descarga el archivo en vez de la página de vista previa
 export function downloadUrl(raw){
@@ -61,6 +77,53 @@ async function checkHost(u){
   if(!addrs.length || !addrs.every(function(a){ return isPublicIp(a.address); })){ throw new ReadError('badUrl'); }
 }
 
+// Archivo de Drive con la API de Drive: los de Google Docs/Sheets/Slides se exportan a PDF.
+// getToken da un token de la cuenta de servicio con permiso de lectura de Drive.
+const DRIVE = 'https://www.googleapis.com/drive/v3/files/';
+export async function fetchDrive(id, getToken, fetchImpl = fetch){
+  let token;
+  try{ token = await getToken(); }catch(e){ throw new ReadError('fetch', 'token: ' + String(e && e.message || e)); }
+  const call = async function(url){
+    let res;
+    try{ res = await fetchImpl(url, { headers: { authorization: 'Bearer ' + token }, signal: AbortSignal.timeout(30000) }); }
+    catch(e){ throw new ReadError('fetch', 'Drive API: ' + String(e && e.message || e)); }
+    if(res.ok){ return res; }
+    let why = '';
+    try{ const j = await res.json(); why = j.error && (j.error.errors && j.error.errors[0] && j.error.errors[0].reason || j.error.message) || ''; }catch(e){}
+    // Quien lo comparte ha desactivado la descarga para los lectores: solo se puede ver
+    if(/cannotDownloadFile|cannotExportFile|cannotCopyFile/i.test(why)){ throw new ReadError('noDownload', 'Drive API ' + res.status + ' ' + why); }
+    // 404: no existe o no está compartido con «cualquier persona con el enlace»
+    if(res.status === 404 || (res.status === 403 && /insufficientFilePermissions|forbidden/i.test(why))){ throw new ReadError('private', 'Drive API ' + res.status + ' ' + why); }
+    throw new ReadError('fetch', 'Drive API ' + res.status + ' ' + why);
+  };
+  const q = '?supportsAllDrives=true';
+  const meta = await (await call(DRIVE + encodeURIComponent(id) + q + '&fields=name,mimeType,size,copyRequiresWriterPermission,capabilities/canDownload')).json();
+  if(meta.copyRequiresWriterPermission || (meta.capabilities && meta.capabilities.canDownload === false)){
+    throw new ReadError('noDownload', 'Drive: descarga desactivada para lectores');
+  }
+  if(Number(meta.size || 0) > MAX_BYTES){ throw new ReadError('tooBig'); }
+  const native = /^application\/vnd\.google-apps\./.test(meta.mimeType || '');
+  const res = await call(DRIVE + encodeURIComponent(id) + (native ? '/export?mimeType=application/pdf&' : '?alt=media&') + q.slice(1));
+  const buf = Buffer.from(await res.arrayBuffer());
+  if(buf.length > MAX_BYTES){ throw new ReadError('tooBig'); }
+  return { buf, type: native ? 'application/pdf' : String(meta.mimeType || '').toLowerCase(), name: meta.name || '' };
+}
+
+// Contenido de un enlace: Drive por su API (y, si falla, por la descarga pública); el resto, descargado
+export async function fetchSource(raw, getToken, fetchImpl = fetch){
+  const id = driveId(raw);
+  if(!id || !getToken){ return fetchUrl(raw, fetchImpl); }
+  try{ return await fetchDrive(id, getToken, fetchImpl); }
+  catch(e){
+    if(!(e instanceof ReadError) || e.code === 'tooBig' || e.code === 'noDownload'){ throw e; }
+    try{ return await fetchUrl(raw, fetchImpl); }
+    catch(e2){
+      if(e2 instanceof ReadError){ e2.message = e.message + ' · ' + e2.message; }
+      throw e2;
+    }
+  }
+}
+
 // Descarga siguiendo las redirecciones a mano, para comprobar cada salto
 export async function fetchUrl(raw, fetchImpl = fetch){
   let url = new URL(downloadUrl(raw));
@@ -78,15 +141,15 @@ export async function fetchUrl(raw, fetchImpl = fetch){
       url = new URL(res.headers.get('location'), url);
       continue;
     }
-    if(res.status === 401 || res.status === 403){ throw new ReadError('private'); }
-    if(!res.ok){ throw new ReadError('fetch', 'HTTP ' + res.status); }
+    if(res.status === 401 || res.status === 403){ throw new ReadError('private', 'HTTP ' + res.status + ' ' + url.hostname); }
+    if(!res.ok){ throw new ReadError('fetch', 'HTTP ' + res.status + ' ' + url.hostname); }
     const len = Number(res.headers.get('content-length') || 0);
     if(len > MAX_BYTES){ throw new ReadError('tooBig'); }
     const buf = Buffer.from(await res.arrayBuffer());
     if(buf.length > MAX_BYTES){ throw new ReadError('tooBig'); }
     const type = (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
     // Drive pide iniciar sesión si el archivo no está compartido: llega la página de acceso
-    if(/(^|\.)accounts\.google\.com$/.test(url.hostname)){ throw new ReadError('private'); }
+    if(/(^|\.)accounts\.google\.com$/.test(url.hostname)){ throw new ReadError('private', 'login ' + url.hostname); }
     return { buf, type, name: decodeURIComponent(url.pathname.split('/').pop() || '') };
   }
   throw new ReadError('fetch', 'demasiadas redirecciones');

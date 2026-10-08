@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  downloadUrl, isPublicIp, fetchUrl, toPart, htmlToText, cleanResult, ReadError, MAX_BYTES
+  downloadUrl, driveId, fetchDrive, fetchSource, isPublicIp, fetchUrl, toPart, htmlToText, cleanResult, ReadError, MAX_BYTES
 } from '../schoolcal.js';
 
 test('enlaces de Drive y Docs pasan a su dirección de descarga', function(){
@@ -80,4 +80,70 @@ test('cleanResult deja solo periodos válidos, ordenados y sin repetir', functio
   assert.deepEqual(r.periods.map(function(p){ return p.from + '/' + p.to; }),
     ['2026-11-01/2026-11-02', '2026-12-08/2026-12-08', '2026-12-22/2027-01-07']);
   assert.deepEqual(cleanResult(null, '2026-10-07').periods, []);
+});
+
+test('driveId reconoce los enlaces de Drive y Docs', function(){
+  assert.equal(driveId('https://drive.google.com/file/d/1AIlonipVQMMepGTFzdTcIgkYaVyEtU0f/view?usp=sharing'), '1AIlonipVQMMepGTFzdTcIgkYaVyEtU0f');
+  assert.equal(driveId('https://drive.google.com/file/u/1/d/AbC/view'), 'AbC');
+  assert.equal(driveId('https://drive.google.com/open?id=XYZ'), 'XYZ');
+  assert.equal(driveId('https://docs.google.com/document/d/D0c/edit'), 'D0c');
+  assert.equal(driveId('https://colegio.es/calendario.pdf'), null);
+});
+
+// Drive simulado: responde según la dirección pedida
+function fakeDrive(routes, calls){
+  return async function(url, opts){
+    calls && calls.push({ url, auth: opts && opts.headers && opts.headers.authorization });
+    for(const [re, fn] of routes){ if(re.test(url)){ return fn(url); } }
+    return new Response('{}', { status: 500 });
+  };
+}
+const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json' } });
+const token = async () => 'tok';
+
+test('fetchDrive descarga un PDF compartido por enlace', async function(){
+  const calls = [];
+  const r = await fetchDrive('ID1', token, fakeDrive([
+    [/files\/ID1\?supportsAllDrives=true&fields=/, () => json({ name: 'cal.pdf', mimeType: 'application/pdf', size: '20', capabilities: { canDownload: true } })],
+    [/files\/ID1\?alt=media/, () => new Response('%PDF-1.4 x')]
+  ], calls));
+  assert.equal(r.type, 'application/pdf');
+  assert.equal(r.name, 'cal.pdf');
+  assert.equal(r.buf.toString(), '%PDF-1.4 x');
+  assert.equal(calls[0].auth, 'Bearer tok');
+});
+
+test('fetchDrive exporta a PDF los documentos de Google', async function(){
+  const r = await fetchDrive('DOC', token, fakeDrive([
+    [/files\/DOC\?supportsAllDrives=true&fields=/, () => json({ name: 'Calendario', mimeType: 'application/vnd.google-apps.document' })],
+    [/files\/DOC\/export\?mimeType=application\/pdf/, () => new Response('%PDF-1.7 doc')]
+  ]));
+  assert.equal(r.type, 'application/pdf');
+});
+
+test('fetchDrive: descarga desactivada y archivo no compartido', async function(){
+  await assert.rejects(fetchDrive('NO', token, fakeDrive([
+    [/fields=/, () => json({ name: 'c.pdf', mimeType: 'application/pdf', copyRequiresWriterPermission: true, capabilities: { canDownload: false } })]
+  ])), function(e){ return e.code === 'noDownload'; });
+  await assert.rejects(fetchDrive('NO2', token, fakeDrive([
+    [/fields=/, () => json({ name: 'c.pdf', mimeType: 'application/pdf' })],
+    [/alt=media/, () => json({ error: { errors: [{ reason: 'cannotDownloadFile' }], message: 'x' } }, 403)]
+  ])), function(e){ return e.code === 'noDownload'; });
+  await assert.rejects(fetchDrive('PRIV', token, fakeDrive([
+    [/fields=/, () => json({ error: { errors: [{ reason: 'notFound' }], message: 'File not found' } }, 404)]
+  ])), function(e){ return e.code === 'private' && /404/.test(e.message); });
+});
+
+test('fetchSource: si la API de Drive falla, prueba la descarga pública; sin Drive, descarga normal', async function(){
+  // API de Drive sin activar (403 accessNotConfigured) y la descarga pública también rechazada
+  await assert.rejects(fetchSource('https://drive.google.com/file/d/ID9/view', token, fakeDrive([
+    [/googleapis\.com\/drive/, () => json({ error: { errors: [{ reason: 'accessNotConfigured' }], message: 'disabled' } }, 403)],
+    [/drive\.google\.com\/uc/, () => new Response('no', { status: 403 })]
+  ])), function(e){ return e.code === 'private' && /accessNotConfigured/.test(e.message) && /HTTP 403/.test(e.message); });
+  // La descarga desactivada no se intenta por otro camino
+  const calls = [];
+  await assert.rejects(fetchSource('https://drive.google.com/file/d/ND/view', token, fakeDrive([
+    [/fields=/, () => json({ copyRequiresWriterPermission: true })]
+  ], calls)), function(e){ return e.code === 'noDownload'; });
+  assert.equal(calls.length, 1);
 });

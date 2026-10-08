@@ -16,8 +16,9 @@ import { logger } from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { GoogleGenAI, ApiError } from '@google/genai';
+import { GoogleAuth } from 'google-auth-library';
 import {
-  ReadError, MAX_BYTES, fetchUrl, toPart, SYSTEM, userPrompt, SCHEMA, cleanResult
+  ReadError, MAX_BYTES, fetchSource, toPart, SYSTEM, userPrompt, SCHEMA, cleanResult
 } from './schoolcal.js';
 
 initializeApp();
@@ -25,6 +26,9 @@ const db = getFirestore();
 const GEMINI_MODEL = defineString('GEMINI_MODEL', { default: 'gemini-3.5-flash' });
 const DAILY_LIMIT = 20;
 let ai = null;
+// Token de la cuenta de servicio para leer con la API de Drive los archivos compartidos por enlace
+const driveAuth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/drive.readonly'] });
+async function driveToken(){ return driveAuth.getAccessToken(); }
 function gemini(){
   if(!ai){ ai = new GoogleGenAI({ enterprise: true, project: process.env.GCLOUD_PROJECT, location: 'global' }); }
   return ai;
@@ -46,7 +50,7 @@ async function checkUser(auth){
 
 // Lo que manda la App: { file: { name, type, data (base64) } } o { url }, más { lang, today }
 async function loadSource(data){
-  if(data.url){ return fetchUrl(String(data.url)); }
+  if(data.url){ return fetchSource(String(data.url), driveToken); }
   const f = data.file;
   if(!f || typeof f.data !== 'string'){ throw new ReadError('format'); }
   const buf = Buffer.from(f.data, 'base64');
@@ -73,7 +77,8 @@ export const readSchoolCalendar = onCall({
   } catch(e){
     if(e instanceof ReadError){
       logger.info('readSchoolCalendar: no se pudo leer', { code: e.code, detail: e.message });
-      throw new HttpsError('failed-precondition', e.code);
+      // El detalle (p. ej. «HTTP 403 drive.usercontent.google.com») va también a la App, para saber qué ha fallado
+      throw new HttpsError('failed-precondition', e.code, { detail: e.message === e.code ? '' : e.message.slice(0, 200) });
     }
     throw e;
   }
