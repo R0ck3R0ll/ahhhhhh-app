@@ -1,26 +1,34 @@
 /* ================= FUNCIONES DEL SERVIDOR (Firebase Cloud Functions) =================
-   readSchoolCalendar: lee el calendario escolar (archivo subido o enlace) con Claude y devuelve
-   los festivos y días no lectivos. La App los enseña para revisarlos antes de guardarlos.
+   readSchoolCalendar: lee el calendario escolar (archivo subido o enlace) con Gemini en Vertex AI
+   y devuelve los festivos y días no lectivos. La App los enseña para revisarlos antes de guardarlos.
 
-   - La clave de Anthropic está en Secret Manager (secreto ANTHROPIC_API_KEY); nunca llega al móvil.
+   - Gemini se usa en el propio proyecto de Google Cloud: no hay clave; la función entra con su
+     cuenta de servicio (necesita el rol «Usuario de Vertex AI») y el gasto va a la facturación
+     del proyecto. Con Vertex AI, Google no usa los datos para entrenar sus modelos.
+   - El modelo se puede cambiar sin tocar el código con el parámetro GEMINI_MODEL (archivo
+     functions/.env); por defecto, un Gemini Flash estable.
    - Solo la pueden usar personas con sesión iniciada que estén en algún plan, y como mucho
-     DAILY_LIMIT veces al día cada una (para que nadie gaste la clave). */
+     DAILY_LIMIT veces al día cada una (para que nadie gaste a costa del proyecto). */
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { defineSecret } from 'firebase-functions/params';
+import { defineString } from 'firebase-functions/params';
 import { logger } from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenAI, ApiError } from '@google/genai';
 import {
-  ReadError, MAX_BYTES, fetchUrl, toContentBlock, SYSTEM, userPrompt, SCHEMA, cleanResult
+  ReadError, MAX_BYTES, fetchUrl, toPart, SYSTEM, userPrompt, SCHEMA, cleanResult
 } from './schoolcal.js';
 
 initializeApp();
 const db = getFirestore();
-const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
+const GEMINI_MODEL = defineString('GEMINI_MODEL', { default: 'gemini-3.5-flash' });
 const DAILY_LIMIT = 20;
-
+let ai = null;
+function gemini(){
+  if(!ai){ ai = new GoogleGenAI({ enterprise: true, project: process.env.GCLOUD_PROJECT, location: 'global' }); }
+  return ai;
+}
 async function checkUser(auth){
   if(!auth || !auth.token.email){ throw new HttpsError('unauthenticated', 'signIn'); }
   const email = auth.token.email.toLowerCase();
@@ -49,7 +57,6 @@ async function loadSource(data){
 
 export const readSchoolCalendar = onCall({
   region: 'europe-west1',
-  secrets: [ANTHROPIC_API_KEY],
   timeoutSeconds: 300,
   memory: '512MiB',
   maxInstances: 3
@@ -59,10 +66,10 @@ export const readSchoolCalendar = onCall({
   const today = /^\d{4}-\d{2}-\d{2}$/.test(data.today) ? data.today : new Date().toISOString().slice(0, 10);
   const lang = String(data.lang || 'es');
 
-  let block;
+  let part;
   try{
     const src = await loadSource(data);
-    block = await toContentBlock(src.buf, src.type, src.name);
+    part = await toPart(src.buf, src.type, src.name);
   } catch(e){
     if(e instanceof ReadError){
       logger.info('readSchoolCalendar: no se pudo leer', { code: e.code, detail: e.message });
@@ -71,36 +78,37 @@ export const readSchoolCalendar = onCall({
     throw e;
   }
 
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
   let res;
   try{
-    res = await client.beta.messages.create({
-      model: 'claude-opus-5-5',
-      max_tokens: 16000,
-      // Si el modelo rechaza la petición por error, la repite con el modelo de respaldo recomendado
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-      output_config: { effort: 'medium', format: { type: 'json_schema', schema: SCHEMA } },
-      system: SYSTEM,
-      messages: [{ role: 'user', content: [block, { type: 'text', text: userPrompt({ lang, today }) }] }]
+    res = await gemini().models.generateContent({
+      model: GEMINI_MODEL.value(),
+      contents: [{ role: 'user', parts: [part, { text: userPrompt({ lang, today }) }] }],
+      config: {
+        systemInstruction: SYSTEM,
+        responseMimeType: 'application/json',
+        responseJsonSchema: SCHEMA,
+        maxOutputTokens: 16000
+      }
     });
   } catch(e){
-    logger.error('readSchoolCalendar: error de la API de Anthropic', { status: e && e.status, message: String(e && e.message || e) });
-    if(e instanceof Anthropic.RateLimitError || (e instanceof Anthropic.APIError && e.status >= 500)){
-      throw new HttpsError('unavailable', 'busy');
-    }
-    if(e instanceof Anthropic.BadRequestError){ throw new HttpsError('failed-precondition', 'format'); }
+    const status = e instanceof ApiError ? e.status : 0;
+    logger.error('readSchoolCalendar: error de Gemini', { status, message: String(e && e.message || e) });
+    if(status === 429 || status >= 500){ throw new HttpsError('unavailable', 'busy'); }
+    // API de Vertex AI sin activar, sin permiso o modelo inexistente: falta configurar el proyecto
+    if(status === 401 || status === 403 || status === 404){ throw new HttpsError('failed-precondition', 'notReady'); }
+    if(status === 400){ throw new HttpsError('failed-precondition', 'format'); }
     throw new HttpsError('internal', 'ai');
   }
 
-  if(res.stop_reason === 'refusal' || res.stop_reason === 'max_tokens'){
-    logger.warn('readSchoolCalendar: respuesta incompleta', { stop: res.stop_reason });
+  const cand = res.candidates && res.candidates[0];
+  if(!cand || cand.finishReason !== 'STOP'){
+    logger.warn('readSchoolCalendar: respuesta incompleta', { finish: cand && cand.finishReason, block: res.promptFeedback && res.promptFeedback.blockReason });
     throw new HttpsError('internal', 'ai');
   }
-  const text = res.content.filter(function(b){ return b.type === 'text'; }).map(function(b){ return b.text; }).join('');
+  const text = res.text || '';
   let out;
   try{ out = JSON.parse(text); }catch(e){ throw new HttpsError('internal', 'ai'); }
   const result = cleanResult(out, today);
-  logger.info('readSchoolCalendar: leído', { periods: result.periods.length, usage: res.usage });
+  logger.info('readSchoolCalendar: leído', { model: GEMINI_MODEL.value(), periods: result.periods.length, usage: res.usageMetadata });
   return result;
 });

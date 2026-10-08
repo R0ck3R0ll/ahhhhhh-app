@@ -1575,7 +1575,7 @@
   }
 
   /* ---- Lectura del calendario escolar con IA ----
-     La hace la función readSchoolCalendar del servidor (functions/index.js) con Claude: recibe el
+     La hace la función readSchoolCalendar del servidor (functions/index.js) con Gemini (Vertex AI): recibe el
      archivo (en base64) o el enlace y devuelve { isCalendar, schoolYear, periods:[{from,to,name}], notes }.
      Lo leído no se aplica solo: se enseña para revisarlo y se guarda con «Guardar». */
   function fileToBase64(blob){
@@ -1617,7 +1617,7 @@
     });
   }
   // Mensaje para cada error de la función (su message es el motivo: 'signIn', 'private', 'busy'…)
-  var READ_ERRORS = ['signIn', 'noPlan', 'limit', 'busy', 'ai', 'format', 'oldWord', 'empty', 'tooBig', 'private', 'fetch', 'badUrl'];
+  var READ_ERRORS = ['signIn', 'noPlan', 'limit', 'busy', 'ai', 'format', 'oldWord', 'empty', 'tooBig', 'private', 'fetch', 'badUrl', 'notReady'];
   function readErrorText(e){
     var code = String(e && e.code || ''), msg = String(e && e.message || '');
     if(READ_ERRORS.indexOf(msg) >= 0){ return t('read.err.' + msg); }

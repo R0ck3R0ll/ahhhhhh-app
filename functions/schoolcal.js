@@ -1,8 +1,8 @@
 /* ================= LECTURA DEL CALENDARIO ESCOLAR =================
-   Lo que no depende de Firebase: conseguir el contenido (archivo subido o enlace), preparar el
-   mensaje para Claude y comprobar lo que devuelve. index.js lo usa desde la función del servidor.
+   Lo que no depende de Firebase: conseguir el contenido (archivo subido o enlace), preparar la
+   petición para Gemini y comprobar lo que devuelve. index.js lo usa desde la función del servidor.
 
-   Formatos: PDF e imágenes van tal cual a Claude; Word (.docx) se pasa a texto; de una página
+   Formatos: PDF e imágenes van tal cual a Gemini; Word (.docx) se pasa a texto; de una página
    web se queda el texto. Los enlaces de Google Drive y Google Docs/Sheets se convierten en su
    dirección de descarga (el archivo tiene que estar compartido con «cualquier persona con el
    enlace»). */
@@ -92,7 +92,7 @@ export async function fetchUrl(raw, fetchImpl = fetch){
   throw new ReadError('fetch', 'demasiadas redirecciones');
 }
 
-/* ---- Contenido para Claude ---- */
+/* ---- Contenido para Gemini ---- */
 
 function sniff(buf){
   const h = buf.subarray(0, 12);
@@ -118,38 +118,35 @@ export function htmlToText(html){
     .replace(/[ \t]+/g, ' ').replace(/ *\n\s*/g, '\n').trim();
 }
 
-// Bloque de contenido para Claude según lo que sea el archivo
-export async function toContentBlock(buf, type, name){
+// Parte de la petición a Gemini según lo que sea el archivo: PDF e imagen tal cual, el resto como texto
+export async function toPart(buf, type, name){
   const kind = sniff(buf) || type;
-  if(kind === 'application/pdf'){
-    return { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: buf.toString('base64') } };
-  }
-  if(IMAGE_TYPES.includes(kind)){
-    return { type: 'image', source: { type: 'base64', media_type: kind, data: buf.toString('base64') } };
+  if(kind === 'application/pdf' || IMAGE_TYPES.includes(kind)){
+    return { inlineData: { mimeType: kind, data: buf.toString('base64') } };
   }
   if(kind === 'ole'){ throw new ReadError('oldWord'); }
   if(kind === 'zip' || kind === DOCX){
     let text = '';
     try{ text = (await mammoth.extractRawText({ buffer: buf })).value; }catch(e){ throw new ReadError('format'); }
-    return textBlock(text, name);
+    return textPart(text, name);
   }
   if(/^text\/|html|xml|json/.test(type) || !kind){
     const raw = buf.toString('utf8');
     const text = /html/.test(type) || /<html|<body|<div/i.test(raw.slice(0, 4000)) ? htmlToText(raw) : raw;
-    return textBlock(text, name);
+    return textPart(text, name);
   }
   throw new ReadError('format');
 }
 
-function textBlock(text, name){
+function textPart(text, name){
   text = (text || '').trim();
   if(text.length < 20){ throw new ReadError('empty'); }
   // Una página o un documento enorme no es un calendario escolar: se queda lo primero
   if(text.length > 200000){ text = text.slice(0, 200000); }
-  return { type: 'document', source: { type: 'text', media_type: 'text/plain', data: text }, title: name || undefined };
+  return { text: 'School calendar' + (name ? ' (' + name + ')' : '') + ':\n\n' + text };
 }
 
-/* ---- Lo que se pide a Claude ---- */
+/* ---- Lo que se pide a Gemini ---- */
 
 export const LANG_NAMES = { es: 'Spanish', en: 'English', it: 'Italian', fr: 'French', de: 'German' };
 
@@ -191,17 +188,15 @@ export const SCHEMA = {
           to: { type: 'string', description: 'Last day without classes, YYYY-MM-DD (same as from for a single day)' },
           name: { type: 'string' }
         },
-        required: ['from', 'to', 'name'],
-        additionalProperties: false
+        required: ['from', 'to', 'name']
       }
     },
     notes: { type: 'string', description: 'Anything the family should check by hand; empty if nothing' }
   },
-  required: ['is_school_calendar', 'school_year', 'periods', 'notes'],
-  additionalProperties: false
+  required: ['is_school_calendar', 'school_year', 'periods', 'notes']
 };
 
-/* ---- Comprobación de lo que devuelve Claude ---- */
+/* ---- Comprobación de lo que devuelve Gemini ---- */
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 function validDate(s){

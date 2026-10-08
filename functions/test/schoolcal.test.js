@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  downloadUrl, isPublicIp, fetchUrl, toContentBlock, htmlToText, cleanResult, ReadError, MAX_BYTES
+  downloadUrl, isPublicIp, fetchUrl, toPart, htmlToText, cleanResult, ReadError, MAX_BYTES
 } from '../schoolcal.js';
 
 test('enlaces de Drive y Docs pasan a su dirección de descarga', function(){
@@ -45,20 +45,18 @@ test('fetchUrl: archivo privado, demasiado grande y correcto', async function(){
   assert.equal(r.name, 'cal.pdf');
 });
 
-test('toContentBlock según el tipo de archivo', async function(){
-  const pdf = await toContentBlock(Buffer.from('%PDF-1.7 ...'), '', 'c.pdf');
-  assert.equal(pdf.type, 'document');
-  assert.equal(pdf.source.media_type, 'application/pdf');
-  const png = await toContentBlock(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]), 'application/octet-stream', 'c.png');
-  assert.equal(png.type, 'image');
-  assert.equal(png.source.media_type, 'image/png');
-  const html = await toContentBlock(Buffer.from('<html><body><h1>Calendario 2026-2027</h1><p>8 de diciembre: festivo</p><script>x()</script></body></html>'), 'text/html', 'cal');
-  assert.equal(html.source.type, 'text');
-  assert.match(html.source.data, /8 de diciembre: festivo/);
-  assert.doesNotMatch(html.source.data, /x\(\)/);
-  await assert.rejects(toContentBlock(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 1, 2, 3, 4]), '', 'c.doc'), function(e){ return e.code === 'oldWord'; });
-  await assert.rejects(toContentBlock(Buffer.from('hola'), 'text/plain', 'c.txt'), function(e){ return e.code === 'empty'; });
-  await assert.rejects(toContentBlock(Buffer.from([0x50, 0x4b, 3, 4, 0, 0]), '', 'roto.docx'), function(e){ return e.code === 'format'; });
+test('toPart según el tipo de archivo', async function(){
+  const pdf = await toPart(Buffer.from('%PDF-1.7 ...'), '', 'c.pdf');
+  assert.equal(pdf.inlineData.mimeType, 'application/pdf');
+  assert.equal(Buffer.from(pdf.inlineData.data, 'base64').toString(), '%PDF-1.7 ...');
+  const png = await toPart(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]), 'application/octet-stream', 'c.png');
+  assert.equal(png.inlineData.mimeType, 'image/png');
+  const html = await toPart(Buffer.from('<html><body><h1>Calendario 2026-2027</h1><p>8 de diciembre: festivo</p><script>x()</script></body></html>'), 'text/html', 'cal');
+  assert.match(html.text, /8 de diciembre: festivo/);
+  assert.doesNotMatch(html.text, /x\(\)/);
+  await assert.rejects(toPart(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 1, 2, 3, 4]), '', 'c.doc'), function(e){ return e.code === 'oldWord'; });
+  await assert.rejects(toPart(Buffer.from('hola'), 'text/plain', 'c.txt'), function(e){ return e.code === 'empty'; });
+  await assert.rejects(toPart(Buffer.from([0x50, 0x4b, 3, 4, 0, 0]), '', 'roto.docx'), function(e){ return e.code === 'format'; });
 });
 
 test('htmlToText', function(){
