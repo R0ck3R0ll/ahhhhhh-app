@@ -447,20 +447,28 @@
   }
 
   // Ubicación del móvil (solo cuando falta 1 h o menos). Si no se puede saber, se sale de casa.
-  var GEO = null, GEO_BUSY = false, GEO_DENIED = false, GEO_RETRY = 0;
+  var GEO = null, GEO_BUSY = false, GEO_DENIED = false, GEO_RETRY = 0, GEO_GOOD_M = 300;
+  // Distancia en metros entre dos puntos { lat, lng } (aproximación suficiente para pocos km)
+  function geoDist(a, b){
+    var k = Math.PI / 180, x = (b.lng - a.lng) * k * Math.cos((a.lat + b.lat) / 2 * k), y = (b.lat - a.lat) * k;
+    return Math.sqrt(x * x + y * y) * 6371000;
+  }
   function ensureGeo(){
     if(GEO_BUSY || GEO_DENIED || Date.now() < GEO_RETRY || (GEO && Date.now() - GEO.at < 5 * 60000)){ return; }
     if(!navigator.geolocation){ GEO_DENIED = true; return; }
     GEO_BUSY = true;
+    // Con GPS (precisión alta): la ubicación por red puede desviarse 1-2 km, poco en coche pero
+    // mucho andando. Si aun así es poco precisa, se usa y se vuelve a pedir al minuto.
     navigator.geolocation.getCurrentPosition(function(p){
       GEO_BUSY = false;
-      GEO = { lat: p.coords.latitude, lng: p.coords.longitude, at: Date.now() };
+      var acc = p.coords.accuracy || 0, rough = acc > GEO_GOOD_M;
+      GEO = { lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(acc), at: rough ? Date.now() - 4 * 60000 : Date.now() };
       renderToday();
     }, function(e){
       GEO_BUSY = false;
       if(e.code === 1){ GEO_DENIED = true; } else { GEO_RETRY = Date.now() + 2 * 60000; }
       renderToday();
-    }, { maximumAge: 5 * 60000, timeout: 15000 });
+    }, { enableHighAccuracy: true, maximumAge: 2 * 60000, timeout: 20000 });
   }
 
   function fetchRoute(origin, dest, mode, departMs){
@@ -518,7 +526,10 @@
       if(!item.place || (item.kind !== 'activity' && item.kind !== 'event')){ return false; }
       var r = ROUTES.items[item.id];
       if(r && r.failAt && Date.now() - r.failAt < 10 * 60000){ return false; }
-      if(r && !r.failAt && routeSlot(item, r) <= r.slot){ return false; }
+      // Desde la ubicación del móvil: si ahora está a más de GEO_GOOD_M del punto usado, se recalcula ya
+      if(r && r.from === 'device'){ ensureGeo(); }   // vuelve a mirar dónde está el móvil (como mucho cada 5 min)
+      var moved = r && r.from === 'device' && r.ll && GEO && geoDist(GEO, { lat: r.ll[0], lng: r.ll[1] }) > GEO_GOOD_M;
+      if(r && !r.failAt && !moved && routeSlot(item, r) <= r.slot){ return false; }
       var org = routeOrigin(item);
       if(!org || org.wait){ return false; }
       due = item; dueOrigin = org; return true;
@@ -529,6 +540,7 @@
     var arrive = TODAY_DATE.getTime() + item.t * 3600000;
     var guess = prev && prev.car ? prev.car.min : 20;
     var res = { at: Date.now(), from: dueOrigin.o.kind, fallback: !!dueOrigin.o.fallback };
+    if(dueOrigin.o.kind === 'device' && GEO){ res.ll = [GEO.lat, GEO.lng]; }
     fetchRoute(dueOrigin.wp, item.place, 'DRIVE', arrive - guess * 60000).then(function(car){
       res.car = car;
       if(car && car.m && car.m <= WALK_MAX_M){
