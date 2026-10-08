@@ -170,6 +170,20 @@
       var p = e.pid && out.filter(function(q){ return q.id === e.pid; })[0], lv = p && leaveHour(p);
       if(lv != null && lv < e.t){ e.t = lv; e.byLeave = true; }
     });
+    // Tarea que vence hoy con bloques de trabajo de hoy que cubren lo que falta: en «Hoy» solo se
+    // ven los bloques, con «(antes de HH:MM)», mientras quede alguno por terminar
+    var covered = {};
+    out.forEach(function(e){
+      if(e.kind !== 'task' || !e.est){ return; }
+      var today = blocksOf(e.ref).filter(function(b){ return b.date === iso && !isLogged(b); });
+      var left = e.est - doneMin(e.ref);
+      var upcoming = out.some(function(b){ return b.kind === 'block' && b.ref === e.ref && b.end > NOW; });
+      if(left > 0 && upcoming && Math.round(blockHours(today) * 60) >= left){ covered[e.ref] = e.t; }
+    });
+    out = out.filter(function(e){ return !(e.kind === 'task' && covered[e.ref] != null); });
+    out.forEach(function(e){
+      if(e.kind === 'block' && covered[e.ref] != null){ e.title += ' (' + t('block.before', { t: fmtHour(covered[e.ref]) }) + ')'; }
+    });
     // Se quitan los que ya han terminado (una tarea, al pasar su hora, queda en «Atrasadas»)
     return out.filter(function(e){ return (e.end || e.t) > NOW + 1e-9 && (e.kind !== 'task' || e.t > NOW); })
       .map(function(e){ if(!/^(tarea|cita|actividad|libre)$/.test(e.cat) && !findCategory(e.cat)){ e.cat = 'libre'; } return e; })
