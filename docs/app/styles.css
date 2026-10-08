@@ -283,6 +283,9 @@
   .hero-place{ font-size:13px; font-weight:600; margin-top:6px; opacity:.85; }
   .hero-leave{ display:flex; justify-content:center; gap:8px; margin-top:8px; }
   /* Hora de salida: solo icono (andando / coche) y hora */
+  .later-leave{ display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+  .later-leave .leave-chip{ padding:1px 6px; font-size:11px; gap:3px; background:rgba(0,0,0,.1); }
+  .later-leave .leave-chip svg{ width:12px; height:12px; }
   .leave-chip{ display:inline-flex; align-items:center; gap:5px; background:rgba(0,0,0,.12); font-weight:700; font-size:12.5px; padding:4px 10px; border-radius:999px; font-variant-numeric:tabular-nums; }
   .fan{ display:flex; align-items:center; justify-content:center; padding:8px 0 10px; }
   .fan-card{
@@ -1090,4 +1093,6 @@
   .place-sugg li[data-i]{ display:flex; align-items:center; gap:7px; padding:9px 10px; border-radius:7px; font-size:14px; cursor:pointer; line-height:1.3; }
   .place-sugg li[data-i]:hover{ background:var(--surface-alt); }
   .place-sugg li svg{ flex:none; color:var(--accent-strong); }
+  .place-hint{ margin:4px 2px 0; color:var(--accent-strong); }
+  .place-hint[hidden]{ display:none; }
   .place-src{ padding:4px 10px 2px; font-size:10.5px; color:var(--text-muted); text-align:right; }

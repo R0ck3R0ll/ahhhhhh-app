@@ -156,7 +156,7 @@
     });
     allTasks().filter(function(x){ return !x.done && x.due && isoOf(x.due) === iso; }).forEach(function(x){
       out.push({ id:'tk-' + x.key.replace(':', '-'), kind:'task', ref:x.key, t:x.due.getHours() + x.due.getMinutes() / 60, cat:'tarea', title:x.name,
-                 place:x.origin, dist:x.est ? fmtEst(x.est) : '', est:x.est });
+                 place:x.origin, dist:x.est ? fmtEst(x.est) : '', est:x.est, pid:taskParentId(x, iso, wd) });
     });
     // Bloques de trabajo de hoy (de tareas sin hacer)
     liveBlocks().filter(function(o){ return o.b.date === iso && !o.x.done; }).forEach(function(o){
@@ -164,16 +164,47 @@
                  place:t('block.label'), dist:fmtEst(Math.round((o.b.end - o.b.start) * 60)) });
     });
     out.forEach(function(e){ e.from = originText(travelOrigin(e, TODAY_DATE, NOW)); });
+    // Tarea de un evento o actividad de hoy: hay que hacerla antes de salir hacia él, así que su
+    // entrega se ve a la hora de salida (la más temprana, si hay coche y a pie) si esa es antes
+    out.forEach(function(e){
+      var p = e.pid && out.filter(function(q){ return q.id === e.pid; })[0], lv = p && leaveHour(p);
+      if(lv != null && lv < e.t){ e.t = lv; e.byLeave = true; }
+    });
     // Se quitan los que ya han terminado (una tarea, al pasar su hora, queda en «Atrasadas»)
     return out.filter(function(e){ return (e.end || e.t) > NOW + 1e-9 && (e.kind !== 'task' || e.t > NOW); })
       .map(function(e){ if(!/^(tarea|cita|actividad|libre)$/.test(e.cat) && !findCategory(e.cat)){ e.cat = 'libre'; } return e; })
-      .sort(function(p, q){ return p.t - q.t || (p.kind === 'task') - (q.kind === 'task'); });
+      .sort(function(p, q){
+        if(p.t !== q.t){ return p.t - q.t; }
+        // A la misma hora, la tarea de un elemento va antes que él; el resto de tareas, después
+        if(p.pid === q.id){ return -1; }
+        if(q.pid === p.id){ return 1; }
+        return (p.kind === 'task') - (q.kind === 'task');
+      });
+  }
+  // Elemento de hoy (evento o sesión de la actividad) al que pertenece una tarea, o null
+  function taskParentId(x, iso, wd){
+    if(!x.parent){ return null; }
+    if(x.kind === 'event'){ return x.parent.date === iso ? 'evt-' + x.parent.id : null; }
+    if(x.kind === 'activity'){
+      var h = x.due.getHours() + x.due.getMinutes() / 60;
+      var ses = (x.parent.sessions || []).filter(function(z){ return z.day === wd && Math.abs(toHours(z.start) - h) < 1e-6; })[0];
+      return ses ? 'act-' + x.parent.id + '-' + ses.start : null;
+    }
+    return null;
+  }
+  // Hora de salida más temprana hacia un elemento de hoy (en horas), o null si no hay trayecto calculado
+  function leaveHour(item){
+    var r = ROUTES.day === isoOf(TODAY_DATE) && ROUTES.items[item.id];
+    if(!r || !r.car){ return null; }
+    var mins = Math.max(r.car.min, r.walk ? r.walk.min : 0);
+    return Math.floor(item.t * 60 - mins) / 60;
   }
   function loadTodayItems(){
     var items = todayItems();
     TODAY_NEXT = items[0] || null;
     refreshRoutes(items);
-    applyRoute(TODAY_NEXT);
+    // Las horas de salida se calculan para todos: se ven en el próximo y en los siguientes
+    items.forEach(applyRoute);
     TODAY_LATER_ALL = items.slice(1);
     TODAY_LATER = TODAY_LATER_ALL.slice(0, TODAY_MAX - 1);
   }
@@ -256,7 +287,10 @@
     if(add){ c.n += add; try{ localStorage.setItem('place-count', JSON.stringify(c)); }catch(e){} }
     return c.n;
   }
+  // Las últimas búsquedas se recuerdan, para no preguntar dos veces lo mismo a Google
+  var PLACE_MEMO = {};
   function searchPlaces(text){
+    if(PLACE_MEMO[text]){ return Promise.resolve(PLACE_MEMO[text]); }
     var body = { input: text, languageCode: LOCALES[LANG], regionCode: 'es' };
     var c = GEO ? [GEO.lat, GEO.lng] : (PLACES[ADDR.home] && PLACES[ADDR.home].ll);
     if(c){ body.locationBias = { circle: { center: { latitude: c[0], longitude: c[1] }, radius: 30000 } }; }
@@ -264,15 +298,25 @@
     return fetch('https://places.googleapis.com/v1/places:autocomplete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': MAPS_KEY,
-                 'X-Goog-FieldMask': 'suggestions.placePrediction.placeId,suggestions.placePrediction.text' },
+                 'X-Goog-FieldMask': 'suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.types' },
       body: JSON.stringify(body)
     }).then(function(r){ if(!r.ok){ throw r.status; } return r.json(); })
       .then(function(j){
         return (j.suggestions || []).map(function(sg){ return sg.placePrediction; }).filter(Boolean)
-          .map(function(p){ return { text: p.text.text, id: p.placeId }; });
+          .map(function(p){ return { text: p.text.text, id: p.placeId, types: p.types || [] }; });
+      }).then(function(r){
+        var keys = Object.keys(PLACE_MEMO);
+        if(keys.length >= 20){ delete PLACE_MEMO[keys[0]]; }
+        PLACE_MEMO[text] = r;
+        return r;
       });
   }
-  // Convierte un campo de texto en campo de lugar con su lista de sugerencias
+  // Una dirección exacta (con número de portal o un sitio concreto), no solo la calle
+  var EXACT_TYPES = ['street_address', 'premise', 'subpremise', 'establishment', 'point_of_interest'];
+  function exactPlace(types){ return (types || []).some(function(x){ return EXACT_TYPES.indexOf(x) >= 0; }); }
+  // Convierte un campo de texto en campo de lugar con su lista de sugerencias.
+  // Si se elige una calle sin número, el cursor se queda tras el nombre de la calle para añadirlo; al
+  // dejar el campo con el texto cambiado, se busca en Google el sitio exacto de lo escrito.
   function placeField(input, onPick){
     var box = document.createElement('div');
     box.className = 'place-field';
@@ -281,8 +325,11 @@
     var list = document.createElement('ul');
     list.className = 'place-sugg'; list.hidden = true; list.setAttribute('role', 'listbox');
     box.appendChild(list);
+    var hint = document.createElement('p');
+    hint.className = 'card-hint place-hint'; hint.hidden = true;
+    box.appendChild(hint);
     input.setAttribute('role', 'combobox'); input.setAttribute('aria-autocomplete', 'list'); input.setAttribute('aria-expanded', 'false');
-    var timer = null, asked = '', remote = [], picked = false;
+    var timer = null, asked = '', remote = [], picked = false, pickedText = '';
     function show(){
       var q = fold(input.value.trim()), local = [];
       if(q){ local = usedPlaces().filter(function(p){ var f = fold(p); return f.indexOf(q) >= 0 && f !== q; }).slice(0, 5); }
@@ -298,11 +345,30 @@
     function pick(it){
       input.value = it.text;
       if(it.id){ PLACES[it.text] = { id: it.id }; savePlaces(); }
-      picked = true; remote = []; list.hidden = true; input.setAttribute('aria-expanded', 'false');
+      picked = true; pickedText = it.text; remote = []; list.hidden = true; input.setAttribute('aria-expanded', 'false');
+      // Calle sin número: el cursor tras el nombre de la calle (antes de la primera coma) y un aviso
+      var street = it.id && !exactPlace(it.types) && (it.types || []).indexOf('route') >= 0;
+      hint.textContent = street ? t('place.addNumber') : ''; hint.hidden = !street;
+      if(street){
+        var at = it.text.indexOf(','); at = at < 0 ? it.text.length : at;
+        input.focus();
+        try{ input.setSelectionRange(at, at); }catch(e){}
+      }
       if(onPick){ onPick(it.text); }
+    }
+    // Texto cambiado a mano tras elegir (p. ej. con el número añadido): se busca su sitio exacto
+    function resolveEdited(){
+      var v = input.value.trim();
+      if(!pickedText || v === pickedText || !v || PLACES[v] || !MAPS_ON || !navigator.onLine || placeCount(0) >= PLACE_DAY_MAX){ return; }
+      pickedText = '';
+      searchPlaces(v).then(function(r){
+        var best = r[0];
+        if(best && exactPlace(best.types)){ PLACES[v] = { id: best.id }; savePlaces(); if(onPick){ onPick(v); } }
+      }).catch(function(){});
     }
     input.addEventListener('input', function(){
       picked = false;
+      hint.hidden = true;
       clearTimeout(timer);
       var v = input.value.trim();
       if(v.length < PLACE_MIN_CHARS){ remote = []; asked = ''; }
@@ -315,7 +381,9 @@
       }
     });
     input.addEventListener('focus', function(){ if(input.value.trim()){ show(); } });
-    input.addEventListener('blur', function(){ setTimeout(function(){ list.hidden = true; input.setAttribute('aria-expanded', 'false'); }, 150); });
+    input.addEventListener('blur', function(){
+      setTimeout(function(){ list.hidden = true; input.setAttribute('aria-expanded', 'false'); if(document.activeElement !== input){ hint.hidden = true; resolveEdited(); } }, 150);
+    });
     input.addEventListener('keydown', function(ev){ if(ev.key === 'Escape'){ list.hidden = true; } });
     // pointerdown en vez de click: así no se pierde el foco antes de elegir
     list.addEventListener('pointerdown', function(ev){
@@ -612,6 +680,8 @@
       return '<span class="leave-chip" title="' + cap(t('how.' + m)) + '">' + (m === 'walk' ? WALK_SVG : CAR_SVG) + '<span>' + l[m] + '</span></span>';
     }).join('');
   }
+  // En los siguientes: las mismas horas de salida, en pequeño
+  function laterLeave(e){ return e.leaves ? '<div class="later-leave">' + leaveChips(e) + '</div>' : ''; }
   var CAR_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14l-1.5-5.5A2 2 0 0 0 15.6 10H8.4a2 2 0 0 0-1.9 1.5Z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>';
 
   // Escala de la barra: toda la franja horaria de hoy. En días de cole, el horario
@@ -950,7 +1020,7 @@
     var chips = TODAY_LATER.map(function(e){
       return '<div class="later-chip' + blk(e) + '" ' + todayOpen(e) + ' style="' + catVars(e.cat) + '">' +
         todayCheck(e) + '<div class="later-time">' + fmtHour(e.t) + '</div>' +
-        '<div class="later-title">' + esc(e.title) + '</div></div>';
+        '<div class="later-title">' + esc(e.title) + '</div>' + laterLeave(e) + '</div>';
     }).join('');
     host.innerHTML =
       '<div><div class="section-eyebrow" style="color:var(--warn-ink)">' + t('today.soon', { t: untilText(n.t) }) + '</div>' +
@@ -967,7 +1037,7 @@
     var cards = TODAY_LATER.map(function(e, i){   // siguientes: solo hora y nombre
       return '<div class="fan-card' + blk(e) + '" ' + todayOpen(e) + ' style="' + catVars(e.cat) + ';z-index:' + (i + 1) + '">' +
         todayCheck(e) + '<div class="fan-time">' + fmtHour(e.t) + '</div>' +
-        '<div class="fan-title">' + esc(e.title) + '</div></div>';
+        '<div class="fan-title">' + esc(e.title) + '</div>' + laterLeave(e) + '</div>';
     }).join('');
     host.innerHTML =
       '<div><div class="hero-eyebrow">' + t('today.nowSoon', { t: untilText(n.t) }) + '</div>' +
@@ -1015,7 +1085,7 @@
       // Siguientes: solo hora y nombre
       note.innerHTML = '<div class="note-shadow"></div><div class="note-card' + blk(item) + '">' +
         todayCheck(item) + '<div class="n-head"><span class="n-time">' + fmtHour(item.t) + '</span></div>' +
-        '<div class="n-title">' + esc(item.title) + '</div></div>';
+        '<div class="n-title">' + esc(item.title) + '</div>' + laterLeave(item) + '</div>';
       // Un post-it de detrás viene al frente; el de delante se abre en su pantalla
       function front(){
         var k = noteOrder.indexOf(item.id);
