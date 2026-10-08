@@ -1338,8 +1338,14 @@
   var LINK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
   // Lectura en curso (READING: el número de lectura, para ignorar la respuesta si entretanto cambia
   // la fuente) y resultado pendiente de revisar, guardado solo en este móvil.
+  // READ_PENDING es { periods… } para revisar o { questions } si la IA necesita saber algo antes de leer.
   var READING = 0, READ_SEQ = 0, READ_PENDING = null;
   try{ READ_PENDING = JSON.parse(localStorage.getItem('school-read-pending') || 'null'); }catch(e){ READ_PENDING = null; }
+  // Respuestas de la familia a las preguntas de la IA ([{ q, a }], compartidas por el plan): se mandan
+  // en cada lectura, también con otro calendario, para que no vuelva a preguntar lo mismo
+  var READ_ANSWERS = [];
+  try{ READ_ANSWERS = JSON.parse(localStorage.getItem('school-read-answers') || '[]') || []; }catch(e){ READ_ANSWERS = []; }
+  function storeReadAnswers(){ try{ localStorage.setItem('school-read-answers', JSON.stringify(READ_ANSWERS)); }catch(e){} }
 
   function setSchoolCal(v){
     SCHOOL_CAL = v;
@@ -1369,12 +1375,13 @@
       b.classList.toggle('is-active', on);
       b.setAttribute('aria-pressed', String(on));
     });
-    var reviewing = !!(c && !manual && READ_PENDING && !READING);
+    var reviewing = !!(c && !manual && READ_PENDING && !READING);   // revisión o preguntas a la vista
+    var asking = reviewing && !!READ_PENDING.questions;
     var read = !!(c && c.read);
     // A mano: el archivo o enlace (si lo hay) se ve tachado y con «Lectura desactivada»; no se puede cambiar
     chip.className = 'status-chip ' + (manual || !c ? 'off' : READING || reviewing ? 'pending' : read ? 'ok' : 'off');
     chip.textContent = manual ? t('schoolCal.off') : !c ? t('schoolCal.none') :
-      READING ? t('read.chipReading') : reviewing ? t('read.chipReview') :
+      READING ? t('read.chipReading') : asking ? t('read.chipQuestion') : reviewing ? t('read.chipReview') :
       read ? (NO_SCHOOL_READ.length === 1 ? t('read.chipOne') : t('read.chipN', { n: NO_SCHOOL_READ.length })) : t('read.chipUnread');
     el('school-cal-line').hidden = manual && !c;
     el('school-cal-src').hidden = !c;
@@ -1396,6 +1403,10 @@
     }
     st.textContent = msg; st.hidden = !msg;
     st.classList.toggle('is-busy', !!READING);
+    // Lo que ya se ha respondido a la IA, con la opción de olvidarlo
+    var ans = el('school-cal-answers');
+    ans.hidden = !c || manual || reviewing || !READ_ANSWERS.length;
+    el('school-cal-answers-text').textContent = t('read.answersUsed', { list: READ_ANSWERS.map(function(x){ return x.a; }).join(' · ') });
     var notes = el('school-cal-notes');
     notes.textContent = c && read && !manual && !reviewing && c.read.notes ? c.read.notes : '';
     notes.hidden = !notes.textContent;
@@ -1606,7 +1617,7 @@
     });
   }
   function readPayload(){
-    var base = { lang: LANG, today: isoOf(new Date()) };
+    var base = { lang: LANG, today: isoOf(new Date()), answers: READ_ANSWERS };
     if(SCHOOL_CAL.kind === 'link'){ base.url = SCHOOL_CAL.url; return Promise.resolve(base); }
     var f = SCHOOL_FILE;
     return (SCHOOL_CAL.ext === 'IMG' ? shrinkImage(f) : Promise.resolve({ blob:f, type:f.type })).then(function(x){
@@ -1638,6 +1649,12 @@
       return window.syncCall('readSchoolCalendar', payload);
     }).then(function(res){
       if(seq !== READ_SEQ){ return; }
+      // La IA necesita saber algo de la alumna: primero se responde y luego se vuelve a leer
+      if(res && res.questions && res.questions.length){
+        setReadPending({ questions: res.questions, picks: res.questions.map(function(){ return { opt: -1, other: '' }; }) });
+        toast(t('read.asking'));
+        return;
+      }
       var periods = (res && res.periods || []).map(function(p, i){
         return { id:'nsr' + Date.now() + '-' + i, from:p.from, to:p.to, name:p.name || '' };
       }).sort(function(a, b){ return a.from < b.from ? -1 : 1; });
@@ -1655,9 +1672,10 @@
 
   // Revisión de lo leído: cada periodo con su casilla (todas marcadas); «Guardar» se queda con las marcadas
   function renderSchoolReview(show){
-    var box = el('school-review');
-    box.hidden = !show;
-    if(!show){ return; }
+    var box = el('school-review'), asking = show && !!READ_PENDING.questions;
+    renderSchoolAsk(asking);
+    box.hidden = !show || asking;
+    if(box.hidden){ return; }
     var p = READ_PENDING, list = el('school-review-list');
     var meta = !p.isCalendar ? t('read.notCalendar') :
       !p.periods.length ? t('read.noneFound') :
@@ -1695,6 +1713,60 @@
     setSchoolCal(c);
     noSchoolChanged();
     toast(t('read.saved'));
+  }
+  // Preguntas de la IA: cada una con sus opciones (botones de radio) y «Otra respuesta» con texto libre
+  function renderSchoolAsk(show){
+    var box = el('school-ask');
+    box.hidden = !show;
+    if(!show){ return; }
+    var p = READ_PENDING, list = el('school-ask-list');
+    list.innerHTML = '';
+    p.questions.forEach(function(q, i){
+      var pick = p.picks[i] || (p.picks[i] = { opt: -1, other: '' });
+      var fs = document.createElement('fieldset'); fs.className = 'ask-q';
+      var lg = document.createElement('legend'); lg.textContent = q.question; fs.appendChild(lg);
+      var opts = q.options.concat([t('read.other')]);
+      var other = document.createElement('input');
+      other.type = 'text'; other.className = 'txt-input'; other.maxLength = 120;
+      other.placeholder = t('read.otherPh'); other.value = pick.other;
+      other.hidden = pick.opt !== q.options.length;
+      other.oninput = function(){ pick.other = other.value; setReadPending(p); };
+      opts.forEach(function(o, j){
+        var label = document.createElement('label'); label.className = 'check-row';
+        var r = document.createElement('input'); r.type = 'radio'; r.name = 'ask-' + i; r.checked = pick.opt === j;
+        r.onchange = function(){
+          pick.opt = j; setReadPending(p);
+          other.hidden = j !== q.options.length;
+          if(!other.hidden){ other.focus(); }
+        };
+        var span = document.createElement('span'); span.textContent = o;
+        label.appendChild(r); label.appendChild(span); fs.appendChild(label);
+      });
+      fs.appendChild(other);
+      list.appendChild(fs);
+    });
+  }
+  function answerSchoolAsk(){
+    var p = READ_PENDING, out = [];
+    for(var i = 0; i < p.questions.length; i++){
+      var q = p.questions[i], pick = p.picks[i] || {}, a = '';
+      if(pick.opt >= 0 && pick.opt < q.options.length){ a = q.options[pick.opt]; }
+      else if(pick.opt === q.options.length){ a = (pick.other || '').trim(); }
+      if(!a){ toast(t('read.needAnswer')); return; }
+      out.push({ q: q.question, a: a });
+    }
+    // La misma pregunta respondida otra vez sustituye a la respuesta anterior
+    READ_ANSWERS = READ_ANSWERS.filter(function(x){ return !out.some(function(y){ return y.q === x.q; }); }).concat(out).slice(-8);
+    storeReadAnswers();
+    setReadPending(null);
+    renderSchoolCal();
+    readSchoolCal();
+  }
+  function forgetReadAnswers(){
+    READ_ANSWERS = [];
+    storeReadAnswers();
+    renderSchoolCal();
+    toast(t('read.forgotten'));
   }
   function discardSchoolRead(){
     setReadPending(null);

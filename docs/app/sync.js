@@ -27,7 +27,7 @@ import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/
 // Datos compartidos del plan. El idioma, el aspecto y los avisos ya vistos son de cada móvil.
 const SHARED_KEYS = [
   'kid-name', 'app-settings', 'app-activities', 'app-events', 'app-tasks', 'app-blocks',
-  'deleted-cats', 'addresses', 'places', 'school-cal', 'school-cal-mode', 'no-school-manual', 'no-school-read'
+  'deleted-cats', 'addresses', 'places', 'school-cal', 'school-cal-mode', 'no-school-manual', 'no-school-read', 'school-read-answers'
 ];
 
 // El inicio de sesión solo funciona en la dirección de Firebase (o en local, para probar)

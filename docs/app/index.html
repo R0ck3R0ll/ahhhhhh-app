@@ -449,6 +449,21 @@
           <!-- Lectura con IA: en curso, falta iniciar sesión, cuándo se leyó… (lo pone renderSchoolCal) -->
           <p class="card-hint school-read-status" id="school-cal-pending" hidden></p>
           <p class="card-hint school-notes" id="school-cal-notes" hidden></p>
+          <!-- Respuestas ya dadas a la IA (se mandan en cada lectura) -->
+          <p class="card-hint school-answers" id="school-cal-answers" hidden>
+            <span id="school-cal-answers-text"></span>
+            <button type="button" class="link-btn" onclick="forgetReadAnswers()" data-i18n="read.forget"></button>
+          </p>
+          <!-- Preguntas de la IA cuando el calendario depende de la alumna (p. ej. dos sistemas o etapas) -->
+          <div class="school-review" id="school-ask" hidden>
+            <div class="school-review-title" data-i18n="read.askTitle"></div>
+            <p class="card-hint" data-i18n="read.askHint"></p>
+            <div id="school-ask-list"></div>
+            <div class="cat-new-actions">
+              <button type="button" class="btn-ghost" onclick="discardSchoolRead()" data-i18n="btn.cancel"></button>
+              <button type="button" class="btn-primary" onclick="answerSchoolAsk()" data-i18n="read.answer"></button>
+            </div>
+          </div>
           <!-- Revisión de lo que ha leído la IA: nada se guarda hasta pulsar «Guardar» -->
           <div class="school-review" id="school-review" hidden>
             <div class="school-review-title" data-i18n="read.reviewTitle"></div>

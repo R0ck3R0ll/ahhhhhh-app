@@ -18,7 +18,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { GoogleGenAI, ApiError } from '@google/genai';
 import { GoogleAuth } from 'google-auth-library';
 import {
-  ReadError, MAX_BYTES, fetchSource, toPart, SYSTEM, userPrompt, SCHEMA, cleanResult
+  ReadError, MAX_BYTES, fetchSource, toPart, SYSTEM, userPrompt, SCHEMA, cleanResult, cleanAnswers
 } from './schoolcal.js';
 
 initializeApp();
@@ -48,7 +48,8 @@ async function checkUser(auth){
   });
 }
 
-// Lo que manda la App: { file: { name, type, data (base64) } } o { url }, más { lang, today }
+// Lo que manda la App: { file: { name, type, data (base64) } } o { url }, más { lang, today, answers }
+// (answers: lo que la familia ha respondido a preguntas anteriores de la IA, [{ q, a }])
 async function loadSource(data){
   if(data.url){ return fetchSource(String(data.url), driveToken); }
   const f = data.file;
@@ -69,6 +70,7 @@ export const readSchoolCalendar = onCall({
   await checkUser(request.auth);
   const today = /^\d{4}-\d{2}-\d{2}$/.test(data.today) ? data.today : new Date().toISOString().slice(0, 10);
   const lang = String(data.lang || 'es');
+  const answers = cleanAnswers(data.answers);
 
   let part;
   try{
@@ -87,7 +89,7 @@ export const readSchoolCalendar = onCall({
   try{
     res = await gemini().models.generateContent({
       model: GEMINI_MODEL.value(),
-      contents: [{ role: 'user', parts: [part, { text: userPrompt({ lang, today }) }] }],
+      contents: [{ role: 'user', parts: [part, { text: userPrompt({ lang, today, answers }) }] }],
       config: {
         systemInstruction: SYSTEM,
         responseMimeType: 'application/json',
@@ -114,6 +116,6 @@ export const readSchoolCalendar = onCall({
   let out;
   try{ out = JSON.parse(text); }catch(e){ throw new HttpsError('internal', 'ai'); }
   const result = cleanResult(out, today);
-  logger.info('readSchoolCalendar: leído', { model: GEMINI_MODEL.value(), periods: result.periods.length, usage: res.usageMetadata });
+  logger.info('readSchoolCalendar: leído', { model: GEMINI_MODEL.value(), periods: result.periods.length, questions: result.questions.length, answers: answers.length, usage: res.usageMetadata });
   return result;
 });

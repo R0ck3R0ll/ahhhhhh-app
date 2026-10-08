@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  downloadUrl, driveId, fetchDrive, fetchSource, isPublicIp, fetchUrl, toPart, htmlToText, cleanResult, ReadError, MAX_BYTES
+  downloadUrl, driveId, fetchDrive, fetchSource, isPublicIp, fetchUrl, toPart, htmlToText, cleanResult, cleanAnswers, userPrompt, ReadError, MAX_BYTES
 } from '../schoolcal.js';
 
 test('enlaces de Drive y Docs pasan a su dirección de descarga', function(){
@@ -146,4 +146,31 @@ test('fetchSource: si la API de Drive falla, prueba la descarga pública; sin Dr
     [/fields=/, () => json({ copyRequiresWriterPermission: true })]
   ], calls)), function(e){ return e.code === 'noDownload'; });
   assert.equal(calls.length, 1);
+});
+
+test('cleanResult: con preguntas no devuelve periodos y limpia las opciones', function(){
+  const r = cleanResult({
+    is_school_calendar: true, school_year: '2026-2027', notes: '',
+    periods: [{ from: '2026-12-08', to: '2026-12-08', name: 'Inmaculada' }],
+    questions: [
+      { question: '¿Qué sistema sigue la alumna?', options: ['British System', 'Sistema español', 'British System', ''] },
+      { question: 'Sin opciones', options: ['solo una'] },
+      { question: 'Q3', options: ['a', 'b'] }, { question: 'Q4', options: ['a', 'b'] }
+    ]
+  }, '2026-10-08');
+  assert.deepEqual(r.questions[0], { question: '¿Qué sistema sigue la alumna?', options: ['British System', 'Sistema español'] });
+  assert.equal(r.questions.length, 2);
+  assert.deepEqual(r.periods, []);
+  const sinPreguntas = cleanResult({ is_school_calendar: true, periods: [{ from: '2026-12-08', to: '2026-12-08', name: 'x' }], questions: [] }, '2026-10-08');
+  assert.equal(sinPreguntas.periods.length, 1);
+  assert.deepEqual(sinPreguntas.questions, []);
+});
+
+test('respuestas de la familia: se limpian y van en la petición', function(){
+  const a = cleanAnswers([{ q: ' ¿Sistema? ', a: 'British System' }, { q: 'vacía', a: '' }, 'basura', null]);
+  assert.deepEqual(a, [{ q: '¿Sistema?', a: 'British System' }]);
+  assert.deepEqual(cleanAnswers('no es una lista'), []);
+  const p = userPrompt({ lang: 'es', today: '2026-10-08', answers: a });
+  assert.match(p, /¿Sistema\? → British System/);
+  assert.doesNotMatch(userPrompt({ lang: 'es', today: '2026-10-08' }), /answers about the student/);
 });

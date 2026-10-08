@@ -900,6 +900,12 @@
   .school-review .check-list{ display:flex; flex-direction:column; gap:6px; }
   .review-row{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
   .review-row:has(input:not(:checked)) .nsd-text{ opacity:.5; text-decoration:line-through; }
+  #school-ask-list{ display:flex; flex-direction:column; gap:10px; }
+  .ask-q{ margin:0; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface); display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .ask-q legend{ float:left; width:100%; padding:0 0 4px; font-size:13.5px; font-weight:600; }
+  .ask-q .txt-input[hidden]{ display:none; }
+  .school-answers[hidden]{ display:none; }
+  .school-answers .link-btn{ margin-left:6px; padding:0; border:0; background:none; font:inherit; color:var(--accent-strong); text-decoration:underline; cursor:pointer; }
 
   /* ---- Editable categories ---- */
   .cat-row{ align-items:center; }
