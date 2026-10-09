@@ -22,7 +22,7 @@
 <main>
   <div class="brand"><a href="./" style="text-decoration:none">AHHHHHH Today</a></div>
   <h1>Privacy policy</h1>
-  <p class="muted">Last updated: 3 October 2026 · <a href="privacidad.html">Versión en español</a></p>
+  <p class="muted">Last updated: 9 October 2026 · <a href="privacidad.html">Versión en español</a></p>
 
   <p>AHHHHHH Today is a private app used by a single family to help a student organise her day. This page explains which data it uses, what for, and what it does not do with it.</p>
 
@@ -38,14 +38,16 @@
   <ul>
     <li>What the family enters: activities, events, tasks, addresses (e.g. home) and preferences.</li>
     <li>The <strong>device location</strong>, only with permission and only to estimate travel time to the next activity.</li>
+    <li>The <strong>school calendar</strong> that the family uploads (PDF, Word or image) or links to (for example, a Google Drive file shared with "anyone with the link" or the school's web page), to find holidays and days without classes. The file is not stored: only its name and the days that the family reviews and approves.</li>
   </ul>
 
   <h2>Who it is shared with</h2>
   <p>No one except the services needed for the app to work, and only what is strictly necessary:</p>
   <ul>
-    <li><strong>Anthropic (Claude):</strong> the text of new emails and posts is sent to extract dates, deadlines and notices. It is not used to train models.</li>
-    <li><strong>Google Maps Platform:</strong> the origin and destination of each trip, to estimate travel time with traffic.</li>
-    <li><strong>Google Firebase:</strong> hosting of the app and storage of its data.</li>
+    <li><strong>Google Cloud – Vertex AI (Gemini):</strong> the school calendar is sent to find holidays and days without classes and, once the Classroom and Gmail connection is turned on, also the text of new emails and posts, to extract dates, deadlines and notices. With Vertex AI, Google does not use this data to train its models.</li>
+    <li><strong>Google Drive:</strong> if the school calendar is given as a Drive link, the app downloads that file to read it (only if it is shared with "anyone with the link").</li>
+    <li><strong>Google Maps Platform:</strong> the origin and destination of each trip, to estimate travel time with traffic, and the text of the addresses being typed, to suggest places.</li>
+    <li><strong>Google Firebase:</strong> hosting of the app, sign-in and storage of its data.</li>
   </ul>
   <p>Data is <strong>never sold</strong>, never used for advertising and never passed on to third parties.</p>
 
