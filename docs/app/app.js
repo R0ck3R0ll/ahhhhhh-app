@@ -325,6 +325,14 @@
         return r;
       });
   }
+  // ¿Es la sugerencia de Google la misma dirección que lo escrito? Todas las palabras (de 3 letras o más)
+  // y números de lo escrito tienen que estar en la sugerencia: así no se toma una calle con el mismo
+  // nombre en otro pueblo
+  function sameAddress(typed, sugg){
+    var words = function(x){ return fold(x).split(/[^a-z0-9ñ]+/).filter(function(w){ return w.length >= 3 || /\d/.test(w); }); };
+    var have = words(sugg);
+    return words(typed).every(function(w){ return have.indexOf(w) >= 0; });
+  }
   // Una dirección exacta (con número de portal o un sitio concreto), no solo la calle
   var EXACT_TYPES = ['street_address', 'premise', 'subpremise', 'establishment', 'point_of_interest'];
   function exactPlace(types){ return (types || []).some(function(x){ return EXACT_TYPES.indexOf(x) >= 0; }); }
@@ -377,7 +385,7 @@
       pickedText = '';
       searchPlaces(v).then(function(r){
         var best = r[0];
-        if(best && exactPlace(best.types)){ PLACES[v] = { id: best.id }; savePlaces(); if(onPick){ onPick(v); } }
+        if(best && exactPlace(best.types) && sameAddress(v, best.text)){ PLACES[v] = { id: best.id }; savePlaces(); if(onPick){ onPick(v); } }
       }).catch(function(){});
     }
     input.addEventListener('input', function(){
@@ -435,7 +443,7 @@
      La clave solo funciona desde la dirección de la App (restricción por sitio web). */
   var MAPS_KEY = 'AIzaSyAVY7P4ZP89mUGi_0cQy-jNY7gXLO8L9Mw';
   var MAPS_ON = /(^|\.)ahhhhhh-today\.(web\.app|firebaseapp\.com)$/.test(location.hostname);
-  var MAPS_DAY_MAX = 60, WALK_MAX_M = 2500, WALK_MAX_MIN = 45, ROUTE_SLOT_MIN = 20;
+  var MAPS_DAY_MAX = 60, WALK_MAX_M = 1000, WALK_MAX_MIN = 45, ROUTE_SLOT_MIN = 20;
   var ROUTES = { day: '', sig: '', items: {} }, ROUTE_BUSY = false, ROUTE_PAUSE = 0;
   try{ var r0 = JSON.parse(localStorage.getItem('route-cache') || 'null'); if(r0 && r0.items){ ROUTES = r0; } }catch(e){}
   function saveRoutes(){ try{ localStorage.setItem('route-cache', JSON.stringify(ROUTES)); }catch(e){} }
@@ -447,7 +455,8 @@
   }
 
   // Ubicación del móvil (solo cuando falta 1 h o menos). Si no se puede saber, se sale de casa.
-  var GEO = null, GEO_BUSY = false, GEO_DENIED = false, GEO_RETRY = 0, GEO_GOOD_M = 300;
+  // GEO_GOOD_M: precisa; GEO_MAX_M: peor que esto no sirve para el trayecto (se sale de casa)
+  var GEO = null, GEO_BUSY = false, GEO_DENIED = false, GEO_RETRY = 0, GEO_GOOD_M = 300, GEO_MAX_M = 1000;
   // Distancia en metros entre dos puntos { lat, lng } (aproximación suficiente para pocos km)
   function geoDist(a, b){
     var k = Math.PI / 180, x = (b.lng - a.lng) * k * Math.cos((a.lat + b.lat) / 2 * k), y = (b.lat - a.lat) * k;
@@ -472,7 +481,7 @@
   }
 
   function fetchRoute(origin, dest, mode, departMs){
-    var body = { origin: origin, destination: waypointFor(dest), travelMode: mode, languageCode: LOCALES[LANG], units: 'METRIC' };
+    var body = { origin: origin, destination: waypointFor(dest), travelMode: mode, languageCode: LOCALES[LANG], regionCode: 'ES', units: 'METRIC' };
     if(mode === 'DRIVE'){
       body.routingPreference = 'TRAFFIC_AWARE';
       if(departMs > Date.now() + 60000){ body.departureTime = new Date(departMs).toISOString(); }
@@ -480,14 +489,17 @@
     routeCount(1);
     return fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': MAPS_KEY, 'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters' },
+      headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': MAPS_KEY, 'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.legs.startLocation,routes.legs.endLocation' },
       body: JSON.stringify(body)
     }).then(function(r){
       if(!r.ok){ throw r.status; }
       return r.json();
     }).then(function(j){
       var r = j.routes && j.routes[0];
-      return r ? { min: Math.max(1, Math.ceil(parseInt(r.duration, 10) / 60)), m: r.distanceMeters || 0 } : null;
+      if(!r){ return null; }
+      // Puntos exactos de salida y llegada que ha usado Google (para ver de dónde sale un trayecto raro)
+      var leg = r.legs && r.legs[0], pt = function(l){ l = l && l.latLng; return l ? [+l.latitude.toFixed(5), +l.longitude.toFixed(5)] : null; };
+      return { min: Math.max(1, Math.ceil(parseInt(r.duration, 10) / 60)), m: r.distanceMeters || 0, s: pt(leg && leg.startLocation), e: pt(leg && leg.endLocation) };
     });
   }
 
@@ -510,8 +522,10 @@
     if(!o){ return null; }
     if(o.kind === 'device'){
       ensureGeo();
-      if(GEO){ return { o: o, wp: { location: { latLng: { latitude: GEO.lat, longitude: GEO.lng } } } }; }
-      if(GEO_DENIED || GEO_RETRY > Date.now()){ o = { kind: 'home', place: ADDR.home, fallback: true }; }
+      var usable = GEO && !(GEO.acc > GEO_MAX_M);
+      if(usable){ return { o: o, wp: { location: { latLng: { latitude: GEO.lat, longitude: GEO.lng } } } }; }
+      // Sin ubicación, o tan imprecisa que el trayecto saldría de otro sitio: desde casa
+      if(GEO_DENIED || GEO_RETRY > Date.now() || GEO){ o = { kind: 'home', place: ADDR.home, fallback: true }; }
       else { return { wait: true }; }   // esperando la ubicación
     }
     return o.place ? { o: o, wp: waypointFor(o.place) } : null;
@@ -527,8 +541,10 @@
       var r = ROUTES.items[item.id];
       if(r && r.failAt && Date.now() - r.failAt < 10 * 60000){ return false; }
       // Desde la ubicación del móvil: si ahora está a más de GEO_GOOD_M del punto usado, se recalcula ya
-      if(r && r.from === 'device'){ ensureGeo(); }   // vuelve a mirar dónde está el móvil (como mucho cada 5 min)
-      var moved = r && r.from === 'device' && r.ll && GEO && geoDist(GEO, { lat: r.ll[0], lng: r.ll[1] }) > GEO_GOOD_M;
+      if(r && (r.from === 'device' || r.fallback)){ ensureGeo(); }   // vuelve a mirar dónde está el móvil (como mucho cada 5 min)
+      var moved = r && r.ll && GEO && !(GEO.acc > GEO_MAX_M) && (r.from === 'device' ? geoDist(GEO, { lat: r.ll[0], lng: r.ll[1] }) > GEO_GOOD_M : false);
+      // Salió de casa por no tener una ubicación buena y ahora la hay: se recalcula desde el móvil
+      if(r && r.fallback && GEO && !(GEO.acc > GEO_MAX_M) && travelOrigin(item, TODAY_DATE, NOW) && travelOrigin(item, TODAY_DATE, NOW).kind === 'device'){ moved = true; }
       if(r && !r.failAt && !moved && routeSlot(item, r) <= r.slot){ return false; }
       var org = routeOrigin(item);
       if(!org || org.wait){ return false; }
