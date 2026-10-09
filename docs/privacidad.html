@@ -22,7 +22,7 @@
 <main>
   <div class="brand"><a href="./" style="text-decoration:none">AHHHHHH Today</a></div>
   <h1>Política de privacidad</h1>
-  <p class="muted">Última actualización: 3 de octubre de 2026 · <a href="privacy.html">English version</a></p>
+  <p class="muted">Última actualización: 9 de octubre de 2026 · <a href="privacy.html">English version</a></p>
 
   <p>AHHHHHH Today es una app privada que usa una sola familia para organizar el día de una estudiante. Esta página explica qué datos usa, para qué y qué no hace con ellos.</p>
 
@@ -38,14 +38,16 @@
   <ul>
     <li>Lo que introduce la familia: actividades, eventos, tareas, direcciones (por ejemplo, la de casa) y preferencias.</li>
     <li>La <strong>ubicación del dispositivo</strong>, solo con permiso y solo para calcular el tiempo de traslado a la siguiente actividad.</li>
+    <li>El <strong>calendario escolar</strong> que la familia sube (PDF, Word o imagen) o enlaza (por ejemplo, un archivo de Google Drive compartido con «cualquier persona con el enlace» o la página del colegio), para sacar los festivos y días sin clase. El archivo no se guarda: solo su nombre y los días que la familia revisa y aprueba.</li>
   </ul>
 
   <h2>Con quién se comparten</h2>
   <p>Con nadie más que los servicios necesarios para que la app funcione, y solo lo imprescindible:</p>
   <ul>
-    <li><strong>Anthropic (Claude):</strong> el texto de los correos y publicaciones nuevos se envía para extraer fechas, plazos y avisos. No se usa para entrenar modelos.</li>
-    <li><strong>Google Maps Platform:</strong> el origen y el destino de cada trayecto, para calcular el tiempo con tráfico.</li>
-    <li><strong>Google Firebase:</strong> alojamiento de la app y almacenamiento de sus datos.</li>
+    <li><strong>Google Cloud – Vertex AI (Gemini):</strong> el calendario escolar se envía para extraer los festivos y días sin clase y, cuando se active la conexión con Classroom y Gmail, también el texto de los correos y publicaciones nuevos, para extraer fechas, plazos y avisos. Con Vertex AI, Google no usa estos datos para entrenar sus modelos.</li>
+    <li><strong>Google Drive:</strong> si el calendario escolar se da como enlace de Drive, la app descarga ese archivo para leerlo (solo si está compartido con «cualquier persona con el enlace»).</li>
+    <li><strong>Google Maps Platform:</strong> el origen y el destino de cada trayecto, para calcular el tiempo con tráfico, y el texto de las direcciones que se escriben, para sugerir lugares.</li>
+    <li><strong>Google Firebase:</strong> alojamiento de la app, inicio de sesión y almacenamiento de sus datos.</li>
   </ul>
   <p>Los datos <strong>no se venden</strong>, no se usan para publicidad y no se ceden a terceros.</p>
 
