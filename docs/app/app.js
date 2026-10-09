@@ -443,7 +443,7 @@
      La clave solo funciona desde la dirección de la App (restricción por sitio web). */
   var MAPS_KEY = 'AIzaSyAVY7P4ZP89mUGi_0cQy-jNY7gXLO8L9Mw';
   var MAPS_ON = /(^|\.)ahhhhhh-today\.(web\.app|firebaseapp\.com)$/.test(location.hostname);
-  var MAPS_DAY_MAX = 60, WALK_MAX_M = 1000, WALK_MAX_MIN = 45, ROUTE_SLOT_MIN = 20;
+  var MAPS_DAY_MAX = 60, WALK_MAX_M = 1500, WALK_MAX_MIN = 45, ROUTE_SLOT_MIN = 20;
   var ROUTES = { day: '', sig: '', items: {} }, ROUTE_BUSY = false, ROUTE_PAUSE = 0;
   try{ var r0 = JSON.parse(localStorage.getItem('route-cache') || 'null'); if(r0 && r0.items){ ROUTES = r0; } }catch(e){}
   function saveRoutes(){ try{ localStorage.setItem('route-cache', JSON.stringify(ROUTES)); }catch(e){} }

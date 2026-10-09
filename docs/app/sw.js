@@ -2,7 +2,7 @@
    y funcione sin conexión. Estrategia: primero la red (así siempre se ve la última versión
    publicada) y, si no hay conexión, la copia guardada. Al publicar una versión nueva basta con
    cambiar VERSION para que se renueve la copia. */
-var VERSION = 'v19';
+var VERSION = 'v20';
 var CACHE = 'ahhhhhh-' + VERSION;
 var SHELL = [
   './', 'index.html', 'styles.css', 'i18n.js', 'app.js', 'sync.js', 'manifest.webmanifest',

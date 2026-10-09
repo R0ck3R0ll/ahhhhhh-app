@@ -166,7 +166,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - **Solo el primer deadline lleva detalles** (lugar, traslado, hora de salida…); los siguientes muestran **hora y nombre** y, si tienen traslado, **sus horas de salida** en pequeño con los mismos iconos (andando y coche) (8/10/2026: los trayectos se calculan para todos los de hoy).
 - **Tarea cubierta por bloques de trabajo** (8/10/2026): si una tarea vence hoy y lo ya hecho más los bloques de trabajo de hoy aún sin registrar cubren su tiempo estimado, en «Hoy» no se ve la tarjeta de la tarea, solo las de sus bloques, con «(antes de las HH:MM)» y la hora de entrega en el nombre. Solo mientras quede algún bloque de hoy por terminar; si no, vuelve la tarjeta de la tarea. Sin tiempo estimado no se puede comprobar y se ven las dos.
 - **Tareas de un evento o actividad** (8/10/2026): se muestran **siempre antes** del elemento al que pertenecen, porque hay que hacerlas antes. Si ese elemento tiene traslado, en «Hoy» la entrega de la tarea se ve a la **hora de salida** (la más temprana si hay coche y a pie), no a la hora del elemento. En Tareas y Calendario la entrega sigue siendo la suya.
-  - En **Post-it 1 y Post-it 2** el primer deadline es compacto: **hora y nombre en la misma línea**, **nombre del destino (sin dirección) y distancia**, y las **horas de salida solo con icono** (andando, si el destino está a menos de 1 km, y coche), cada una con su hora; caben las dos. En Post-it 2 van a la derecha, una encima de la otra.
+  - En **Post-it 1 y Post-it 2** el primer deadline es compacto: **hora y nombre en la misma línea**, **nombre del destino (sin dirección) y distancia**, y las **horas de salida solo con icono** (andando, si el trayecto es de 1,5 km o menos, y coche), cada una con su hora; caben las dos. En Post-it 2 van a la derecha, una encima de la otra.
 - **Pulsar una tarjeta de «Hoy»** abre ese elemento en su pantalla (Actividades, Eventos o Tareas), igual que al pulsarlo allí, con un botón **«‹ Volver a Hoy»**. En Post-it 2, un post-it de detrás primero viene al frente; el de delante se abre.
   - En Post-it 2 los post-its son casi cuadrados: hora en la esquina superior derecha y nombre al pie; se solapan escalonados (bastante juntos, para que en un móvil grande quepa también «Próximos días» desplegada) de modo que la hora y el nombre de cada uno queden a la vista.
 - **Color del primer deadline según lo que falta:**
@@ -184,7 +184,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - «Próximos días» también usa las tareas reales pendientes.
   - Los **traslados** (distancia y horas de salida) quedan pendientes hasta conectar Google Maps: mientras tanto se muestran el lugar y **desde dónde se sale** («Polideportivo · desde casa»).
 - Si un evento implica desplazamiento, se muestran **dos datos**: el deadline en sí, y la hora de salida calculada según el tiempo de traslado (Google Maps).
-  - Distancias menores de 1 km: preguntar al usuario si se va andando.
+  - Distancias de 1,5 km o menos: también el tiempo andando (al principio se pensó en 1 km y preguntar; ver punto 2 quater).
   - Resto de distancias: calcular en coche.
   - **Servicio: Google Maps (Routes API)**, con **tráfico**: el tiempo se pide para la **hora de salida prevista** (tráfico previsto para ese día y hora), se ajusta una vez con la nueva hora de salida y se actualiza con el tráfico real a partir de 1 h antes. La clave de la API va en la App, restringida a su dirección y a Routes API y Places API (New).
   - **Punto de partida** de cada traslado (solo actividades y eventos con ubicación):
@@ -254,7 +254,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 - **Routes API** activada en el proyecto `ahhhhhh-today`. Clave «Maps App» restringida a los sitios `https://ahhhhhh-today.web.app/*` y `https://ahhhhhh-today.firebaseapp.com/*` y solo a Routes API; va dentro de la App (es pública por naturaleza, la protege la restricción).
 - **Alerta de presupuesto** de 5 € en Facturación > Budgets & caps (avisa por correo, no corta el gasto).
-- **En la App** (`refreshRoutes` / `applyRoute` en `app.js`): cada elemento de hoy con lugar y traslado tiene su tiempo en coche (con tráfico previsto) y, si el trayecto en coche es de **1 km o menos**, a pie (si son 45 min o menos). (9/10/2026: estaba a 2,5 km por error.) La pantalla Hoy muestra las horas de salida y la distancia del próximo.
+- **En la App** (`refreshRoutes` / `applyRoute` en `app.js`): cada elemento de hoy con lugar y traslado tiene su tiempo en coche (con tráfico previsto) y, si el trayecto en coche es de **1,5 km o menos**, a pie (si son 45 min o menos). (9/10/2026: decidido 1,5 km; antes era 2,5 km, demasiado.) La pantalla Hoy muestra las horas de salida y la distancia del próximo.
   - Punto de partida según las reglas del punto de traslados (ubicación del móvil desde 1 h antes de la hora de salida; si no se puede saber, casa).
   - **Cuándo se calcula** (decidido 7/10/2026):
     - la primera vez que se abre la App en el día: todos los de hoy;
