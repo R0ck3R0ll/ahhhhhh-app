@@ -3,6 +3,12 @@
 
 Este documento resume el estudio y las decisiones tomadas en la fase de planificación, como base para el desarrollo del proyecto en Claude Code.
 
+> **Estado (9/10/2026)**
+> - **App publicada** en https://ahhhhhh-today.web.app desde la rama `ccr-7f2b2179-0pay8k` (contiene todo lo de `claude/hopeful-lovelace-18fa2k` y lo posterior). Conviene trabajar solo en esa rama (o pasarla a `main`): `hopeful-lovelace` también publica y podría pisar la versión actual.
+> - **Hecho y probado por Carlo:** pantallas, tareas y bloques de trabajo, avisos de riesgo, sincronización entre móviles (Firebase), traslados con Google Maps (coche y a pie, ubicación por GPS), lectura del calendario escolar con IA (Gemini en Vertex AI, con preguntas cuando el calendario depende de la alumna).
+> - **Pendiente:** conexión con Classroom y Gmail (bloqueada por el colegio, punto 3), extracción con IA de correos y publicaciones con su pantalla de revisión (punto 4), exportación a Google Calendar.
+> - **Siguiente proyecto:** App de seguimiento para Carlo (punto 7 bis).
+
 ---
 
 ## 1. Objetivo del proyecto
@@ -315,6 +321,24 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - Diseño gráfico y de contenido detallado de cada pantalla (mencionado como primer paso a definir en Code).
 - Peso relativo de los criterios de priorización en el algoritmo de planificación diaria.
 - Grado de autonomía de la IA al interpretar correos (todo lo extraído pasa por aprobación del usuario, según lo decidido en el punto 4).
+
+---
+
+## 7 bis. Próximo proyecto: App de seguimiento (Carlo)
+
+La App de Martina la usará solo ella. Carlo quiere otra App, más sencilla, para **estar al tanto de los planes** (muchas veces hay que llevarla) y **ver si se organiza bien**. Más adelante se valorará alguna función para **interactuar** (p. ej. enviar sugerencias).
+
+**Qué hay ya en el servidor (Firestore) y le sirve tal cual:** la App de Martina guarda en `plans/{id}/kv/{clave}` todo el plan: actividades, eventos, tareas (con hecho / fecha en que se hizo), bloques de trabajo (con lo trabajado en cada uno), ajustes (franja y horario escolar), lugares, días sin cole, nombre. Se actualiza al momento en cada cambio. La App de seguimiento puede leer ese mismo plan; **no hace falta un log nuevo** para ver los planes ni el avance.
+
+**Lo que no está en el servidor (se queda en cada móvil):** los trayectos calculados (`route-cache`: horas de salida), el aspecto, el idioma, los avisos ya vistos y la lectura pendiente de revisar.
+
+**Cambios necesarios o recomendables en la App de Martina:**
+1. **Permiso de solo lectura** (necesario): hoy, quien está en `memberEmails` puede leer **y escribir**. Para la App de seguimiento conviene un rol de **observador** (p. ej. `viewerEmails` en `plans/{id}`, solo lectura en `firestore.rules`), que añada el dueño del plan desde Config > Cuenta. Así la App de Carlo no puede cambiar nada del plan por error.
+2. **Horas de salida** (recomendable): compartir `route-cache` (añadirlo a `SHARED_KEYS`), para ver en la App de seguimiento cuándo hay que salir sin volver a calcularlo (ni gastar más consultas de Maps).
+3. **Registro de actividad** (opcional, para «ver si se organiza bien»): los datos ya dicen qué se ha hecho y cuánto se ha trabajado, pero no cuándo se creó o cambió cada cosa. Si se quiere un historial (p. ej. «planificó 2 bloques el lunes», «movió la entrega»), habría que añadir un registro de cambios (`plans/{id}/log`).
+4. **Sugerencias** (más adelante): una colección `plans/{id}/suggestions` que escribe la App de seguimiento y que la App de Martina muestra (y puede aceptar o descartar).
+
+**A tener en cuenta:** que Martina sepa que Carlo ve su plan (p. ej. una línea en Config > Cuenta: «Carlo puede ver tu plan»); y que la App de seguimiento use el mismo proyecto de Firebase (`ahhhhhh-today`), con su propia dirección o como otra página del mismo sitio.
 
 ---
 
