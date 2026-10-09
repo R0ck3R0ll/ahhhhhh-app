@@ -8,8 +8,6 @@ on:
   push:
     branches:
       - main
-      - claude/hopeful-lovelace-18fa2k
-      - ccr-7f2b2179-0pay8k
     paths:
       - 'docs/app/**'
       - 'firebase.json'
