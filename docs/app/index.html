@@ -847,6 +847,17 @@
   </div>
 </dialog>
 
+<!-- Añadir supervisor (App de seguimiento): qué podrá ver y hacer -->
+<dialog class="confirm-dialog" id="viewer-dialog" aria-labelledby="viewer-title">
+  <h2 id="viewer-title" data-i18n="sync.viewerDlgTitle"></h2>
+  <p id="viewer-body"></p>
+  <p id="viewer-member" data-i18n="sync.viewerDlgMember" hidden></p>
+  <div class="form-actions">
+    <button type="button" class="btn-ghost" onclick="el('viewer-dialog').close()" data-i18n="btn.cancel"></button>
+    <button type="button" class="btn-primary" onclick="confirmViewer()" data-i18n="sync.viewerConfirm"></button>
+  </div>
+</dialog>
+
 <!-- Salir de un formulario abierto con la barra de pestañas -->
 <dialog class="confirm-dialog" id="discard-dialog" aria-labelledby="discard-title">
   <h2 id="discard-title" data-i18n="discard.title"></h2>

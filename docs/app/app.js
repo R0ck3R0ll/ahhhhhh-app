@@ -28,6 +28,9 @@
     return changed;
   }
   syncClock();
+  // Modo supervisor (App de seguimiento): quien entra como supervisor del plan lo ve todo, pero no
+  // cambia nada. Lo decide sync.js y lo deja guardado en el móvil para abrir ya en ese modo.
+  var IS_SUPERVISOR = (function(){ try{ return localStorage.getItem('sync-role') === 'viewer'; }catch(e){ return false; } })();
   function todaySubtitle(){
     return cap(fmtDate(TODAY_DATE, { weekday:'long', day:'numeric', month:'long' })) + ' · ' + t('planOf');
   }
@@ -102,7 +105,7 @@
   }
   function showScreen(btn){
     // Sin configurar lo mínimo, solo se puede usar Configuración
-    if(btn.dataset.screen !== 'config' && !setupDone()){ toast(t('setup.locked')); renderSetup(); return; }
+    if(!IS_SUPERVISOR && btn.dataset.screen !== 'config' && !setupDone()){ toast(t('setup.locked')); renderSetup(); return; }
     // Con un formulario abierto, cambiar de pestaña pide confirmación
     if(openForm() && !btn.classList.contains('is-active')){ pendingTab = btn; el('discard-dialog').showModal(); return; }
     PRESS_BACK = null;
@@ -537,7 +540,7 @@
   }
   // Repasa los elementos de hoy y calcula (de uno en uno) los que tocan
   function refreshRoutes(items){
-    if(!MAPS_ON || ROUTE_BUSY || Date.now() < ROUTE_PAUSE || !navigator.onLine){ return; }
+    if(IS_SUPERVISOR || !MAPS_ON || ROUTE_BUSY || Date.now() < ROUTE_PAUSE || !navigator.onLine){ return; }
     var iso = isoOf(TODAY_DATE), sig = routeSig();
     if(ROUTES.day !== iso || ROUTES.sig !== sig){ ROUTES = { day: iso, sig: sig, items: {} }; saveRoutes(); }
     var due = null, dueOrigin = null;
@@ -834,20 +837,44 @@
     } else if(S.status === 'out'){
       h = '<p class="card-hint">' + t('sync.why') + '</p>' +
           '<div><button type="button" class="btn-primary" onclick="syncSignIn()">' + t('sync.signIn') + '</button></div>';
+    } else if(S.role === 'viewer'){
+      h = '<div class="config-line"><span class="config-label">' + t('sync.signedAs') + ' <strong>' + esc(S.email) + '</strong></span></div>' +
+          '<p class="card-hint">' + esc(t('sync.supervising', { owner: S.owner })) + '</p>' +
+          '<div><button type="button" class="btn-ghost" onclick="syncSignOut()">' + t('sync.signOut') + '</button></div>';
     } else {
+      var me = String(S.email || '').toLowerCase();
       h = '<div class="config-line"><span class="config-label">' + t('sync.signedAs') + ' <strong>' + esc(S.email) + '</strong></span></div>' +
           '<p class="card-hint">' + t('sync.synced') + '</p>' +
+          // Te ofrecen ser la dueña o el dueño del plan
+          (S.pendingOwner && S.pendingOwner === me
+            ? '<div class="offer-box"><p>' + esc(t('sync.offerYou', { owner: S.owner })) + '</p><button type="button" class="btn-primary" onclick="acceptOwner()">' + t('sync.offerAccept') + '</button></div>' : '') +
           '<span class="field-label">' + t('sync.members') + '</span>' +
           '<ul class="member-list">' + (S.members || []).map(function(m){
-            var own = m === S.owner;
-            return '<li><span class="member-email">' + esc(m) + (own ? ' <span class="muted">· ' + t('sync.owner') + '</span>' : '') + '</span>' +
-              (S.isOwner && !own ? '<button type="button" class="btn-ghost" data-email="' + esc(m) + '" onclick="removeMember(this)">' + t('sync.remove') + '</button>' : '') + '</li>';
+            var own = m === S.owner, offered = m === S.pendingOwner;
+            return '<li><span class="member-email">' + esc(m) + (own ? ' <span class="muted">· ' + t('sync.owner') + '</span>' : '') +
+                (offered ? ' <span class="muted">· ' + t('sync.offered') + '</span>' : '') + '</span>' +
+              (S.isOwner && !own ? '<span class="member-actions">' +
+                (offered ? '<button type="button" class="btn-ghost" onclick="offerOwner(\'\')">' + t('sync.offerCancel') + '</button>'
+                         : '<button type="button" class="btn-ghost" data-email="' + esc(m) + '" onclick="offerOwner(this.dataset.email)">' + t('sync.offer') + '</button>') +
+                '<button type="button" class="btn-ghost" data-email="' + esc(m) + '" onclick="removeMember(this)">' + t('sync.remove') + '</button></span>' : '') + '</li>';
           }).join('') + '</ul>' +
           (S.isOwner
             ? '<form class="member-add" onsubmit="addMember(event)"><input class="txt-input" id="member-email" type="email" autocomplete="off" inputmode="email" placeholder="' + esc(t('sync.addPh')) + '">' +
               '<button type="submit" class="btn-primary">' + t('sync.add') + '</button></form>' +
               '<p class="card-hint">' + t('sync.membersHint') + '</p>'
             : '<p class="card-hint">' + esc(t('sync.sharedBy', { owner: S.owner })) + '</p>') +
+          // Supervisor (App de seguimiento): ve el plan, no lo cambia. Solo lo pone o lo quita el dueño
+          '<span class="field-label">' + t('sync.viewerTitle') + '</span>' +
+          ((S.viewers || []).length
+            ? '<ul class="member-list">' + S.viewers.map(function(v){
+                return '<li><span class="member-email">' + esc(t('sync.viewerLine', { email: v })) + '</span>' +
+                  (S.isOwner ? '<button type="button" class="btn-ghost" data-email="' + esc(v) + '" onclick="removeViewer(this)">' + t('sync.remove') + '</button>' : '') + '</li>';
+              }).join('') + '</ul>'
+            : (S.isOwner
+                ? '<form class="member-add" onsubmit="addViewer(event)"><input class="txt-input" id="viewer-email" type="email" autocomplete="off" inputmode="email" placeholder="' + esc(t('sync.viewerAddPh')) + '">' +
+                  '<button type="submit" class="btn-primary">' + t('sync.add') + '</button></form>'
+                : '<p class="card-hint">' + t('sync.viewerNone') + '</p>')) +
+          (S.isOwner ? '<p class="card-hint">' + t('sync.viewerHint') + '</p>' : '') +
           '<div><button type="button" class="btn-ghost" onclick="syncSignOut()">' + t('sync.signOut') + '</button></div>';
     }
     if(S.error){ h += '<p class="card-hint sync-error">' + esc(t('sync.error', { code: S.error })) + '</p>'; }
@@ -865,6 +892,39 @@
     var v = inp.value.trim().toLowerCase();
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){ toast(t('sync.badEmail')); inp.focus(); return; }
     window.syncAddMember(v).then(function(ok){ if(ok){ inp.value = ''; toast(t('sync.added')); } })
+      .catch(function(e){ toast(t('sync.error', { code: e && e.code || e })); });
+  }
+  // Supervisor: antes de añadirlo, un aviso explica qué podrá ver y hacer
+  var VIEWER_PENDING = '';
+  function addViewer(ev){
+    ev.preventDefault();
+    var inp = el('viewer-email'), v = inp.value.trim().toLowerCase(), S = window.SYNC || {};
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){ toast(t('sync.badEmail')); inp.focus(); return; }
+    if(v === S.owner){ toast(t('sync.viewerIsOwner')); return; }
+    VIEWER_PENDING = v;
+    el('viewer-body').textContent = t('sync.viewerDlgBody', { email: v });
+    el('viewer-member').hidden = (S.members || []).indexOf(v) < 0;
+    el('viewer-dialog').showModal();
+  }
+  function confirmViewer(){
+    var v = VIEWER_PENDING;
+    el('viewer-dialog').close();
+    window.syncAddViewer(v).then(function(ok){ if(ok){ var inp = el('viewer-email'); if(inp){ inp.value = ''; } toast(t('sync.viewerAdded')); } })
+      .catch(function(e){ toast(t('sync.error', { code: e && e.code || e })); });
+  }
+  // Quitar al supervisor pide una segunda pulsación
+  function removeViewer(btn){
+    if(!btn.classList.contains('is-confirm')){ btn.classList.add('is-confirm'); btn.textContent = t('sync.removeConfirm'); return; }
+    window.syncRemoveViewer(btn.dataset.email).then(function(ok){ if(ok){ toast(t('sync.viewerRemoved')); } })
+      .catch(function(e){ toast(t('sync.error', { code: e && e.code || e })); });
+  }
+  // Pasar la propiedad del plan (p. ej. para que el dueño pueda ser solo supervisor): '' la anula
+  function offerOwner(email){
+    window.syncOfferOwner(email).then(function(ok){ if(ok && email){ toast(t('sync.offerSent')); } })
+      .catch(function(e){ toast(t('sync.error', { code: e && e.code || e })); });
+  }
+  function acceptOwner(){
+    window.syncAcceptOwner().then(function(ok){ if(ok){ toast(t('sync.offerAccepted')); } })
       .catch(function(e){ toast(t('sync.error', { code: e && e.code || e })); });
   }
   function removeMember(btn){
@@ -2649,7 +2709,8 @@
       task: withTask ? { name: el('atask-name').value.trim(), est: getDur('atask-est'),
         prio: editingAct && editingAct.task ? editingAct.task.prio || null : null,
         desc: editingAct && editingAct.task ? editingAct.task.desc || '' : '',
-        doneFor: editingAct && editingAct.task ? editingAct.task.doneFor || [] : [] } : null,
+        doneFor: editingAct && editingAct.task ? editingAct.task.doneFor || [] : [],
+        doneAtFor: editingAct && editingAct.task ? editingAct.task.doneAtFor || {} : {} } : null,
       // Sesiones quitadas con «Hoy no voy» (solo las de hoy en adelante)
       skip: (editingAct && editingAct.skip || []).filter(function(k){ return k >= isoOf(TODAY_DATE); })
     };
@@ -2766,11 +2827,14 @@
     var x = allTasks().filter(function(it){ return it.key === key; })[0];
     if(!x){ return; }
     if(x.kind === 'activity'){
-      var list = x.ref.doneFor = (x.ref.doneFor || []).filter(function(k){ return k !== occKey(x.due); });
-      if(done){ list.push(occKey(x.due)); }
+      var occ = occKey(x.due), list = x.ref.doneFor = (x.ref.doneFor || []).filter(function(k){ return k !== occ; });
+      var at = x.ref.doneAtFor = x.ref.doneAtFor || {};
+      // Momento en que se marcó cada sesión (solo se guardan las que siguen marcadas)
+      Object.keys(at).forEach(function(k){ if(list.indexOf(k) < 0){ delete at[k]; } });
+      if(done){ list.push(occ); at[occ] = new Date().toISOString(); }
     } else {
       x.ref.done = done;
-      x.ref.doneAt = done ? isoOf(appNow()) : null;
+      x.ref.doneAt = done ? new Date().toISOString() : null;   // día y hora (antes, solo el día)
     }
     storeTasks(); storeEvents(); storeActivities();
     renderTasks(); renderEvents(); renderActivities(); renderCalendar(calView); renderToday();
@@ -3241,7 +3305,8 @@
     }).sort(function(p, q){ return blockEnd(p.b) - blockEnd(q.b); });
   }
   function checkBlockEnds(){
-    if(END || document.querySelector('dialog[open]')){ return; }
+    // El supervisor no responde por Martina ni recibe sus avisos emergentes
+    if(IS_SUPERVISOR || END || document.querySelector('dialog[open]')){ return; }
     var o = pendingEnds()[0];
     if(o){ openBlockEnd(o); } else { checkRisks(); }
   }
@@ -3443,7 +3508,7 @@
   }
   var RISK_OPEN = null;
   function checkRisks(){
-    if(END || RISK_OPEN || document.querySelector('dialog[open]')){ return; }
+    if(IS_SUPERVISOR || END || RISK_OPEN || document.querySelector('dialog[open]')){ return; }
     // Primero los rojos
     var r = riskTasks().filter(function(o){ return RISK_ACK.indexOf(o.x.key + ':' + o.level) < 0 && !(o.level === 'amber' && RISK_SEEN[o.x.key] === 'red'); })
       .sort(function(p, q){ return (p.level === 'red' ? 0 : 1) - (q.level === 'red' ? 0 : 1); })[0];
@@ -3915,7 +3980,11 @@
   loadSettings();
   restoreEventCategories();
   applyI18n();
-  if(!setupDone()){
+  if(IS_SUPERVISOR){
+    var sup = document.createElement('script');
+    sup.src = 'supervisor.js';
+    document.body.appendChild(sup);
+  } else if(!setupDone()){
     var cfgTab = document.querySelector('.tab[data-screen="config"]');
     showScreen(cfgTab);
     openCfgGroup('profile', true);

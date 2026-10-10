@@ -1110,3 +1110,11 @@
   .place-hint{ margin:4px 2px 0; color:var(--accent-strong); }
   .place-hint[hidden]{ display:none; }
   .place-src{ padding:4px 10px 2px; font-size:10.5px; color:var(--text-muted); text-align:right; }
+
+  /* ---- Modo supervisor (supervisor.js): sus pestañas sustituyen a las de la App ---- */
+  body.is-supervisor .tabbar:not(.sup-tabbar){ display:none; }
+  .sup-soon .card-hint{ margin:0; }
+  /* Config > Cuenta: pasar el plan a otra persona */
+  .member-actions{ display:flex; gap:6px; flex:none; }
+  .offer-box{ display:flex; flex-direction:column; gap:8px; align-items:flex-start; padding:10px 12px; border-radius:10px; background:var(--surface-2, var(--surface)); border:1.5px solid var(--accent); }
+  .offer-box p{ margin:0; font-size:13.5px; }

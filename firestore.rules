@@ -1,12 +1,23 @@
 rules_version = '2';
 // Datos de AHHHHHH Today
 //  - users/{uid}: a qué plan pertenece cada persona (solo lo ve y lo cambia ella misma)
-//  - plans/{planId}: dueño y correos que comparten el plan
+//  - plans/{planId}: dueño, correos que comparten el plan (miembros: leen y escriben) y
+//    supervisores (viewerEmails: solo leen, para la App de seguimiento)
 //  - plans/{planId}/kv/{clave}: los datos del plan (actividades, eventos, ajustes…)
+//  - plans/{planId}/log y archive: historial y archivo de tareas; solo los escribe el servidor
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null && request.auth.token.email != null; }
     function myEmail() { return request.auth.token.email.lower(); }
+    function viewersOf(d) { return 'viewerEmails' in d ? d.viewerEmails : []; }
+    // Un plan bien formado: el dueño está entre los miembros, nadie es miembro y supervisor a la vez
+    function wellFormed(d) {
+      return d.memberEmails is list && d.memberEmails.size() <= 20
+        && d.ownerEmail in d.memberEmails
+        && viewersOf(d) is list && viewersOf(d).size() <= 5
+        && !viewersOf(d).hasAny(d.memberEmails)
+        && (!('pendingOwner' in d) || d.pendingOwner == null || d.pendingOwner in d.memberEmails);
+    }
 
     match /users/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
@@ -14,35 +25,55 @@ service cloud.firestore {
 
     match /plans/{planId} {
       function isMember(d) { return myEmail() in d.memberEmails; }
-      // Ver el plan (y buscar invitaciones): solo quien está en la lista
-      allow read: if signedIn() && isMember(resource.data);
+      function isViewer(d) { return 'viewerEmails' in d && myEmail() in d.viewerEmails; }
+      // Ver el plan (y buscar invitaciones): solo quien está en una de las listas
+      allow read: if signedIn() && (isMember(resource.data) || isViewer(resource.data));
       // Crear: uno mismo como dueño y en la lista
       allow create: if signedIn()
         && request.resource.data.owner == request.auth.uid
         && request.resource.data.ownerEmail == myEmail()
-        && request.resource.data.memberEmails is list
-        && myEmail() in request.resource.data.memberEmails
-        && request.resource.data.memberEmails.size() <= 20;
-      // Cambiar la lista: solo el dueño, sin cambiar de dueño ni quitarse a sí mismo
+        && wellFormed(request.resource.data);
+      // Cambiar las listas: solo el dueño, sin cambiar de dueño ni quitarse a sí mismo.
+      // Puede ofrecer el plan a otro miembro (pendingOwner)…
       allow update: if signedIn()
         && resource.data.owner == request.auth.uid
         && request.resource.data.owner == resource.data.owner
         && request.resource.data.ownerEmail == resource.data.ownerEmail
-        && request.resource.data.memberEmails is list
-        && resource.data.ownerEmail in request.resource.data.memberEmails
-        && request.resource.data.memberEmails.size() <= 20;
+        && wellFormed(request.resource.data);
+      // …y ese miembro lo acepta: pasa a ser el dueño, sin tocar nada más
+      allow update: if signedIn()
+        && 'pendingOwner' in resource.data && resource.data.pendingOwner == myEmail()
+        && isMember(resource.data)
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.ownerEmail == myEmail()
+        && request.resource.data.pendingOwner == null
+        && request.resource.data.memberEmails == resource.data.memberEmails
+        && viewersOf(request.resource.data) == viewersOf(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['owner', 'ownerEmail', 'pendingOwner']);
       allow delete: if false;
 
+      function plan() { return get(/databases/$(database)/documents/plans/$(planId)).data; }
+      function member() { return signedIn() && myEmail() in plan().memberEmails; }
+      function reader() { return member() || (signedIn() && myEmail() in viewersOf(plan())); }
+
       match /kv/{key} {
-        function member() {
-          return signedIn() && myEmail() in get(/databases/$(database)/documents/plans/$(planId)).data.memberEmails;
-        }
-        allow read: if member();
+        allow read: if reader();
         allow write: if member()
           && request.resource.data.keys().hasOnly(['v', 'at', 'by'])
           && (request.resource.data.v == null || (request.resource.data.v is string && request.resource.data.v.size() < 500000))
           && request.resource.data.by == request.auth.uid;
         allow delete: if member();
+      }
+      match /log/{id} {
+        allow read: if reader();
+        allow write: if false;
+      }
+      match /archive/{id} {
+        allow read: if reader();
+        allow write: if false;
+      }
+      match /private/{id} {
+        allow read, write: if false;
       }
     }
   }

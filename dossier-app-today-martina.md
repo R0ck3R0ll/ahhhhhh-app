@@ -476,7 +476,7 @@ Un **único instrumento** sirve para todo: sugerencias, ánimos, proponer un eve
 2. **Supervisor en Config > Cuenta**, con su aviso (7 bis.3).
 3. **Mensajes:** aviso emergente con «OK» / «Responder», lista de mensajes recibidos y notificaciones con la App cerrada. Necesita el permiso de notificaciones (ya se pide en la configuración del primer inicio) y registrar el móvil para recibir notificaciones.
 4. **`sync.js`:** detecta el rol (miembro o supervisor). En modo supervisor no sube nada.
-5. **Cálculos a un módulo común, `docs/app/core.js`.** Incluye sacar de `app.js` las funciones puras:
+5. **Cálculos a un módulo común, `docs/app/core.js`** (en la fase 5). Incluye sacar de `app.js` las funciones puras:
    - la lista de tareas a partir de tareas, eventos y actividades (hoy `allTasks`);
    - las sesiones de actividades, los huecos y el tiempo libre;
    - el riesgo y el progreso.
@@ -501,12 +501,35 @@ Un **único instrumento** sirve para todo: sugerencias, ánimos, proponer un eve
 
 Cada fase se publica y la prueba Carlo antes de pasar a la siguiente.
 
-1. **Base y permisos:**
-   - `core.js` con sus pruebas, sin cambios visibles en la App de Martina;
+1. **Base y permisos** (**hecha el 10/10/2026**):
    - `viewerEmails`, reglas y alta del supervisor con su aviso;
+   - **pasar la propiedad del plan** a otro miembro (si el dueño es quien va a ser supervisor);
    - `doneAt` con hora;
    - modo supervisor vacío (inicio de sesión, detección del rol y pestañas);
    - **`onPlanChange` escribiendo ya el historial** (y el archivo), para que el historial empiece a acumularse cuanto antes, aunque todavía no se vea.
+   - `core.js` pasa a la fase 5: solo hace falta para los avisos que calcula el servidor; el historial compara los datos tal cual.
+
+   Cómo quedó:
+   - **Reglas** (`firestore.rules`): leen el plan, `kv`, `log` y `archive` los miembros y los supervisores; escriben `kv` solo los miembros; `log`, `archive` y `private` solo el servidor.
+     - Un plan siempre tiene al dueño entre los miembros y nadie está a la vez en `memberEmails` y en `viewerEmails` (máximo 5 supervisores; la pantalla deja uno).
+     - Probadas con el emulador de Firestore: plan antiguo sin supervisores, paso de miembro a supervisor, supervisor solo lectura, traspaso del plan y creación.
+   - **Pasar el plan:** en Config > Cuenta, el dueño tiene **«Pasarle el plan»** junto a cada miembro (`pendingOwner`, con «Anular»).
+     - Esa persona ve «*dueño* te ofrece el plan…» con **«Aceptar»** y pasa a ser la dueña (las reglas solo le dejan cambiar `owner`, `ownerEmail` y `pendingOwner`).
+     - Así, si el dueño es Carlo, pasa el plan a Martina y ella lo añade como supervisor.
+   - **Supervisor en Config > Cuenta:** el dueño escribe el correo y un aviso explica qué podrá ver y hacer (y, si era miembro, que dejará de poder cambiar el plan).
+     - Al confirmar, en un solo cambio sale de `memberEmails` y entra en `viewerEmails`.
+     - Todos los miembros ven «*correo* puede ver tu plan y enviarte mensajes»; el dueño, con «Quitar» (segunda pulsación).
+   - **`sync.js`:** al iniciar sesión, si el correo está en `viewerEmails` de un plan, entra como supervisor. Baja los datos del plan, no sube nunca nada y guarda `sync-role = viewer` en el móvil.
+     - Si el dueño lo cambia de miembro a supervisor (o al revés), la App lo detecta y se recarga en el modo que toca.
+     - Al cerrar sesión, el supervisor borra del móvil los datos del plan.
+   - **Modo supervisor** (`supervisor.js`, solo se carga en ese modo):
+     - Pestañas propias: Ahora · Calendario · Tareas · Análisis · Historial · Config. Las cinco primeras dicen en qué fase llegan.
+     - Config tiene la cuenta («Supervisas el plan de…», cerrar sesión) y el idioma.
+     - En ese modo la App de Martina **no hace** preguntas de fin de bloque, avisos de riesgo ni consultas a Google Maps.
+   - **`doneAt`** guarda día y hora (ISO). Las tareas de práctica guardan la hora de cada sesión hecha en `doneAtFor`.
+   - **Historial** (`functions/planlog.js` y `onPlanChange` en `functions/index.js`, región `europe-southwest1`, la de la base de datos):
+     - Pruebas con `npm test`; probado también con los emuladores de Firestore y de funciones (tarea creada, entrega movida, bloques planificados y trabajados, trabajo anotado a mano y tarea eliminada con sus bloques en el archivo).
+     - La publicación activa la API de Eventarc y, como la primera vez Google tarda unos minutos en preparar sus permisos, reintenta una vez a los 3 minutos.
 2. **Ver:** Ahora, Calendario (con lo trabajado y los ✓) y Tareas con sus fichas.
 3. **Historial:** pestaña Historial (línea de tiempo con filtros por tipo; cada entrada abre su ficha) e historia en la ficha de cada tarea.
 4. **Análisis:** Estado de las tareas (totales → lista → ficha) e indicadores.

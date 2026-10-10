@@ -9,6 +9,9 @@
    - Los datos van por claves, igual que en el almacenamiento del navegador: cada clave
      compartida es un documento plans/{id}/kv/{clave} con su valor. Al cambiar en el móvil se
      sube; al cambiar en otro móvil llega aquí y la App se vuelve a cargar con los datos nuevos.
+   - Supervisor (viewerEmails, p. ej. Carlo): ve el plan en modo supervisor, solo lectura. Recibe
+     los datos igual que un miembro, pero nunca sube nada (las reglas tampoco se lo permiten).
+     El rol se guarda en el móvil ('sync-role') para que la App abra ya en ese modo.
    - Sin sesión, la App funciona como siempre, solo en el móvil.
    La parte visible (Configuración > Cuenta) está en app.js: renderAccount() lee window.SYNC. */
 
@@ -46,7 +49,14 @@ const firebaseConfig = {
 };
 
 // Estado que lee la App: status = 'unavailable' | 'loading' | 'out' | 'in'
-const SYNC = window.SYNC = { status: ALLOWED ? 'loading' : 'unavailable', email: '', isOwner: false, members: [], owner: '', error: '' };
+const SYNC = window.SYNC = { status: ALLOWED ? 'loading' : 'unavailable', email: '', isOwner: false, members: [], viewers: [], owner: '', pendingOwner: '', role: '', error: '' };
+// Rol en este móvil: si cambia (p. ej. el dueño pasa a alguien de miembro a supervisor), la App se recarga
+function setRole(role){
+  const was = localStorage.getItem('sync-role') || '';
+  SYNC.role = role;
+  if(role === 'viewer'){ localStorage.setItem('sync-role', 'viewer'); } else { localStorage.removeItem('sync-role'); }
+  return was !== (role === 'viewer' ? 'viewer' : '');
+}
 function changed(){ if(typeof window.renderAccount === 'function'){ window.renderAccount(); } }
 
 if(!ALLOWED){
@@ -76,13 +86,13 @@ async function start(){
     if(this === window.localStorage && !applyingRemote && SHARED_KEYS.includes(k)){ queuePush(k); }
   };
   function queuePush(k){
-    if(!planId){ return; }
+    if(!planId || SYNC.role === 'viewer'){ return; }
     pushQueue.add(k);
     clearTimeout(pushTimer);
     pushTimer = setTimeout(flushPush, 600);
   }
   async function flushPush(){
-    if(!planId || !user){ return; }
+    if(!planId || !user || SYNC.role === 'viewer'){ return; }
     const keys = Array.from(pushQueue); pushQueue.clear();
     const batch = writeBatch(db);
     keys.forEach(function(k){
@@ -141,10 +151,14 @@ async function start(){
     unsubPlan = onSnapshot(doc(db, 'plans', planId), function(snap){
       const d = snap.data() || {};
       SYNC.members = d.memberEmails || [];
+      SYNC.viewers = d.viewerEmails || [];
       SYNC.owner = d.ownerEmail || '';
+      SYNC.pendingOwner = d.pendingOwner || '';
       SYNC.isOwner = d.owner === (user && user.uid);
-      // Si el dueño te quita del plan, se deja de sincronizar
-      if(user && SYNC.members.length && !SYNC.members.includes(user.email.toLowerCase())){ leavePlan(); }
+      // Si el dueño te quita del plan (o te cambia de miembro a supervisor), se vuelve a buscar el plan
+      const me = user && user.email.toLowerCase();
+      const list = SYNC.role === 'viewer' ? SYNC.viewers : SYNC.members;
+      if(me && SYNC.members.length && !list.includes(me)){ leavePlan(); return; }
       changed();
     }, function(e){ SYNC.error = String(e.code || e); changed(); });
   }
@@ -154,6 +168,8 @@ async function start(){
     if(unsubPlan){ unsubPlan(); unsubPlan = null; }
     planId = null;
     if(user){ await setDoc(doc(db, 'users', user.uid), { planId: null }, { merge: true }); }
+    // Si los datos de este móvil eran de un plan que ya no ve, se quitan
+    if(SYNC.role === 'viewer'){ SHARED_KEYS.forEach(function(k){ applyRemote(k, null); }); }
     await connect();
   }
 
@@ -162,9 +178,27 @@ async function start(){
     const email = user.email.toLowerCase();
     const me = await getDoc(doc(db, 'users', user.uid));
     planId = me.exists() ? me.data().planId : null;
+    let role = 'member';
     if(planId){
       const p = await getDoc(doc(db, 'plans', planId)).catch(function(){ return null; });
-      if(!p || !p.exists() || !(p.data().memberEmails || []).includes(email)){ planId = null; }
+      const d = p && p.exists() ? p.data() : {};
+      if((d.memberEmails || []).includes(email)){ role = 'member'; }
+      else if((d.viewerEmails || []).includes(email)){ role = 'viewer'; }
+      else { planId = null; }
+    }
+    if(!planId){
+      // ¿Soy supervisor de algún plan? Entonces se ve ese plan (solo lectura)
+      const sup = await getDocs(query(collection(db, 'plans'), where('viewerEmails', 'array-contains', email), limit(1)));
+      if(!sup.empty){
+        planId = sup.docs[0].id;
+        await setDoc(doc(db, 'users', user.uid), { planId: planId }, { merge: true });
+        setRole('viewer');
+        const kv = await getDocs(collection(db, 'plans', planId, 'kv'));
+        SHARED_KEYS.forEach(function(k){ applyRemote(k, null); });
+        kv.forEach(function(s){ if(SHARED_KEYS.includes(s.id)){ applyRemote(s.id, s.data().v); } });
+        location.reload();
+        return;
+      }
     }
     if(!planId){
       // ¿Alguien me ha invitado a su plan?
@@ -178,6 +212,7 @@ async function start(){
         }
         planId = p.id;
         await setDoc(doc(db, 'users', user.uid), { planId: planId }, { merge: true });
+        setRole('member');
         // Los datos del plan sustituyen a los de este móvil
         const kv = await getDocs(collection(db, 'plans', planId, 'kv'));
         SHARED_KEYS.forEach(function(k){ applyRemote(k, null); });
@@ -192,6 +227,7 @@ async function start(){
       await setDoc(doc(db, 'users', user.uid), { planId: planId }, { merge: true });
       await uploadAll();
     }
+    if(setRole(role)){ location.reload(); return; }
     SYNC.status = 'in';
     listen();
     changed();
@@ -228,7 +264,11 @@ async function start(){
     if(unsubKv){ unsubKv(); unsubKv = null; }
     if(unsubPlan){ unsubPlan(); unsubPlan = null; }
     planId = null;
+    // El supervisor no se queda con los datos del plan en el móvil
+    if(SYNC.role === 'viewer'){ SHARED_KEYS.forEach(function(k){ applyRemote(k, null); }); }
+    const wasViewer = setRole('');
     await signOut(auth);
+    if(wasViewer){ location.reload(); }
   };
   window.syncAddMember = async function(email){
     email = String(email || '').trim().toLowerCase();
@@ -236,9 +276,36 @@ async function start(){
     await updateDoc(doc(db, 'plans', planId), { memberEmails: arrayUnion(email) });
     return true;
   };
+  // Supervisor: solo lo pone el dueño. Si ya era miembro, deja de serlo en el mismo cambio
+  window.syncAddViewer = async function(email){
+    email = String(email || '').trim().toLowerCase();
+    if(!planId || !SYNC.isOwner || email === SYNC.owner || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ return false; }
+    const upd = { viewerEmails: arrayUnion(email), memberEmails: arrayRemove(email) };
+    if(SYNC.pendingOwner === email){ upd.pendingOwner = null; }
+    await updateDoc(doc(db, 'plans', planId), upd);
+    return true;
+  };
+  window.syncRemoveViewer = async function(email){
+    if(!planId || !SYNC.isOwner){ return false; }
+    await updateDoc(doc(db, 'plans', planId), { viewerEmails: arrayRemove(email) });
+    return true;
+  };
+  // Pasar la propiedad del plan a otro miembro: el dueño la ofrece y el otro la acepta
+  window.syncOfferOwner = async function(email){
+    if(!planId || !SYNC.isOwner || (email && !SYNC.members.includes(email))){ return false; }
+    await updateDoc(doc(db, 'plans', planId), { pendingOwner: email || null });
+    return true;
+  };
+  window.syncAcceptOwner = async function(){
+    if(!planId || !user || SYNC.pendingOwner !== user.email.toLowerCase()){ return false; }
+    await updateDoc(doc(db, 'plans', planId), { owner: user.uid, ownerEmail: user.email.toLowerCase(), pendingOwner: null });
+    return true;
+  };
   window.syncRemoveMember = async function(email){
     if(!planId || !SYNC.isOwner || email === SYNC.owner){ return false; }
-    await updateDoc(doc(db, 'plans', planId), { memberEmails: arrayRemove(email) });
+    const upd = { memberEmails: arrayRemove(email) };
+    if(SYNC.pendingOwner === email){ upd.pendingOwner = null; }
+    await updateDoc(doc(db, 'plans', planId), upd);
     return true;
   };
 
@@ -248,7 +315,7 @@ async function start(){
   onAuthStateChanged(auth, async function(u){
     user = u;
     if(!u){
-      SYNC.status = 'out'; SYNC.email = ''; SYNC.members = []; SYNC.isOwner = false; SYNC.owner = '';
+      SYNC.status = 'out'; SYNC.email = ''; SYNC.members = []; SYNC.viewers = []; SYNC.isOwner = false; SYNC.owner = ''; SYNC.pendingOwner = '';
       changed();
       return;
     }

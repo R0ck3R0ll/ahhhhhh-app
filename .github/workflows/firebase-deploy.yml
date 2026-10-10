@@ -1,6 +1,6 @@
 # Publica la App en Firebase Hosting (https://ahhhhhh-today.web.app) cada vez que cambia.
 # También publica las reglas de la base de datos (firestore.rules) y, si han cambiado, las funciones
-# del servidor (carpeta functions: lectura del calendario escolar con IA).
+# del servidor (carpeta functions: lectura del calendario escolar con IA e historial del plan).
 # Usa la llave de la cuenta de servicio github-deploy, guardada en el secreto FIREBASE_SERVICE_ACCOUNT.
 name: Publicar en Firebase
 
@@ -75,10 +75,14 @@ jobs:
         run: |
           printf '%s' "$SA_KEY" > "$RUNNER_TEMP/sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
-          # La lectura con IA usa Gemini en Vertex AI y lee los enlaces de Drive con la API de Drive:
-          # las dos APIs tienen que estar activadas en el proyecto
+          # La lectura con IA usa Gemini en Vertex AI y lee los enlaces de Drive con la API de Drive;
+          # el historial del plan (onPlanChange) se dispara con los cambios de Firestore a través de Eventarc:
+          # todas esas APIs tienen que estar activadas en el proyecto
           gcloud auth activate-service-account --key-file="$RUNNER_TEMP/sa.json" --quiet
-          gcloud services enable aiplatform.googleapis.com drive.googleapis.com --project ahhhhhh-today --quiet \
-            || echo "::warning::No se pudieron activar las APIs de Vertex AI y Drive; actívalas a mano en Google Cloud"
-          npx --yes firebase-tools@15 deploy --only functions --project ahhhhhh-today --non-interactive --force
+          gcloud services enable aiplatform.googleapis.com drive.googleapis.com eventarc.googleapis.com pubsub.googleapis.com --project ahhhhhh-today --quiet \
+            || echo "::warning::No se pudieron activar las APIs de Vertex AI, Drive y Eventarc; actívalas a mano en Google Cloud"
+          # La primera vez que se publica una función disparada por Firestore, Google tarda unos minutos
+          # en preparar los permisos de Eventarc: si falla, se reintenta una vez pasados 3 minutos
+          npx --yes firebase-tools@15 deploy --only functions --project ahhhhhh-today --non-interactive --force \
+            || { echo "Reintento en 3 minutos"; sleep 180; npx --yes firebase-tools@15 deploy --only functions --project ahhhhhh-today --non-interactive --force; }
           rm -f "$RUNNER_TEMP/sa.json"
