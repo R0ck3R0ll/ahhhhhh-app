@@ -8,7 +8,7 @@ Este documento resume el estudio y las decisiones tomadas en la fase de planific
 > - **GitHub Pages** (páginas de inicio, privacidad y condiciones que usa la pantalla de permisos de Google) aún se publica desde `claude/hopeful-lovelace-18fa2k`: hay que cambiar su origen a `main` / `docs` (GitHub > Settings > Pages) y después ya se puede borrar esa rama.
 > - **Hecho y probado por Carlo:** pantallas, tareas y bloques de trabajo, avisos de riesgo, sincronización entre móviles (Firebase), traslados con Google Maps (coche y a pie, ubicación por GPS), lectura del calendario escolar con IA (Gemini en Vertex AI, con preguntas cuando el calendario depende de la alumna).
 > - **Pendiente:** conexión con Classroom y Gmail (bloqueada por el colegio, punto 3), extracción con IA de correos y publicaciones con su pantalla de revisión (punto 4), exportación a Google Calendar.
-> - **Siguiente proyecto:** App de seguimiento para Carlo (punto 7 bis).
+> - **Siguiente proyecto:** App de seguimiento para Carlo: contenido y plan de desarrollo decididos el 10/10/2026 (punto 7 bis).
 
 ---
 
@@ -326,21 +326,185 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 ---
 
-## 7 bis. Próximo proyecto: App de seguimiento (Carlo)
+## 7 bis. App de seguimiento (Carlo): plan de desarrollo
 
-La App de Martina la usará solo ella. Carlo quiere otra App, más sencilla, para **estar al tanto de los planes** (muchas veces hay que llevarla) y **ver si se organiza bien**. Más adelante se valorará alguna función para **interactuar** (p. ej. enviar sugerencias).
+> **Decidido el 10/10/2026** (lluvia de ideas con Carlo). La App de Martina la usa solo ella; Carlo quiere **estar al tanto de sus planes**, **ver si se organiza bien** y **enviarle mensajes**. Sin logística (horas de salida, quién la lleva).
 
-**Qué hay ya en el servidor (Firestore) y le sirve tal cual:** la App de Martina guarda en `plans/{id}/kv/{clave}` todo el plan: actividades, eventos, tareas (con hecho / fecha en que se hizo), bloques de trabajo (con lo trabajado en cada uno), ajustes (franja y horario escolar), lugares, días sin cole, nombre. Se actualiza al momento en cada cambio. La App de seguimiento puede leer ese mismo plan; **no hace falta un log nuevo** para ver los planes ni el avance.
+### 7 bis.1 Qué es
 
-**Lo que no está en el servidor (se queda en cada móvil):** los trayectos calculados (`route-cache`: horas de salida), el aspecto, el idioma, los avisos ya vistos y la lectura pendiente de revisar.
+- **La misma App y la misma dirección** (https://ahhhhhh-today.web.app), en **modo supervisor**: si quien inicia sesión es el **supervisor** del plan (ver 7 bis.3), la App se abre con las pantallas de seguimiento y **sin nada que cambie el plan**.
+  - Motivo: aprovecha el Calendario, las fichas de tareas y los cálculos (huecos libres, riesgo, progreso) que ya existen. Así hay una sola instalación, una sola publicación y un solo inicio de sesión.
+  - El código propio del modo supervisor va en `docs/app/supervisor.js`, que **solo se carga en ese modo**: la App de Martina no crece.
+- **Pestañas:** Ahora · Calendario · Tareas · Análisis · Historial · Config. En la cabecera hay una **campana con los avisos** y un botón de **mensajes**.
+- **Solo lectura:** el supervisor no puede cambiar nada del plan, ni desde la App ni por error. Lo impiden las reglas de Firestore, no solo la pantalla. Lo único que escribe son mensajes.
 
-**Cambios necesarios o recomendables en la App de Martina:**
-1. **Permiso de solo lectura** (necesario): hoy, quien está en `memberEmails` puede leer **y escribir**. Para la App de seguimiento conviene un rol de **observador** (p. ej. `viewerEmails` en `plans/{id}`, solo lectura en `firestore.rules`), que añada el dueño del plan desde Config > Cuenta. Así la App de Carlo no puede cambiar nada del plan por error.
-2. **Horas de salida** (recomendable): compartir `route-cache` (añadirlo a `SHARED_KEYS`), para ver en la App de seguimiento cuándo hay que salir sin volver a calcularlo (ni gastar más consultas de Maps).
-3. **Registro de actividad** (opcional, para «ver si se organiza bien»): los datos ya dicen qué se ha hecho y cuánto se ha trabajado, pero no cuándo se creó o cambió cada cosa. Si se quiere un historial (p. ej. «planificó 2 bloques el lunes», «movió la entrega»), habría que añadir un registro de cambios (`plans/{id}/log`).
-4. **Sugerencias** (más adelante): una colección `plans/{id}/suggestions` que escribe la App de seguimiento y que la App de Martina muestra (y puede aceptar o descartar).
+### 7 bis.2 Contenido
 
-**A tener en cuenta:** que Martina sepa que Carlo ve su plan (p. ej. una línea en Config > Cuenta: «Carlo puede ver tu plan»); y que la App de seguimiento use el mismo proyecto de Firebase (`ahhhhhh-today`), con su propia dirección o como otra página del mismo sitio.
+**1. Ahora**
+- **Dónde está o estará Martina:** lo que tiene en este momento (cole, actividad, evento o bloque de trabajo) y lo siguiente, con su hora.
+- **Barra de tiempo del día**, como la de «Hoy» pero más sencilla: los deadlines y los bloques de trabajo de hoy, sin traslados ni horas de salida.
+- Pulsar cualquier elemento abre su ficha, de solo lectura y con todos los detalles: lugar, descripción, material… No hay sección aparte de preparativos.
+
+**2. Calendario** (semana y día, como el de Martina)
+- **Qué se ve:** actividades, eventos, entregas de tareas, **bloques de trabajo planificados**, **días sin cole** y **huecos libres**.
+- **Planificado y trabajado a la vez:** cada bloque terminado se rellena en proporción a lo que Martina anotó. Por ejemplo, un bloque de 1 h con 40 min anotados se rellena 2/3. Un bloque terminado **sin registrar** se ve con borde punteado y uno con **0 min**, tachado.
+- **Tareas hechas:** un **✓ en el momento en que se marcaron** (día y hora), además de su entrega.
+- Pulsar un elemento abre su ficha, con «‹ Volver al Calendario».
+
+**3. Tareas**
+- **Lista como la de Martina:** Atrasadas, Pendientes por orden de entrega y Hechas. Hechas no se limita a la semana actual: se ven todas, con selector de periodo.
+- **Ficha de cada tarea** (solo lectura):
+  - Nombre, origen (Classroom, suelta, evento o actividad), prioridad y descripción.
+  - **Entrega, tiempo estimado, planificado (bloques), trabajado y lo que falta**, con barra de progreso y la lista de bloques con lo anotado en cada uno.
+  - **Cuándo se marcó como hecha** y **con cuánta antelación** respecto a la entrega (o con cuánto retraso).
+  - **Historia** (del Historial, 7 bis.5): cuándo se creó, cuándo se planificó y si se movió la entrega o se cambió el estimado (de qué a qué y cuándo).
+  - Botón **«Enviar mensaje sobre esta tarea»** (7 bis.2, punto 7).
+
+**4. Estado de las tareas** (resumen al principio de la pestaña Análisis)
+- Recuento por estado en el periodo elegido (esta semana · 4 semanas · curso).
+- **Pulsar un total abre la lista** de esas tareas, y cada tarea de la lista abre su ficha.
+- **Estados** (cada tarea está en uno solo; se aplica el primero que cumple, en este orden):
+  1. **Eliminada:** se borró sin hacerla. Sale del Historial.
+  2. **Hecha a tiempo:** hecha antes de su entrega o en ella.
+  3. **Hecha tarde:** hecha después de su entrega.
+  4. **Atrasada:** la entrega pasó y no está hecha.
+  5. **Sin estimar:** pendiente y sin tiempo estimado.
+  6. **En curso:** pendiente y con tiempo ya trabajado.
+  7. **Planificada:** pendiente, sin tiempo trabajado y con bloques que cubren lo que falta.
+  8. **Sin planificar:** pendiente, sin trabajar y con bloques que no cubren lo que falta, o sin bloques.
+
+**5. Análisis** (pestaña propia, debajo del Estado de las tareas)
+- **% de tareas entregadas a tiempo**, con su evolución semana a semana en un gráfico.
+- **Antelación media:** cuánto antes de la entrega se terminan las tareas, en media y en mediana. Por ejemplo, «2 días antes» o «la noche de antes».
+- **Precisión de las estimaciones:** trabajado frente a estimado en las tareas hechas. Muestra si se queda corta o se pasa, y en qué porcentaje.
+- **Cumplimiento de lo planificado:** trabajado frente a planificado en los bloques terminados.
+- **Procrastinación:** qué parte del trabajo de cada tarea se hizo en las últimas 24 h antes de la entrega, en media y por semana.
+- **Horas de estudio** por día y por semana, separadas por asignatura u origen (curso de Classroom, evento, actividad, sueltas).
+- **Carga que viene:** horas comprometidas (lo que falta de las tareas pendientes) en los próximos 7 días frente al tiempo libre, día a día, con los **días críticos** resaltados (en ámbar o rojo con el mismo cálculo de riesgo que la App de Martina).
+
+**6. Avisos** (notificación en el móvil de Carlo y lista en la campana)
+
+| Aviso | Cuándo salta | Por defecto |
+|---|---|---|
+| Tarea no hecha a tiempo | pasa la entrega y sigue pendiente | activado |
+| Riesgo rojo «No da tiempo» | mismo cálculo que en la App de Martina | activado |
+| Riesgo ámbar «Cuidado, el tiempo se agota» | mismo cálculo; vuelve a avisar si pasa a rojo | activado, margen de 1 h |
+| Entrega próxima | faltan X horas para la entrega y no está hecha | X = 24 h y 3 h |
+| Tarea grande sin bloques | estimado de **3 h o más**, sin bloques y con la entrega a N días o menos | N = 3 días |
+| Tarea sin tiempo estimado | al aparecer una tarea pendiente sin estimar (no se puede comprobar su riesgo) | activado |
+| Bloque terminado sin registrar | han pasado H horas desde el fin del bloque y sigue sin anotar | H = 2 h |
+| Bloque saltado | anota 0 min o menos del P % de lo planificado | P = 50 % |
+| Novedades | tarea nueva (de Classroom o a mano), evento nuevo, entrega cambiada | activado |
+
+- Cada aviso sale **una sola vez** por tarea o bloque. El riesgo vuelve a avisar al pasar de ámbar a rojo.
+- Los avisos de bloques **no añaden nada a la App de Martina**: ella sigue con su pregunta «¿Cuánto has trabajado?» de siempre.
+- En la campana, cada aviso abre su ficha.
+
+**Resúmenes**
+- **Diario a las 22:00:** qué hizo hoy (tareas hechas, tiempo trabajado y bloques cumplidos o no) y qué queda para mañana.
+- **Semanal el domingo a las 22:00**, además del diario: la semana que viene (entregas, carga por día y días críticos).
+
+**7. Mensajes**
+
+Un **único instrumento** sirve para todo: sugerencias, ánimos, proponer un evento y preguntar cómo va.
+- **Carlo** escribe un texto libre. Opcionalmente puede ir **ligado a una tarea**, desde su ficha. Hay atajos que rellenan el texto:
+  - «¿Cómo vas?»
+  - «¡Bien hecho!» (en tareas hechas)
+  - «Propongo un evento:» con fecha y hora
+- **Martina** lo ve:
+  - Con su App **abierta:** como **aviso emergente**.
+  - Con la App **cerrada:** como **notificación** y, al abrir la App, como aviso emergente.
+- **Respuesta:** ella responde con **«OK»** o con un **texto**. Si hay que cambiar algo (planificar, crear el evento…), **lo hace ella** en su App. El mensaje no cambia ningún dato del plan.
+- **Carlo** recibe la respuesta como notificación. En la lista de mensajes ve cada uno con su estado: enviado · visto · respondido (con la respuesta).
+- Martina tiene en su App una lista con los mensajes recibidos.
+
+**8. Configuración del supervisor**
+- Activar o desactivar cada aviso y cambiar sus umbrales: X horas antes de la entrega (varios valores), margen del ámbar, tamaño de «tarea grande» y días antes, horas para «sin registrar» y % para «saltado».
+- Activar o desactivar cada resumen.
+- Cuenta: cerrar sesión.
+
+**No se incluye** (decidido): logística y horas de salida, «¿la llevo yo?», material aparte, el Google Calendar de Carlo, aviso de salida, inactividad, uso de la App, rachas, horas de silencio, varios supervisores y varios planes.
+
+### 7 bis.3 Alta del supervisor (en la App de Martina)
+
+- Se hace en **Config > Cuenta > «Supervisor»**: quien es dueño del plan escribe el correo. Si el dueño del plan es Carlo (si lo creó él), antes hay que **pasar la propiedad a Martina**: el dueño no puede ser solo supervisor.
+- **Antes de confirmar**, un aviso explica: «*correo* podrá **ver toda tu planificación** (calendario, tareas, tiempo trabajado e historial) y **enviarte mensajes**. No puede cambiar nada de tu plan.» Botones: «Añadir supervisor» / «Cancelar».
+- Después, en Config > Cuenta queda la línea «*correo* puede ver tu plan y enviarte mensajes», con el botón **«Quitar»** (pide una segunda pulsación).
+- Una persona es **miembro** (lee y escribe) **o supervisora** (solo lee), no las dos cosas. Si el correo de Carlo ya estaba en el plan como miembro, al hacerlo supervisor deja de ser miembro.
+- Carlo inicia sesión en la App con ese correo y la App detecta el rol: entra en modo supervisor.
+
+### 7 bis.4 Datos (Firestore)
+
+- `plans/{id}`: nuevo campo **`viewerEmails`** (lista; la pantalla permite uno). Solo lo cambia el dueño.
+- **Reglas** (`firestore.rules`):
+  - Leen el plan y `kv` quienes están en `memberEmails` o en `viewerEmails`; **escriben `kv` solo los miembros**.
+  - `log`, `archive` y `sent` los escribe solo el servidor.
+  - Mensajes: el supervisor los crea y la dueña solo puede cambiar su estado y la respuesta.
+- **`plans/{id}/log/{auto}`**: historial. Lo escribe la función `onPlanChange` (7 bis.6) **comparando el antes y el después** de cada cambio de `app-tasks`, `app-events`, `app-activities` y `app-blocks`, sin tocar la App de Martina.
+  - Campos: `{ at, type, key, name, before, after }`.
+  - Tipos de tarea: `task.created`, `task.due-changed`, `task.est-changed`, `task.done`, `task.reopened`, `task.deleted`.
+  - Tipos de bloque: `block.planned`, `block.moved`, `block.removed`, `block.logged`.
+  - Tipos de eventos y actividades: `event.created` / `event.changed` / `event.deleted` y lo mismo para `activity.*`.
+  - **Empieza a contar cuando se publique la función**: de lo que ya existía, la primera entrada es «ya existía el dd/mm».
+  - Un cambio hecho sin conexión se registra cuando llega al servidor. La hora de «hecha» se toma del dato `doneAt`, no de la llegada.
+- **`plans/{id}/archive/{clave}`**: copia de cada tarea eliminada con sus bloques, porque la App de Martina borra los bloques al eliminar la tarea. Sirve para el estado «Eliminada» y para que las estadísticas no pierdan el tiempo trabajado.
+- **`plans/{id}/messages/{id}`**: `{ from, text, taskKey?, createdAt, seenAt?, reply?: { ok | text, at } }`.
+- **`plans/{id}/sent/{clave}`**: qué avisos se han enviado ya, para no repetirlos.
+- **`users/{uid}`**: `viewerOf` (plan que supervisa) y `alerts` (configuración de avisos del supervisor). En **`users/{uid}/devices/{token}`** se guardan los móviles que reciben notificaciones, de Carlo y de Martina.
+
+### 7 bis.5 Cambios en la App de Martina
+
+1. **`doneAt` con fecha y hora:** hoy guarda solo la fecha. Las tareas de práctica de actividades guardarán también la hora de cada sesión hecha (`doneAtFor`). Las tareas marcadas antes del cambio solo tendrán el día.
+2. **Supervisor en Config > Cuenta**, con su aviso (7 bis.3).
+3. **Mensajes:** aviso emergente con «OK» / «Responder», lista de mensajes recibidos y notificaciones con la App cerrada. Necesita el permiso de notificaciones (ya se pide en la configuración del primer inicio) y registrar el móvil para recibir notificaciones.
+4. **`sync.js`:** detecta el rol (miembro o supervisor). En modo supervisor no sube nada.
+5. **Cálculos a un módulo común, `docs/app/core.js`.** Incluye sacar de `app.js` las funciones puras:
+   - la lista de tareas a partir de tareas, eventos y actividades (hoy `allTasks`);
+   - las sesiones de actividades, los huecos y el tiempo libre;
+   - el riesgo y el progreso.
+
+   Así los usan igual la App de Martina, el modo supervisor y el servidor (los avisos con las apps cerradas). Es la pieza más delicada: **no debe cambiar nada de lo que hace la App de Martina**, y se comprueba con pruebas automáticas antes y después. La publicación copia `core.js` a `functions/`.
+
+### 7 bis.6 Servidor (Cloud Functions, hora de Madrid)
+
+- **`onPlanChange`** (al cambiar `plans/{id}/kv/{clave}`):
+  - escribe el historial y el archivo;
+  - lanza los avisos de **novedades**;
+  - vuelve a calcular el **riesgo** al momento.
+- **`checkAlerts`** (cada 15 min): entrega próxima, atrasada, riesgo, tarea grande sin bloques, sin estimar, bloque sin registrar y bloque saltado. Usa `core.js` y `sent` para no repetir.
+- **`dailySummary`** (todos los días a las 22:00) y **`weeklySummary`** (domingo a las 22:00).
+- **`onMessage`:** al crear un mensaje, notificación a Martina; al responder, notificación a Carlo.
+- **Notificaciones:** con **Firebase Cloud Messaging** (Web Push, gratis). El `sw.js` las recibe con la App cerrada. Hay que crear la **clave VAPID** en Firebase (Configuración del proyecto > Cloud Messaging).
+  - **En iPhone solo funcionan con la App instalada en la pantalla de inicio** (iOS 16.4 o posterior).
+- **Coste esperado: 0 €.** `checkAlerts` son unas 3.000 ejecuciones al mes, dentro del nivel gratuito; las lecturas y escrituras son pocas.
+- **Pruebas:** con `npm test` en `functions/`: `core.js`, la comparación del historial, los estados de las tareas y los avisos con fechas simuladas. Las reglas se prueban con los emuladores de Firebase.
+
+### 7 bis.7 Fases
+
+Cada fase se publica y la prueba Carlo antes de pasar a la siguiente.
+
+1. **Base y permisos:**
+   - `core.js` con sus pruebas, sin cambios visibles en la App de Martina;
+   - `viewerEmails`, reglas y alta del supervisor con su aviso;
+   - `doneAt` con hora;
+   - modo supervisor vacío (inicio de sesión, detección del rol y pestañas);
+   - **`onPlanChange` escribiendo ya el historial** (y el archivo), para que el historial empiece a acumularse cuanto antes, aunque todavía no se vea.
+2. **Ver:** Ahora, Calendario (con lo trabajado y los ✓) y Tareas con sus fichas.
+3. **Historial:** pestaña Historial (línea de tiempo con filtros por tipo; cada entrada abre su ficha) e historia en la ficha de cada tarea.
+4. **Análisis:** Estado de las tareas (totales → lista → ficha) e indicadores.
+5. **Avisos y resúmenes:** notificaciones (FCM), `checkAlerts`, novedades, resúmenes de las 22:00, campana y Config de avisos.
+6. **Mensajes:** envío, aviso emergente o notificación a Martina, respuesta «OK» o texto, y lista de mensajes en las dos apps.
+
+### 7 bis.8 Valores por defecto a confirmar al probar
+
+Todos se pueden cambiar en Config del supervisor:
+- Entrega próxima: 24 h y 3 h antes.
+- Margen del ámbar: 1 h.
+- Tarea grande: 3 h o más, a 3 días o menos de la entrega.
+- Bloque sin registrar: 2 h después de su fin.
+- Bloque saltado: menos del 50 % de lo planificado.
+- Procrastinación: últimas 24 h antes de la entrega.
+- Resumen semanal: el domingo a las 22:00, además del diario.
 
 ---
 
