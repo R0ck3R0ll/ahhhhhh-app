@@ -688,6 +688,15 @@
   .end-prog .progress{ max-width:none; }
   #end-step1[hidden], #end-step2[hidden]{ display:none; }
   #end-step1 .field-label{ display:block; margin-top:6px; }
+  /* Anotar trabajo hecho: mismo diálogo que el fin de bloque, con cuándo empezó */
+  #work-step1[hidden], #work-step2[hidden], .work-error[hidden]{ display:none; }
+  #work-step1 .field-label{ display:block; margin-top:6px; }
+  .work-when{ display:flex; gap:8px; margin:4px 0 6px; }
+  .work-when .txt-input{ flex:1; min-width:0; }
+  .work-error{ margin:8px 0 0; font-size:13px; color:var(--danger-bg); }
+  #work-ok:disabled{ opacity:.45; cursor:default; }
+  /* Ficha de la actividad: sesiones quitadas, con «Volver a ponerla» */
+  .detail-list .link-btn{ margin-left:6px; padding:0; border:0; background:none; font:inherit; color:var(--accent-strong); text-decoration:underline; cursor:pointer; }
 
   /* ---- Riesgo: triángulo rojo junto a la barra de tiempo ---- */
   #today-bar{ position:relative; }

@@ -146,8 +146,8 @@
   function todayItems(){
     var iso = isoOf(TODAY_DATE), wd = weekdayOf(TODAY_DATE), now = appNow(), out = [];
     USER_ACTS.forEach(function(a){
-      a.sessions.filter(function(x){ return x.day === wd; }).forEach(function(x){
-        out.push({ id:'act-' + a.id + '-' + x.start, kind:'activity', ref:a.id, t:toHours(x.start), end:toHours(x.end), cat:a.cat, title:a.name, place:a.place || '' });
+      a.sessions.filter(function(x){ return x.day === wd && sessionOn(a, x, iso); }).forEach(function(x){
+        out.push({ id:'act-' + a.id + '-' + x.start, kind:'activity', ref:a.id, ses:x.start, t:toHours(x.start), end:toHours(x.end), cat:a.cat, title:a.name, place:a.place || '' });
       });
     });
     USER_EVENTS.filter(function(e){ return e.date === iso; }).forEach(function(e){
@@ -224,6 +224,11 @@
   }
   function todayVisible(){ return TODAY_LATER_ALL; }
   function todayCheck(e){
+    // Actividad: «Hoy no voy» (quita la sesión de hoy del plan), en el mismo sitio que el ✓ de las tareas
+    if(e.kind === 'activity'){
+      return '<button type="button" class="task-check today-check today-skip" aria-label="' + t('act.skipToday') + ': ' + esc(e.title) + '" title="' + t('act.skipToday') + '" ' +
+        'onclick="event.stopPropagation(); skipSession(\'' + e.ref + '\', \'' + e.ses + '\')" onkeydown="event.stopPropagation()" onpointerdown="event.stopPropagation()">' + SKIP_ICON + '</button>';
+    }
     return e.kind === 'task' ? '<button type="button" class="task-check today-check" aria-label="' + t('task.markDone') + ': ' + esc(e.title) + '" title="' + t('task.markDone') + '" ' +
       'onclick="event.stopPropagation(); setTaskDone(\'' + e.ref + '\', true)" onkeydown="event.stopPropagation()" onpointerdown="event.stopPropagation()">' + CHECK_ICON + '</button>' : '';
   }
@@ -246,7 +251,7 @@
   function placedElements(d){
     var iso = isoOf(d), wd = weekdayOf(d), out = [];
     USER_ACTS.forEach(function(a){
-      a.sessions.filter(function(x){ return x.day === wd; }).forEach(function(x){
+      a.sessions.filter(function(x){ return x.day === wd && sessionOn(a, x, iso); }).forEach(function(x){
         out.push({ id:'act-' + a.id + '-' + x.start, t:toHours(x.start), place:a.place || '', name:a.name });
       });
     });
@@ -2410,16 +2415,60 @@
   // Momento actual según el reloj de la App (al minuto)
   function appNow(){ var d = new Date(TODAY_DATE.getTime()); d.setMinutes(Math.round(NOW * 60)); return d; }
   function weekdayOf(d){ return (d.getDay() + 6) % 7; }
+  // Festivos nacionales de España: fijos y Viernes Santo (dos días antes del domingo de Pascua,
+  // calculado con el algoritmo de Meeus). Los que caen en domingo no se trasladan (eso lo decide
+  // cada comunidad).
+  var HOLIDAYS = {};
+  function nationalHolidays(y){
+    if(HOLIDAYS[y]){ return HOLIDAYS[y]; }
+    var a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25),
+        g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4,
+        l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451),
+        month = Math.floor((h + l - 7 * m + 114) / 31), day = (h + l - 7 * m + 114) % 31 + 1;
+    HOLIDAYS[y] = ['01-01', '01-06', '05-01', '08-15', '10-12', '11-01', '12-06', '12-08', '12-25']
+      .map(function(md){ return y + '-' + md; }).concat(isoOf(new Date(y, month - 1, day - 2)));
+    return HOLIDAYS[y];
+  }
+  function isHoliday(iso){ return nationalHolidays(+iso.slice(0, 4)).indexOf(iso) >= 0; }
+  // ¿Hay sesión x de la actividad a el día iso? No en festivo nacional ni si se ha quitado con
+  // «Hoy no voy» (a.skip: 'fecha' + 'T' + 'hora de inicio')
+  function sessionOn(a, x, iso){ return !isHoliday(iso) && (a.skip || []).indexOf(iso + 'T' + x.start) < 0; }
   // Próxima sesión de una actividad a partir de «from» → Date del inicio
   function nextSession(a, from){
-    for(var off = 0; off <= 7; off++){
+    for(var off = 0; off <= 35; off++){
       var d = new Date(from.getFullYear(), from.getMonth(), from.getDate() + off);
-      var todays = a.sessions.filter(function(x){ return x.day === weekdayOf(d); })
+      var todays = a.sessions.filter(function(x){ return x.day === weekdayOf(d) && sessionOn(a, x, isoOf(d)); })
         .map(function(x){ var s = new Date(d.getTime()); s.setMinutes(Math.round(toHours(x.start) * 60)); return s; })
         .filter(function(s){ return s > from; }).sort(function(p, q){ return p - q; });
       if(todays.length){ return todays[0]; }
     }
     return null;
+  }
+  // «Hoy no voy»: quita del plan la sesión de hoy que empieza a «start» (con «Deshacer»).
+  // Con back = true la vuelve a poner. iso: otro día (desde la ficha de la actividad).
+  var SKIP_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/></svg>';
+  function skipSession(id, start, back, iso){
+    var a = USER_ACTS.filter(function(x){ return x.id === id; })[0];
+    if(!a){ return; }
+    var today = isoOf(TODAY_DATE), k = (iso || today) + 'T' + start;
+    a.skip = (a.skip || []).filter(function(s){ return s >= today && s !== k; });
+    if(!back){ a.skip.push(k); }
+    storeActivities();
+    renderActivities(); renderTasks(); renderCalendar(calView); renderToday(); refreshOpenDetails();
+    toast(t(back ? 'act.unskipped' : 'act.skipped', { name: a.name }),
+      { label: t('btn.undo'), fn: function(){ skipSession(id, start, !back, iso); } });
+  }
+  // Sesiones de las próximas 3 semanas que no se hacen (festivo nacional o «Hoy no voy»), para la ficha
+  function missedSessions(a){
+    var out = [], now = appNow();
+    for(var off = 0; off < 21; off++){
+      var d = new Date(TODAY_DATE.getFullYear(), TODAY_DATE.getMonth(), TODAY_DATE.getDate() + off), iso = isoOf(d);
+      a.sessions.filter(function(x){ return x.day === weekdayOf(d) && !sessionOn(a, x, iso); }).forEach(function(x){
+        var end = new Date(d.getTime()); end.setMinutes(Math.round(toHours(x.end) * 60));
+        if(end > now){ out.push({ iso:iso, x:x, holiday:isHoliday(iso) }); }
+      });
+    }
+    return out;
   }
   function sessionsText(a){
     return a.sessions.slice().sort(function(p, q){ return p.day - q.day; }).map(function(x){
@@ -2486,12 +2535,24 @@
         [t('f.prio'), prioHtml(a.prio, !(c && findCategory(a.cat) && findCategory(a.cat).prio === a.prio))],
         [t('f.place'), esc(a.place)],
         [t('f.desc'), a.desc ? esc(a.desc) : ''],
-        [t('d.task'), a.task ? esc(a.task.name) + '<br><span class="muted">' + fmtEst(a.task.est) + ' · ' + t('task.dueNextAt', { t: next ? fmtWhen(next) : '—' }) + '</span>' : '']
+        [t('d.task'), a.task ? esc(a.task.name) + '<br><span class="muted">' + fmtEst(a.task.est) + ' · ' + t('task.dueNextAt', { t: next ? fmtWhen(next) : '—' }) + '</span>' : ''],
+        [t('act.missed'), missedSessions(a).map(function(m){
+          return '<span class="block-line">' + fmtDay(m.iso) + ' ' + m.x.start + '–' + m.x.end + ' <span class="muted">· ' + t(m.holiday ? 'act.holiday' : 'act.notGoing') + '</span>' +
+            (m.holiday ? '' : ' <button type="button" class="link-btn" onclick="skipSession(\'' + a.id + '\', \'' + m.x.start + '\', true, \'' + m.iso + '\')">' + t('act.unskip') + '</button>') + '</span>';
+        }).join('')]
       ],
+      extra: todaySessions(a).map(function(x){
+        return '<button type="button" class="btn-plan" onclick="skipSession(\'' + a.id + '\', \'' + x.start + '\')">' + SKIP_ICON + t('act.skipToday') + (todaySessions(a).length > 1 ? ' (' + x.start + ')' : '') + '</button>';
+      }).join(''),
       edit: "openActivityForm('" + a.id + "')", del: 'cancelActivity(this)', delLabel: t('act.cancel')
     });
   }
 
+  // Sesiones de hoy que aún no han terminado y no se han quitado
+  function todaySessions(a){
+    var iso = isoOf(TODAY_DATE), wd = weekdayOf(TODAY_DATE);
+    return a.sessions.filter(function(x){ return x.day === wd && sessionOn(a, x, iso) && toHours(x.end) > NOW; });
+  }
   function refreshActivityForm(){
     if(!el('act-form')){ return; }
     el('act-form-title').textContent = t(editingAct ? 'act.editTitle' : 'act.new');
@@ -2587,7 +2648,10 @@
       // Tarea de práctica: deadline siempre la siguiente sesión; prioridad la de la actividad salvo la propia puesta en Tareas
       task: withTask ? { name: el('atask-name').value.trim(), est: getDur('atask-est'),
         prio: editingAct && editingAct.task ? editingAct.task.prio || null : null,
-        desc: editingAct && editingAct.task ? editingAct.task.desc || '' : '' } : null
+        desc: editingAct && editingAct.task ? editingAct.task.desc || '' : '',
+        doneFor: editingAct && editingAct.task ? editingAct.task.doneFor || [] : [] } : null,
+      // Sesiones quitadas con «Hoy no voy» (solo las de hoy en adelante)
+      skip: (editingAct && editingAct.skip || []).filter(function(k){ return k >= isoOf(TODAY_DATE); })
     };
     if(editingAct){ USER_ACTS[USER_ACTS.indexOf(editingAct)] = data; } else { USER_ACTS.push(data); }
     storeActivities();
@@ -2624,6 +2688,7 @@
     USER_ACTS.forEach(function(a){
       var c = eventCategory(a);
       a.sessions.forEach(function(x){
+        if(!sessionOn(a, x, isoOf(WEEK_DAYS[x.day].d))){ return; }
         out.push({ day: x.day, title: a.name, start: toHours(x.start), end: toHours(x.end), color: c ? c.color : null, catLabel: c ? c.name : '', ref: { kind:'activity', id:a.id } });
       });
     });
@@ -2640,6 +2705,7 @@
     USER_ACTS.forEach(function(a){
       if(!a.task){ return; }
       a.sessions.forEach(function(x){
+        if(!sessionOn(a, x, isoOf(WEEK_DAYS[x.day].d))){ return; }
         var due = new Date(WEEK_DAYS[x.day].d.getTime()); due.setMinutes(Math.round(toHours(x.start) * 60));
         out.push({ day: x.day, title: a.task.name, time: toHours(x.start), cat: 'tarea', done: (a.task.doneFor || []).indexOf(occKey(due)) >= 0, ref: { kind:'task', id:'a:' + a.id } });
       });
@@ -2781,11 +2847,12 @@
         [t('d.status'), t(x.done ? 'status.done' : x.overdue ? 'status.overdue' : 'status.pending')],
         [t('d.progress'), progressHtml(x)],
         [t('d.blocks'), blocksOf(key).map(function(b){
-          return '<span class="block-line">' + fmtDay(b.date) + ' ' + fmtHour(b.start) + '–' + fmtHour(b.end) + (isLogged(b) ? ' <span class="muted">· ' + t('prog.logged', { t: b.logged ? fmtEst(b.logged) : '0 min' }) + '</span>' : '') + '</span>';
+          return '<span class="block-line">' + fmtDay(b.date) + ' ' + fmtHour(b.start) + '–' + fmtHour(b.end) + (isLogged(b) ? ' <span class="muted">· ' + t('prog.logged', { t: b.logged ? fmtEst(b.logged) : '0 min' }) + (b.manual ? ' · ' + t('work.manual') : '') + '</span>' : '') + '</span>';
         }).join('')]
       ],
       extra: '<button type="button" class="btn-done' + (x.done ? ' is-done' : '') + '" onclick="setTaskDone(\'' + key + '\', ' + !x.done + ')">' + CHECK_ICON + t(x.done ? 'task.reopen' : 'task.markDone') + '</button>' +
-        (x.done ? '' : '<button type="button" class="btn-plan" onclick="openPlan(\'' + key + '\')">' + CAL_PLAN_SVG + t('task.plan') + '</button>'),
+        (x.done ? '' : '<button type="button" class="btn-plan" onclick="openPlan(\'' + key + '\')">' + CAL_PLAN_SVG + t('task.plan') + '</button>' +
+          '<button type="button" class="btn-plan" onclick="openWork(\'' + key + '\')">' + CLOCK_SVG + t('work.btn') + '</button>'),
       edit: "openTaskForm('" + key + "')", del: 'deleteTask(this)', delLabel: t('task.delete')
     });
   }
@@ -2923,7 +2990,7 @@
   function busyOn(iso, skip, extra){
     var d = isoDate(iso), wd = weekdayOf(d), out = [], sc = schoolForDate(d);
     if(sc.on){ out.push([toHours(sc.entry), toHours(sc.exit)]); }
-    USER_ACTS.forEach(function(a){ a.sessions.forEach(function(x){ if(x.day === wd){ out.push([toHours(x.start), toHours(x.end)]); } }); });
+    USER_ACTS.forEach(function(a){ a.sessions.forEach(function(x){ if(x.day === wd && sessionOn(a, x, iso)){ out.push([toHours(x.start), toHours(x.end)]); } }); });
     USER_EVENTS.forEach(function(e){ if(e.date === iso){ var h = toHours(e.time); out.push([h, h + (e.dur || 60) / 60]); } });
     WORK_BLOCKS.concat(extra || []).forEach(function(b){ if(b.date === iso && (skip || []).indexOf(b.id) < 0){ out.push([b.start, b.end]); } });
     return out.sort(function(p, q){ return p[0] - q[0]; });
@@ -3230,6 +3297,77 @@
     }
     setTimeout(checkBlockEnds, 300);
   }
+  /* ---- Anotar trabajo hecho sin haberlo planificado ----
+     Desde la ficha de la tarea: cuándo empezó (un momento del pasado) y cuánto se trabajó. Se guarda
+     como un bloque de trabajo ya registrado (manual: true), así cuenta en el progreso, se ve en el
+     Calendario (atenuado) y no se puede mover. Si llega al tiempo estimado, pregunta si está hecha. */
+  var CLOCK_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+  var WORK = null, WORK_MAX_FREE = 240;   // sin tiempo estimado (o ya cubierto): hasta 4 h
+  function openWork(key){
+    var x = allTasks().filter(function(it){ return it.key === key; })[0];
+    if(!x){ return; }
+    var left = x.est ? x.est - doneMin(key) : 0, now = appNow();
+    WORK = { x:x, max: left > 0 ? left : WORK_MAX_FREE, full: left > 0 };
+    // Por defecto: 30 min que terminan ahora (redondeado a 5 min)
+    var len = Math.min(30, WORK.max), start = new Date(now.getTime() - len * 60000);
+    start.setMinutes(Math.floor(start.getMinutes() / 5) * 5);
+    el('work-task').textContent = x.name;
+    el('work-date').value = isoOf(start);
+    el('work-date').max = isoOf(now);
+    el('work-time').value = fmtHour(start.getHours() + start.getMinutes() / 60);
+    el('work-range').max = WORK.max; el('work-range').value = len;
+    el('work-max').textContent = fmtEst(WORK.max);
+    el('work-step1').hidden = false; el('work-step2').hidden = true;
+    workInput();
+    el('work-dialog').showModal();
+  }
+  // Inicio elegido (en horas) o null si falta la fecha o la hora
+  function workStart(){
+    var d = el('work-date').value, tm = el('work-time').value;
+    return d && tm ? { date:d, h:toHours(tm) } : null;
+  }
+  function workInput(){
+    var v = +el('work-range').value, x = WORK.x, st = workStart(), err = '';
+    el('work-value').textContent = fmtEst(v);
+    el('work-range').setAttribute('aria-valuetext', el('work-value').textContent);
+    el('work-prog').innerHTML = x.est ? progressHtml(x, v) : '';
+    if(!st){ err = t('work.noWhen'); }
+    else {
+      var end = isoDate(st.date); end.setMinutes(Math.round(st.h * 60) + v);
+      if(end > appNow()){ err = t('work.future'); }
+      else if(st.h + v / 60 > 24){ err = t('work.midnight'); }
+    }
+    el('work-error').textContent = err;
+    el('work-error').hidden = !err;
+    el('work-ok').disabled = !!err;
+    el('work-ok').textContent = t(WORK.full && v >= WORK.max ? 'end.next' : 'btn.save');
+  }
+  function workConfirm(){
+    var v = +el('work-range').value;
+    if(el('work-ok').disabled){ return; }
+    if(WORK.full && v >= WORK.max){
+      el('work-q2').textContent = t('end.q2', { name: WORK.x.name });
+      el('work-step1').hidden = true; el('work-step2').hidden = false;
+      return;
+    }
+    workSave(false);
+  }
+  function workSave(finished){
+    var v = +el('work-range').value, st = workStart(), x = WORK.x;
+    WORK_BLOCKS.push({ id:'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), task:x.key, date:st.date,
+                       start:st.h, end:st.h + v / 60, logged:v, manual:true });
+    storeBlocks();
+    WORK = null;
+    el('work-dialog').close();
+    if(finished){ setTaskDone(x.key, true); }
+    else {
+      renderTasks(); renderCalendar(calView); renderToday(); refreshOpenDetails();
+      toast(t('end.saved', { t: fmtEst(v), name: x.name }));
+    }
+  }
+  function workClose(){ WORK = null; if(el('work-dialog').open){ el('work-dialog').close(); } }
+  el('work-dialog').addEventListener('cancel', function(){ WORK = null; });
+
   // «Ahora no»: se vuelve a preguntar la próxima vez que se abra la App
   function endLater(){
     if(END){ END_LATER.push(END.b.id); }

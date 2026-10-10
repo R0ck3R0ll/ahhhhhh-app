@@ -93,6 +93,13 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - **Deadline automática: la siguiente sesión de la misma actividad** (cada sesión genera la tarea para la siguiente). La lista muestra la próxima entrega.
   - Por defecto toma la prioridad de la actividad (se le puede poner una propia desde Tareas). Se edita desde la actividad o desde **Tareas**, y se elimina con la actividad; para el resto de la App es una tarea más (Today, Calendario, avisos).
 - Eliminar una actividad pide una segunda pulsación (y avisa si se elimina también su tarea).
+- **Festivos nacionales** (10/10/2026): las sesiones no se hacen en los festivos nacionales de España. Son 1/1, 6/1, Viernes Santo, 1/5, 15/8, 12/10, 1/11, 6/12, 8/12 y 25/12, calculados por la App sin consultar nada (los que caen en domingo no se trasladan: eso lo decide cada comunidad).
+  - Esas sesiones no salen en «Hoy» ni en el Calendario, no cuentan como ocupadas (huecos libres, riesgo) y la tarea de práctica pasa a la siguiente sesión que sí se hace.
+- **«Hoy no voy»** (10/10/2026): quita del plan la sesión de hoy, con el mismo efecto que un festivo, y aparece un aviso con «Deshacer».
+  - Se hace con el botón **⦸** de la tarjeta de la actividad en «Hoy» (en el sitio del ✓ de las tareas) o con el botón **«Hoy no voy»** de su ficha, si la sesión de hoy aún no ha terminado.
+  - La ficha de la actividad lista las **«Sesiones que no se hacen»** de las próximas 3 semanas («festivo nacional» o «no voy»). Las quitadas con «Hoy no voy» tienen **«Volver a ponerla»**.
+  - Se guarda en la actividad (`skip`: fecha y hora de inicio de cada sesión quitada) y se comparte por el plan.
+  - Al editar la actividad se conservan las sesiones quitadas y las sesiones de práctica ya hechas (antes, editar una actividad las borraba).
 - Las actividades recurrentes cuentan siempre como **activas** a efectos de borrar su categoría (ver Configuración).
 
 ### 2.3 Eventos
@@ -132,6 +139,16 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
   - Si la App estaba **cerrada** cuando terminó el bloque, la pregunta aparece **al abrirla**, y el móvil muestra una **notificación** (los permisos se piden en la configuración del primer inicio). Con la App abierta se comprueba cada minuto.
   - **Progreso:** barra «hecho de estimado» en la ficha de la tarea (fila «Progreso»), en la lista de Tareas (cuando ya hay algo hecho), en «Planificar» y en la propia pregunta (se actualiza al mover el control). La ficha lista cada bloque con lo que se anotó.
   - «Planificar» cuenta lo hecho: «Estimado · hecho · planificado · falta»; la propuesta de bloques cubre solo lo que falta. Los bloques ya terminados no se pueden mover y se conservan al guardar; en el Calendario se ven atenuados.
+- **Anotar trabajo hecho** (10/10/2026), para registrar trabajo **sin haberlo planificado**:
+  - Se hace con el botón **«Anotar trabajo hecho»** de la ficha de la tarea (si no está hecha).
+  - Se indica **cuándo empezó** (día y hora; tiene que ser un momento del pasado, terminar antes de ahora y el mismo día) y **cuánto** se trabajó, con el mismo control que «¿Cuánto has trabajado?».
+    - Por defecto, 30 min que terminan ahora.
+    - El máximo es lo que falta de la tarea; sin tiempo estimado (o si ya está cubierto), 4 h.
+  - Si se llega a lo que falta, pregunta si la tarea está hecha («Sí, está hecha» / «Todavía no»).
+  - Se guarda como un **bloque de trabajo ya registrado** (`manual: true`), así:
+    - cuenta en el progreso y en «Planificar» como hecho;
+    - se ve atenuado en el Calendario y no se puede mover;
+    - en la ficha sale en la lista de bloques con «anotado a mano».
 - **Aviso de riesgo** (fase 6): la App comprueba si cada tarea cabe en el **tiempo libre** que queda hasta su entrega.
   - **Cálculo:** por orden de entrega, lo que falta de las tareas (estimado − hecho), **acumulado** con las que se entregan antes o a la vez, tiene que caber en el tiempo libre desde ahora hasta cada entrega. Tiempo libre: la franja horaria menos cole, actividades y eventos (los bloques de trabajo cuentan como libres: son tiempo para las tareas). Las tareas sin tiempo estimado no se pueden comprobar.
   - Se comprueba al abrir la App y tras cualquier cambio (tareas, eventos, actividades, bloques), después de las preguntas de fin de bloque.
@@ -393,10 +410,11 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 | Tarea grande sin bloques | estimado de **3 h o más**, sin bloques y con la entrega a N días o menos | N = 3 días |
 | Tarea sin tiempo estimado | al aparecer una tarea pendiente sin estimar (no se puede comprobar su riesgo) | activado |
 | Bloque terminado sin registrar | han pasado H horas desde el fin del bloque y sigue sin anotar | H = 2 h |
-| Bloque saltado | anota 0 min o menos del P % de lo planificado | P = 50 % |
+| Bloque saltado | al registrarlo, anota menos de lo planificado para ese bloque (no lo completa) | activado |
 | Novedades | tarea nueva (de Classroom o a mano), evento nuevo, entrega cambiada | activado |
 
 - Cada aviso sale **una sola vez** por tarea o bloque. El riesgo vuelve a avisar al pasar de ámbar a rojo.
+- El **trabajo anotado a mano** (sin bloque planificado) cuenta como trabajado, pero no como planificado: no entra en los avisos de bloques ni en el «cumplimiento de lo planificado».
 - Los avisos de bloques **no añaden nada a la App de Martina**: ella sigue con su pregunta «¿Cuánto has trabajado?» de siempre.
 - En la campana, cada aviso abre su ficha.
 
@@ -419,7 +437,7 @@ Un **único instrumento** sirve para todo: sugerencias, ánimos, proponer un eve
 - Martina tiene en su App una lista con los mensajes recibidos.
 
 **8. Configuración del supervisor**
-- Activar o desactivar cada aviso y cambiar sus umbrales: X horas antes de la entrega (varios valores), margen del ámbar, tamaño de «tarea grande» y días antes, horas para «sin registrar» y % para «saltado».
+- Activar o desactivar cada aviso y cambiar sus umbrales: X horas antes de la entrega (varios valores), margen del ámbar, tamaño de «tarea grande» y días antes, y horas para «sin registrar».
 - Activar o desactivar cada resumen.
 - Cuenta: cerrar sesión.
 
@@ -502,7 +520,6 @@ Todos se pueden cambiar en Config del supervisor:
 - Margen del ámbar: 1 h.
 - Tarea grande: 3 h o más, a 3 días o menos de la entrega.
 - Bloque sin registrar: 2 h después de su fin.
-- Bloque saltado: menos del 50 % de lo planificado.
 - Procrastinación: últimas 24 h antes de la entrega.
 - Resumen semanal: el domingo a las 22:00, además del diario.
 

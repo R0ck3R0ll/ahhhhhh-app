@@ -805,6 +805,36 @@
   </div>
 </dialog>
 
+<!-- Anotar trabajo hecho sin planificarlo: cuándo empezó (en el pasado) y cuánto -->
+<dialog class="confirm-dialog end-dialog" id="work-dialog" aria-labelledby="work-title">
+  <h2 id="work-title" data-i18n="work.title"></h2>
+  <p class="end-task"><strong id="work-task"></strong></p>
+  <div id="work-step1">
+    <span class="field-label" data-i18n="work.when"></span>
+    <div class="work-when">
+      <input class="txt-input" type="date" id="work-date" data-i18n-aria="work.date" oninput="workInput()">
+      <input class="txt-input" type="time" id="work-time" step="300" data-i18n-aria="work.time" oninput="workInput()">
+    </div>
+    <label class="field-label" for="work-range" data-i18n="end.q"></label>
+    <div class="end-value" id="work-value"></div>
+    <input type="range" class="end-range" id="work-range" min="5" step="5" oninput="workInput()">
+    <div class="end-scale"><span>5 min</span><span id="work-max"></span></div>
+    <div class="end-prog" id="work-prog"></div>
+    <p class="work-error" id="work-error" role="alert" hidden></p>
+    <div class="form-actions">
+      <button type="button" class="btn-ghost" onclick="workClose()" data-i18n="btn.cancel"></button>
+      <button type="button" class="btn-primary" id="work-ok" onclick="workConfirm()"></button>
+    </div>
+  </div>
+  <div id="work-step2" hidden>
+    <p id="work-q2"></p>
+    <div class="form-actions">
+      <button type="button" class="btn-ghost" onclick="workSave(false)" data-i18n="end.notYet"></button>
+      <button type="button" class="btn-primary" onclick="workSave(true)" data-i18n="end.yesDone"></button>
+    </div>
+  </div>
+</dialog>
+
 <!-- Aviso de riesgo: una tarea que no cabe en el tiempo libre antes de su entrega -->
 <dialog class="confirm-dialog risk-dialog" id="risk-dialog" aria-labelledby="risk-title">
   <h2 class="risk-head"><span id="risk-icon" aria-hidden="true"></span><span id="risk-title"></span></h2>
