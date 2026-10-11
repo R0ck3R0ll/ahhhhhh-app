@@ -9,7 +9,7 @@ Este documento resume el estudio y las decisiones tomadas en la fase de planific
 > - **Hecho y probado por Carlo:** pantallas, tareas y bloques de trabajo, avisos de riesgo, sincronización entre móviles (Firebase), traslados con Google Maps (coche y a pie, ubicación por GPS), lectura del calendario escolar con IA (Gemini en Vertex AI, con preguntas cuando el calendario depende de la alumna).
 > - **Pendiente:** conexión con Classroom y Gmail (bloqueada por el colegio, punto 3), extracción con IA de correos y publicaciones con su pantalla de revisión (punto 4), exportación a Google Calendar.
 > - **Mejoras en la App de Martina (10/10/2026):** anotar trabajo hecho sin planificar, festivos nacionales en las actividades y «Hoy no voy» (puntos 2.2 y 2.3 bis).
-> - **App de seguimiento para Carlo** (punto 7 bis): fases 1 a 6 hechas y publicadas (10-11/10/2026). Carlo ya entra como supervisor. **Pendiente: probar avisos y mensajes en los móviles (7 bis.9)** y, después, la fase 7 (por definir).
+> - **App de seguimiento para Carlo** (punto 7 bis): fases 1 a 6 hechas y publicadas (10-11/10/2026). Carlo ya entra como supervisor. Prueba de avisos y mensajes en los móviles (7 bis.9) **hecha y correcta** (11/10/2026). **Pendiente: la fase 7 (por definir).**
 
 ---
 
@@ -664,7 +664,9 @@ Todos se pueden cambiar en Config del supervisor:
 - **La primera ejecución de `checkAlerts`** no avisa de nada (solo marca lo que ya tocaba, `alertsSince`): los avisos llegan a partir de la siguiente novedad.
 - **El historial** cuenta desde el 11/10/2026 a las 9:43, y la antelación solo con las tareas marcadas desde la fase 1 (`doneAt` con hora).
 
-**Fase 7:** por definir con Carlo al empezar la próxima sesión, después de la prueba.
+**Resultado de la prueba (11/10/2026):** Carlo confirma que la prueba ha ido bien.
+
+**Fase 7:** por definir con Carlo.
 
 **Otros pendientes que vienen de antes:**
 - GitHub Pages aún publica desde `claude/hopeful-lovelace-18fa2k` (ver el estado al principio).
