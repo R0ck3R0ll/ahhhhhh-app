@@ -522,6 +522,11 @@ Cada fase se publica y la prueba Carlo antes de pasar a la siguiente.
    - **`sync.js`:** al iniciar sesión, si el correo está en `viewerEmails` de un plan, entra como supervisor. Baja los datos del plan, no sube nunca nada y guarda `sync-role = viewer` en el móvil.
      - Si el dueño lo cambia de miembro a supervisor (o al revés), la App lo detecta y se recarga en el modo que toca.
      - Al cerrar sesión, el supervisor borra del móvil los datos del plan.
+     - **Arreglos del 11/10/2026:**
+       - El móvil de Carlo tenía la App anterior cuando Martina lo pasó a supervisor. Esa versión, al verse fuera del plan, creó un plan nuevo solo con él. Ahora, al iniciar sesión, si alguien es el único miembro de su plan y es supervisor de otro, entra como supervisor de ese otro. El plan solitario queda sin usar; las reglas no dejan borrar planes.
+       - Bucle «Datos actualizados desde otro móvil». Si la App reescribía un dato del plan al arrancar, el dato del servidor lo pisaba antes de subirlo y la App se recargaba sin fin. Ahora un cambio del móvil pendiente de subir no se pisa.
+       - En modo supervisor la App no puede escribir los datos del plan (solo `sync.js`, con lo que llega del servidor).
+       - Si la App se recarga 3 veces en un minuto, deja de recargar.
    - **Modo supervisor** (`supervisor.js`, solo se carga en ese modo):
      - Pestañas propias: Ahora · Calendario · Tareas · Análisis · Historial · Config. Las cinco primeras dicen en qué fase llegan.
      - Config tiene la cuenta («Supervisas el plan de…», cerrar sesión) y el idioma.

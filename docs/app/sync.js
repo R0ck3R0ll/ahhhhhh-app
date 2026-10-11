@@ -152,6 +152,9 @@ async function start(){
         if(ch.doc.metadata.hasPendingWrites){ return; }   // es nuestro propio cambio
         const k = ch.doc.id;
         if(!SHARED_KEYS.includes(k)){ return; }
+        // Un cambio de este móvil que aún no se ha subido gana: si no, al arrancar la App podría
+        // rehacer un dato, recibir el del servidor encima, recargarse y volver a empezar sin fin
+        if(pushQueue.has(k)){ return; }
         const v = ch.type === 'removed' ? null : ch.doc.data().v;
         if(applyRemote(k, v)){ any = true; }
       });
@@ -191,7 +194,15 @@ async function start(){
     if(planId){
       const p = await getDoc(doc(db, 'plans', planId)).catch(function(){ return null; });
       const d = p && p.exists() ? p.data() : {};
-      if((d.memberEmails || []).includes(email)){ role = 'member'; }
+      if((d.memberEmails || []).includes(email)){
+        role = 'member';
+        // Plan en el que solo estoy yo (p. ej. el que creó una versión anterior de la App al pasar de
+        // miembro a supervisor): si soy supervisor de otro plan, se usa ese
+        if((d.memberEmails || []).length === 1 && !(d.viewerEmails || []).length){
+          const sup = await getDocs(query(collection(db, 'plans'), where('viewerEmails', 'array-contains', email), limit(1))).catch(function(){ return null; });
+          if(sup && !sup.empty){ planId = null; }
+        }
+      }
       else if((d.viewerEmails || []).includes(email)){ role = 'viewer'; }
       else { planId = null; }
     }
