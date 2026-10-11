@@ -598,6 +598,8 @@
           <div class="row-list" id="task-list"></div>
           <details class="done-group" id="tasks-done" hidden>
             <summary><span data-i18n="tasks.doneTitle"></span> · <span id="tasks-done-count"></span></summary>
+            <!-- Solo en modo supervisor: últimos 7 días o semanas anteriores -->
+            <div class="done-filter" id="tasks-done-filter" hidden></div>
             <div class="row-list" id="task-done-list"></div>
           </details>
         </div>

@@ -1167,3 +1167,6 @@
   .sup-row-main{ display:flex; flex-direction:column; min-width:0; }
   .sup-row-title{ font-weight:600; font-size:14px; overflow-wrap:anywhere; }
   .sup-row-sub{ font-size:12px; color:var(--text-muted); }
+  /* Supervisor: periodo de «Hechas» */
+  .done-filter{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:4px 0 10px; }
+  .done-filter[hidden]{ display:none; }

@@ -545,7 +545,10 @@ Cada fase se publica y la prueba Carlo antes de pasar a la siguiente.
      - cada bloque terminado se rellena según lo anotado;
      - sin registrar, se ve punteado; con 0 min, tachado;
      - cada tarea hecha tiene una marca «✓» a la hora en que se marcó (solo las marcadas desde la fase 1, que guardan la hora).
-   - **En Tareas:** «Hechas» las muestra todas, de la entrega más reciente a la más antigua. El selector de periodo queda para Análisis (fase 4).
+   - **En Tareas:** «Hechas» va de la entrega más reciente a la más antigua y tiene el selector **«Entregas de»** (decidido 11/10/2026).
+     - Por defecto, **«Últimos 7 días»**: entregas desde hace 6 días, incluidas las que se entregan más adelante y ya están hechas.
+     - Después, semanas anteriores de 7 días hacia atrás («30/09 – 06/10», «23/09 – 29/09»…), hasta la de la entrega más antigua.
+     - El número de «Hechas · n» es el del periodo elegido.
    - **Ficha de la tarea:** añade Planificado (bloques sin registrar), Trabajado, Falta y «Marcada como hecha» (día y hora, y «1 d 23 h antes de la entrega» o «… después de la entrega»).
 3. **Historial:** pestaña Historial (línea de tiempo con filtros por tipo; cada entrada abre su ficha) e historia en la ficha de cada tarea.
 4. **Análisis:** Estado de las tareas (totales → lista → ficha) e indicadores.

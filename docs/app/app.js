@@ -2907,8 +2907,9 @@
         pending = items.filter(function(x){ return !x.done && !x.overdue; }),
         // Las hechas se quitan de la lista cuando su fecha queda fuera de la semana del calendario
         done = items.filter(function(x){ return x.done && (IS_SUPERVISOR || !x.due || (x.due >= wk0 && x.due < wk1)); });
-    // El supervisor las ve todas, de la más reciente a la más antigua
-    if(IS_SUPERVISOR){ done.sort(function(p, q){ return (q.due || 0) - (p.due || 0); }); }
+    // El supervisor las ve por periodos de 7 días, de la entrega más reciente a la más antigua
+    var doneAll = done.length;
+    if(IS_SUPERVISOR){ done = supDoneFilter(done).sort(function(p, q){ return (q.due || 0) - (p.due || 0); }); }
     el('task-list-wrap').hidden = !(overdue.length + pending.length + done.length);
     // Atrasadas arriba y Hechas al final: ambas plegadas y sólo si tienen algo dentro
     el('task-overdue-wrap').hidden = !overdue.length;
@@ -2916,9 +2917,35 @@
     el('task-overdue').innerHTML = overdue.map(taskRow).join('');
     el('task-pending-title').hidden = !pending.length;
     list.innerHTML = pending.map(taskRow).join('');
-    el('tasks-done').hidden = !done.length;
+    el('tasks-done').hidden = !doneAll;
     el('tasks-done-count').textContent = done.length;
-    el('task-done-list').innerHTML = done.map(taskRow).join('');
+    el('task-done-list').innerHTML = done.length ? done.map(taskRow).join('') : '<p class="card-hint">' + t('done.none') + '</p>';
+  }
+  // Supervisor: «Hechas» de los últimos 7 días (con las que se entregan más adelante) o de una semana
+  // anterior: k = 1 son los 7 días de antes, k = 2 los 7 anteriores…
+  var DONE_WEEK = 0;
+  function doneWeek(k){
+    var to = new Date(TODAY_DATE); to.setDate(to.getDate() + 1 - 7 * k);
+    var from = new Date(to); from.setDate(from.getDate() - 7);
+    return { from: from, to: k ? to : null };
+  }
+  function supDoneFilter(done){
+    var box = el('tasks-done-filter');
+    // Semanas que hay, hasta la de la entrega más antigua
+    var oldest = done.reduce(function(m, x){ return x.due && x.due < m ? x.due : m; }, TODAY_DATE), max = 0;
+    while(doneWeek(max).from > oldest){ max++; }
+    DONE_WEEK = Math.min(DONE_WEEK, max);
+    var opts = [];
+    for(var k = 0; k <= max; k++){
+      var w = doneWeek(k), last = new Date(w.to || TODAY_DATE); if(w.to){ last.setDate(last.getDate() - 1); }
+      opts.push('<option value="' + k + '"' + (k === DONE_WEEK ? ' selected' : '') + '>' +
+        (k ? ddmm(w.from) + ' – ' + ddmm(last) : t('done.last7')) + '</option>');
+    }
+    box.hidden = false;
+    box.innerHTML = '<label class="config-label" for="done-week">' + t('done.period') + '</label>' +
+      '<select id="done-week" class="lang-select" onchange="DONE_WEEK = +this.value; renderTasks()">' + opts.join('') + '</select>';
+    var r = doneWeek(DONE_WEEK);
+    return done.filter(function(x){ return !x.due || (x.due >= r.from && (!r.to || x.due < r.to)); });
   }
 
 
