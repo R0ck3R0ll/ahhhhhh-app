@@ -2757,9 +2757,35 @@
   }
   // Bloques de trabajo de la semana (atenuados si la tarea ya está hecha)
   function weekBlocks(){
+    var now = appNow();
     return liveBlocks().map(function(o){
-      return { day: weekDayIndex(o.b.date), title: o.x.name, start: o.b.start, end: o.b.end, block: true, done: o.x.done || isLogged(o.b), ref: { kind:'task', id:o.x.key } };
+      var e = { day: weekDayIndex(o.b.date), title: o.x.name, start: o.b.start, end: o.b.end, block: true, done: o.x.done || isLogged(o.b), ref: { kind:'task', id:o.x.key } };
+      // Supervisor: planificado y trabajado a la vez (relleno según lo anotado; sin registrar, punteado; 0 min, tachado)
+      if(IS_SUPERVISOR){
+        var len = Math.round((o.b.end - o.b.start) * 60);
+        e.done = o.x.done;
+        if(isLogged(o.b)){ e.worked = len ? Math.min(1, o.b.logged / len) : 1; e.skipped = !o.b.logged; }
+        else if(blockEnd(o.b) <= now){ e.unlogged = true; }
+      }
+      return e;
     }).filter(function(e){ return e.day >= 0; });
+  }
+  // Supervisor: ✓ en el momento en que se marcó cada tarea como hecha (solo las que guardan la hora)
+  function weekDoneMarks(){
+    if(!IS_SUPERVISOR){ return []; }
+    var out = [];
+    function add(at, name, key){
+      if(!at || at.indexOf('T') < 0){ return; }
+      var d = new Date(at), day = weekDayIndex(isoOf(d)), h = d.getHours() + d.getMinutes() / 60;
+      if(day >= 0){ out.push({ day: day, title: name, start: Math.max(CAL_START, Math.min(h, CAL_END - 0.25)), end: Math.max(CAL_START, Math.min(h, CAL_END - 0.25)) + 0.25, cat:'tarea', mark: true, ref: { kind:'task', id:key } }); }
+    }
+    allTasks().forEach(function(x){ if(x.kind !== 'activity' && x.done){ add(x.ref.doneAt, x.name, x.key); } });
+    USER_ACTS.forEach(function(a){
+      if(!a.task){ return; }
+      var at = a.task.doneAtFor || {};
+      (a.task.doneFor || []).forEach(function(k){ add(at[k], a.task.name, 'a:' + a.id); });
+    });
+    return out;
   }
   function weekActTasks(){
     var out = [];
@@ -2880,7 +2906,9 @@
     var overdue = items.filter(function(x){ return x.overdue; }),
         pending = items.filter(function(x){ return !x.done && !x.overdue; }),
         // Las hechas se quitan de la lista cuando su fecha queda fuera de la semana del calendario
-        done = items.filter(function(x){ return x.done && (!x.due || (x.due >= wk0 && x.due < wk1)); });
+        done = items.filter(function(x){ return x.done && (IS_SUPERVISOR || !x.due || (x.due >= wk0 && x.due < wk1)); });
+    // El supervisor las ve todas, de la más reciente a la más antigua
+    if(IS_SUPERVISOR){ done.sort(function(p, q){ return (q.due || 0) - (p.due || 0); }); }
     el('task-list-wrap').hidden = !(overdue.length + pending.length + done.length);
     // Atrasadas arriba y Hechas al final: ambas plegadas y sólo si tienen algo dentro
     el('task-overdue-wrap').hidden = !overdue.length;
@@ -2909,16 +2937,40 @@
         [t('f.prio'), prioHtml(x.prio, !!x.own)],
         [t('f.desc'), x.desc ? esc(x.desc) : ''],
         [t('d.status'), t(x.done ? 'status.done' : x.overdue ? 'status.overdue' : 'status.pending')],
-        [t('d.progress'), progressHtml(x)],
+        [t('d.progress'), progressHtml(x)]
+      ].concat(IS_SUPERVISOR ? supTaskRows(x) : []).concat([
         [t('d.blocks'), blocksOf(key).map(function(b){
           return '<span class="block-line">' + fmtDay(b.date) + ' ' + fmtHour(b.start) + '–' + fmtHour(b.end) + (isLogged(b) ? ' <span class="muted">· ' + t('prog.logged', { t: b.logged ? fmtEst(b.logged) : '0 min' }) + (b.manual ? ' · ' + t('work.manual') : '') + '</span>' : '') + '</span>';
         }).join('')]
-      ],
+      ]),
       extra: '<button type="button" class="btn-done' + (x.done ? ' is-done' : '') + '" onclick="setTaskDone(\'' + key + '\', ' + !x.done + ')">' + CHECK_ICON + t(x.done ? 'task.reopen' : 'task.markDone') + '</button>' +
         (x.done ? '' : '<button type="button" class="btn-plan" onclick="openPlan(\'' + key + '\')">' + CAL_PLAN_SVG + t('task.plan') + '</button>' +
           '<button type="button" class="btn-plan" onclick="openWork(\'' + key + '\')">' + CLOCK_SVG + t('work.btn') + '</button>'),
       edit: "openTaskForm('" + key + "')", del: 'deleteTask(this)', delLabel: t('task.delete')
     });
+  }
+
+  // Supervisor: planificado, trabajado y lo que falta; cuándo se marcó como hecha y con cuánta antelación
+  function fmtSpan(min){
+    var d = Math.floor(min / 1440), h = Math.round((min - d * 1440) / 60);
+    if(h === 24){ d++; h = 0; }
+    return d ? d + ' ' + t('unit.day') + (h ? ' ' + h + ' h' : '') : fmtEst(min);
+  }
+  function supTaskRows(x){
+    var worked = doneMin(x.key), planned = plannedMin(x.key), rows = [];
+    rows.push([t('d.planned'), planned ? fmtEst(planned) : '—']);
+    rows.push([t('d.worked'), worked ? fmtEst(worked) : '—']);
+    if(x.est){ rows.push([t('d.left'), fmtEst(Math.max(0, x.est - worked))]); }
+    var at = x.kind === 'activity' ? ((x.ref.doneAtFor || {})[x.due ? occKey(x.due) : ''] || null) : x.ref.doneAt;
+    if(x.done && at){
+      var when = at.indexOf('T') < 0 ? fmtDay(at) : fmtWhen(new Date(at)), txt = when;
+      if(at.indexOf('T') >= 0 && x.due){
+        var diff = Math.round((x.due - new Date(at)) / 60000);
+        txt += '<br><span class="muted">' + (Math.abs(diff) < 1 ? t('d.onTime') : t(diff > 0 ? 'd.early' : 'd.late', { t: fmtSpan(Math.abs(diff)) })) + '</span>';
+      }
+      rows.push([t('d.doneAt'), txt]);
+    }
+    return rows;
   }
 
   // Sin clave: tarea suelta nueva, añadida a mano (prioridad por defecto: la de la categoría Tarea)
@@ -3630,6 +3682,7 @@
   }, pressAt);
 
   function pressAt(at){
+    if(IS_SUPERVISOR){ return; }
     var now = appNow(), nowH = now.getHours() + now.getMinutes() / 60, today = isoOf(now);
     var h = Math.round(at.h * 4) / 4;   // al cuarto de hora
     if(at.iso < today || (at.iso === today && at.h < nowH)){ toast(t('press.past')); return; }
@@ -3799,7 +3852,7 @@
     // Actividades, eventos, bloques y entregas de tareas. La entrega se dibuja como un bloque
     // estándar de TASK_VIEW_H que termina en la deadline (solo visual: avisos y barra
     // de tiempo usan la deadline).
-    var allItems = CAL_EVENTS.concat(weekUserActs(), weekUserEvents(), weekBlocks()).concat(CAL_DEADLINES.concat(weekUserTasks(), weekActTasks()).map(function(e){
+    var allItems = CAL_EVENTS.concat(weekUserActs(), weekUserEvents(), weekBlocks(), weekDoneMarks()).concat(CAL_DEADLINES.concat(weekUserTasks(), weekActTasks()).map(function(e){
       return { day:e.day, title:e.title, start:Math.max(e.time - TASK_VIEW_H, CAL_START), end:e.time, cat:'tarea', due:true, done:e.done, ref:e.ref };
     }));
     // El horario del cole se comprime (en la semana, el de lunes a viernes). Si un día sin cole
@@ -3895,7 +3948,8 @@
       layoutLanes(items);
       items.forEach(function(e){
         var bar = document.createElement('div');
-        bar.className = 'cal-bar' + (e.cat ? ' cat-' + e.cat : '') + (e.block ? ' is-block' : '') + (e.done ? ' is-done' : '');
+        bar.className = 'cal-bar' + (e.cat ? ' cat-' + e.cat : '') + (e.block ? ' is-block' : '') + (e.done ? ' is-done' : '') +
+          (e.unlogged ? ' is-unlogged' : '') + (e.skipped ? ' is-skipped' : '') + (e.mark ? ' is-mark' : '');
         if(e.color){ bar.style.background = e.color; }
         bar.style.top = pos(e.start) + 'px';
         bar.style.height = (pos(e.end) - pos(e.start)) + 'px';
@@ -3914,10 +3968,11 @@
         // Bloques bajos (p. ej. la media hora de una entrega): título y hora en una sola línea
         var h = pos(e.end) - pos(e.start);
         // Tarea hecha: atenuada y con ✓
-        if(e.done){ e.title = '✓ ' + e.title; }
-        bar.innerHTML = isWeek ? '<span class="bar-title">' + esc(e.title) + '</span>'
+        if(e.done || e.mark){ e.title = '✓ ' + e.title; }
+        if(e.mark){ when = t('sup.doneAt', { t: fmtHour(e.start) }); bar.title = e.title + ' · ' + when; }
+        bar.innerHTML = (e.worked != null ? '<span class="cal-worked" style="height:' + Math.round(e.worked * 100) + '%"></span>' : '') + (isWeek ? '<span class="bar-title">' + esc(e.title) + '</span>'
           : h < 30 ? '<span class="bar-title">' + esc(e.title) + ' <span class="bar-time">· ' + when + '</span></span>'
-          : '<span class="bar-title">' + esc(e.title) + '</span><span class="bar-time">' + when + '</span>';
+          : '<span class="bar-title">' + esc(e.title) + '</span><span class="bar-time">' + when + '</span>');
         col.appendChild(bar);
         if(e.block){ legend.block = true; }
         else if(e.color || e.cat){ legend[e.due ? 'tarea' : (e.catLabel ? 'u:' + e.catLabel + '|' + e.color : e.cat)] = true; }

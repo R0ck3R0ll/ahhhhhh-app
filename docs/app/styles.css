@@ -1118,3 +1118,52 @@
   .member-actions{ display:flex; gap:6px; flex:none; }
   .offer-box{ display:flex; flex-direction:column; gap:8px; align-items:flex-start; padding:10px 12px; border-radius:10px; background:var(--surface-2, var(--surface)); border:1.5px solid var(--accent); }
   .offer-box p{ margin:0; font-size:13.5px; }
+  /* Solo lectura: no se ve nada que cambie el plan */
+  body.is-supervisor .add-btn,
+  body.is-supervisor [id$="-detail"] .form-actions,
+  body.is-supervisor [id$="-detail"] .btn-done,
+  body.is-supervisor [id$="-detail"] .btn-plan,
+  body.is-supervisor [id$="-detail"] .link-btn,
+  body.is-supervisor .today-check,
+  body.is-supervisor .press-hint{ display:none !important; }
+  body.is-supervisor .task-check{ pointer-events:none; }
+  .sup-hidden-tab{ display:none !important; }
+  /* Calendario del supervisor: lo trabajado sobre lo planificado y el ✓ de las tareas hechas */
+  .cal-bar .cal-worked{ position:absolute; left:0; right:0; top:0; background:var(--cat-tarea-ink); opacity:.55; border-radius:inherit; pointer-events:none; }
+  .cal-bar > .bar-title, .cal-bar > .bar-time{ position:relative; }
+  .cal-bar.is-unlogged{ background:transparent !important; border:1.5px dashed var(--cat-tarea-ink); color:var(--cat-tarea-ink); }
+  .cal-bar.is-skipped .bar-title{ text-decoration:line-through; }
+  .cal-bar.is-mark{ background:var(--surface) !important; border:1.5px solid var(--cat-tarea-ink); color:var(--cat-tarea-ink); border-radius:999px; }
+  /* Ahora */
+  .sup-now{ display:flex; flex-direction:column; gap:12px; }
+  .sup-card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:3px; }
+  .sup-card.is-open{ cursor:pointer; }
+  .sup-card:first-child{ border:2px solid var(--accent); }
+  .sup-card.is-empty .sup-big{ color:var(--text-muted); }
+  .sup-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); }
+  .sup-big{ font-family:var(--font-display); font-size:22px; font-weight:700; line-height:1.15; }
+  .sup-sub{ font-size:13px; color:var(--text-muted); }
+  .sup-dayline{ margin-top:4px; }
+  .sup-track{ position:relative; height:18px; border-radius:9px; background:var(--border); overflow:hidden; }
+  .sup-track i{ position:absolute; top:0; bottom:0; }
+  .sup-seg{ opacity:.9; }
+  .sup-seg.k-school{ background:repeating-linear-gradient(135deg, var(--text-muted) 0 3px, transparent 3px 7px); opacity:.5; }
+  .sup-seg.k-activity{ background:var(--cat-actividad); }
+  .sup-seg.k-event{ background:var(--cat-cita); }
+  .sup-seg.k-block{ background:repeating-linear-gradient(135deg, var(--cat-tarea) 0 4px, var(--cat-tarea-ink) 4px 6px); }
+  .sup-tick{ width:3px; margin-left:-1px; background:var(--cat-tarea-ink); }
+  .sup-tick.is-done{ opacity:.4; }
+  .sup-nowline{ width:2px; margin-left:-1px; background:var(--accent); box-shadow:0 0 0 1px var(--surface); }
+  .sup-scale{ display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); margin-top:3px; font-variant-numeric:tabular-nums; }
+  .sup-h{ margin:6px 0 0; font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); }
+  .sup-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .sup-row{ display:flex; gap:10px; align-items:baseline; padding:8px 10px; border-radius:10px; background:var(--surface); border-left:4px solid var(--border); }
+  .sup-row.is-open{ cursor:pointer; }
+  .sup-row.k-activity{ border-left-color:var(--cat-actividad); }
+  .sup-row.k-event{ border-left-color:var(--cat-cita); }
+  .sup-row.k-block, .sup-row.k-task{ border-left-color:var(--cat-tarea); }
+  .sup-row.is-past{ opacity:.55; }
+  .sup-row-time{ flex:none; width:86px; font-size:12.5px; font-variant-numeric:tabular-nums; color:var(--text-muted); }
+  .sup-row-main{ display:flex; flex-direction:column; min-width:0; }
+  .sup-row-title{ font-weight:600; font-size:14px; overflow-wrap:anywhere; }
+  .sup-row-sub{ font-size:12px; color:var(--text-muted); }

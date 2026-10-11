@@ -534,7 +534,19 @@ Cada fase se publica y la prueba Carlo antes de pasar a la siguiente.
        - `roles/iam.serviceAccountTokenCreator` a `service-356797407017@gcp-sa-pubsub.iam.gserviceaccount.com`;
        - `roles/run.invoker` y `roles/eventarc.eventReceiver` a `356797407017-compute@developer.gserviceaccount.com`.
      - El historial cuenta desde ese momento.
-2. **Ver:** Ahora, Calendario (con lo trabajado y los ✓) y Tareas con sus fichas.
+2. **Ver** (**hecha el 11/10/2026**): Ahora, Calendario (con lo trabajado y los ✓) y Tareas con sus fichas.
+   - **Ahora** (`supervisor.js`): tarjeta «Ahora» y tarjeta «Lo siguiente» (con «en 1h10»), barra del día y lista «Todo lo de hoy».
+     - «Ahora» muestra lo que está en curso; el bloque, el evento o la actividad van antes que el cole, y si no hay nada sale «Tiempo libre».
+     - La barra del día va sobre la franja de Config: cole rayado, actividades, eventos, bloques, entregas como marcas y la hora actual.
+     - En la lista de hoy (cole, sesiones, eventos, bloques con lo anotado o «sin registrar», entregas con ✓ si están hechas), lo pasado sale atenuado.
+     - Cada elemento abre su ficha, con «‹ Volver a Ahora». Se redibuja cada minuto.
+   - **Calendario y Tareas:** son las pantallas de la App, de solo lectura. En modo supervisor no se ven los botones Añadir, Editar, Eliminar, Marcar como hecha, Planificar, Anotar trabajo, Hoy no voy ni Volver a ponerla, y no funciona la pulsación larga.
+   - **En el Calendario:**
+     - cada bloque terminado se rellena según lo anotado;
+     - sin registrar, se ve punteado; con 0 min, tachado;
+     - cada tarea hecha tiene una marca «✓» a la hora en que se marcó (solo las marcadas desde la fase 1, que guardan la hora).
+   - **En Tareas:** «Hechas» las muestra todas, de la entrega más reciente a la más antigua. El selector de periodo queda para Análisis (fase 4).
+   - **Ficha de la tarea:** añade Planificado (bloques sin registrar), Trabajado, Falta y «Marcada como hecha» (día y hora, y «1 d 23 h antes de la entrega» o «… después de la entrega»).
 3. **Historial:** pestaña Historial (línea de tiempo con filtros por tipo; cada entrada abre su ficha) e historia en la ficha de cada tarea.
 4. **Análisis:** Estado de las tareas (totales → lista → ficha) e indicadores.
 5. **Avisos y resúmenes:** notificaciones (FCM), `checkAlerts`, novedades, resúmenes de las 22:00, campana y Config de avisos.
