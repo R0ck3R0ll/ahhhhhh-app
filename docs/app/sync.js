@@ -306,6 +306,17 @@ async function start(){
     return x;
   };
 
+  // Todo el archivo (para Análisis: también las tareas eliminadas, con lo trabajado)
+  window.syncArchiveAll = async function(){
+    if(!planId){ return null; }
+    const snap = await getDocs(collection(db, 'plans', planId, 'archive'));
+    return snap.docs.map(function(d){
+      const x = d.data(); x.key = d.id;
+      ['createdAt', 'existedAt', 'deletedAt', 'updatedAt'].forEach(function(k){ if(x[k] && x[k].toDate){ x[k] = x[k].toDate(); } });
+      return x;
+    });
+  };
+
   // Supervisor: solo lo pone el dueño. Si ya era miembro, deja de serlo en el mismo cambio
   window.syncAddViewer = async function(email){
     email = String(email || '').trim().toLowerCase();

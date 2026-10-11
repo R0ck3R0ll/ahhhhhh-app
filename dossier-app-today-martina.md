@@ -558,7 +558,20 @@ Cada fase se publica y la prueba Carlo antes de pasar a la siguiente.
      - Cada entrada abre su ficha con «‹ Volver al Historial». Una tarea eliminada se abre desde el archivo (sus datos al eliminarla, lo trabajado con sus bloques, «Eliminada el …» y su historia).
    - **Ficha de cada tarea** (también desde Tareas, Calendario o Ahora): tarjeta **«Historia»** con todo lo de esa tarea (cambios y bloques). Si la tarea ya existía al empezar el historial, lo indica.
    - **Lectura** (`sync.js`): `syncReadLog` (por páginas, por `at`), `syncTaskLog` (por `key`, sin índice compuesto) y `syncArchive`. Comprobado con el emulador que el supervisor puede hacer estas consultas y que otros no.
-4. **Análisis:** Estado de las tareas (totales → lista → ficha) e indicadores.
+4. **Análisis** (**hecha el 11/10/2026**): Estado de las tareas (totales → lista → ficha) e indicadores.
+   - **Dónde está:** `analysis.js`, que solo se carga en modo supervisor. Se calcula en el móvil con los datos del plan; las tareas eliminadas salen del archivo (`syncArchiveAll`).
+   - **Periodo** (por la entrega de cada tarea): **Esta semana** (lunes a domingo) · **4 semanas** (esta y las 3 anteriores) · **Curso** (desde el 1 de septiembre).
+   - Las tareas de práctica de las actividades no tienen entrega fija: no cuentan en estados ni entregas, pero su tiempo sí cuenta en las horas de estudio.
+   - **Estado de las tareas:** 8 casillas con su número; cada tarea está en un solo estado, el primero que cumple: eliminada · hecha a tiempo · hecha tarde · atrasada · sin estimar · en curso · planificada · sin planificar.
+     - Pulsar un número abre la lista y cada tarea abre su ficha, con «‹ Volver a Análisis». Al volver sigue la lista.
+   - **Indicadores:**
+     - **Entregadas a tiempo:** % de las tareas ya vencidas que se marcaron antes de la entrega (las atrasadas cuentan como no). Gráfico de las últimas 8 semanas.
+     - **Antelación:** lo habitual (mediana) y la media, solo con las tareas que guardan la hora.
+     - **Precisión de las estimaciones:** trabajado / estimado en las hechas, y «se queda corta», «estima de más» o «estima bien» (margen del 10 %).
+     - **Cumplimiento de lo planificado:** trabajado / planificado en los bloques ya terminados (sin los anotados a mano), con completos, a medias, a cero y sin registrar.
+     - **Trabajo de última hora:** parte del tiempo de las tareas hechas que se trabajó en las 24 h antes de la entrega.
+     - **Horas de estudio:** total y media, barras por día (semana) o por semana (4 semanas y curso), y reparto por asignatura (curso de Classroom) u origen (sueltas, eventos, actividad).
+     - **Carga de los próximos 7 días:** por día, lo que falta de las tareas que vencen ese día frente al tiempo libre, con «⚠ no da tiempo» o «⚠ muy justo» según el mismo cálculo de riesgo de la App.
 5. **Avisos y resúmenes:** notificaciones (FCM), `checkAlerts`, novedades, resúmenes de las 22:00, campana y Config de avisos.
 6. **Mensajes:** envío, aviso emergente o notificación a Martina, respuesta «OK» o texto, y lista de mensajes en las dos apps.
 

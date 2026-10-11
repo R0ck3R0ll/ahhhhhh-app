@@ -11,7 +11,7 @@
    - Historial (fase 3): lo que ha hecho y cuándo (plans/{id}/log, lo escribe el servidor), con filtros;
      cada entrada abre su ficha (las tareas eliminadas, desde el archivo). La ficha de cada tarea añade
      su historia.
-   - Análisis (fase 4): por llegar.
+   - Análisis (fase 4): estado de las tareas e indicadores (analysis.js, que se carga desde aquí).
    - Config: la cuenta y el idioma. */
 (function(){
   var ICONS = {
@@ -25,7 +25,7 @@
   // screen: pantalla de la App que se usa tal cual (de solo lectura); phase: fase en la que llega
   var TABS = [
     { id: 'now' }, { id: 'cal', screen: 'calendar' }, { id: 'tasks', screen: 'tasks' },
-    { id: 'stats', phase: 4 }, { id: 'log' }, { id: 'config' }
+    { id: 'stats' }, { id: 'log' }, { id: 'config' }
   ];
 
   document.body.classList.add('is-supervisor');
@@ -49,6 +49,7 @@
     sec.setAttribute('aria-labelledby', 'screen-heading');
     sec.innerHTML = tab.id === 'now' ? '<div id="sup-now-body" class="sup-now"></div>'
       : tab.id === 'log' ? '<div class="sup-filters" id="sup-log-filters" role="radiogroup"></div><div id="sup-log-body"></div>'
+      : tab.id === 'stats' ? '<div id="sup-stats-body" class="an-body"></div>'
       : tab.phase ? '<div class="config-card sup-soon"><p class="card-hint" data-sup-soon="' + tab.phase + '"></p></div>'
       : '<div class="config-card" id="sup-account"></div><div class="config-card" id="sup-lang"></div>';
     main.appendChild(sec);
@@ -67,6 +68,7 @@
     if(btn.classList.contains('sup-hidden-tab') && prev){ prev.classList.add('is-active'); }
     if(btn.dataset.screen === 'sup-now'){ renderNow(); }
     if(btn.dataset.screen === 'sup-log' && !LOG.loaded){ loadLog(false); }
+    if(btn.dataset.screen === 'sup-stats' && window.renderStats){ window.renderStats(); }
   };
 
   // Config: la cuenta (la dibuja renderAccount en #account-body) y el idioma: se traen aquí de la Config de la App
@@ -227,6 +229,18 @@
     if(kind === 'activity'){ openActivity(id); } else if(kind === 'event'){ openEvent(id); }
     else if(allTasks().some(function(x){ return x.key === id; })){ openTask(id); } else { openArchived(id); }
   };
+  // Igual, desde cualquier pantalla del supervisor: «‹ Volver a …» (labelKey) a esa pantalla (screen)
+  window.supOpenWith = function(kind, id, labelKey, screen){
+    var sc = KIND_SCREEN[kind];
+    nav.querySelector('.tab[data-screen="' + sc[0] + '"]').click();
+    DETAIL_BACK = { label: t(labelKey), fn: "supBackTo('" + sc[1] + "', '" + screen + "')", go: function(){ window.supBackTo(sc[1], screen); } };
+    if(kind === 'activity'){ openActivity(id); } else if(kind === 'event'){ openEvent(id); }
+    else if(allTasks().some(function(x){ return x.key === id; })){ openTask(id); } else { openArchived(id); }
+  };
+  window.supBackTo = function(f, screen){
+    showView(f, 'list');
+    nav.querySelector('.tab[data-screen="' + screen + '"]').click();
+  };
   window.supBackLog = function(f){
     showView(f, 'list');
     nav.querySelector('.tab[data-screen="sup-log"]').click();
@@ -276,6 +290,7 @@
   window.renderAccount = function(){
     renderAccountBase.apply(this, arguments);
     if(window.SYNC && window.SYNC.status === 'in' && !LOG.loaded && document.getElementById('screen-sup-log').classList.contains('active')){ loadLog(false); }
+    if(window.SYNC && window.SYNC.status === 'in' && window.renderStats && document.getElementById('screen-sup-stats').classList.contains('active')){ window.renderStats(); }
   };
 
   /* ---- Historia de cada tarea (en su ficha) y tareas eliminadas (desde el archivo) ---- */
@@ -343,6 +358,7 @@
     if(active){ setScreenHeading(active); }
     renderNow();
     renderLog();
+    if(window.renderStats && document.getElementById('screen-sup-stats').classList.contains('active')){ window.renderStats(); }
   }
   // Al cambiar de idioma se vuelven a escribir los textos del modo supervisor
   var applyI18nBase = window.applyI18n;
@@ -353,4 +369,7 @@
   if(typeof window.renderAccount === 'function'){ window.renderAccount(); }
   showScreen(nav.querySelector('.tab'));
   texts();
+  var an = document.createElement('script');
+  an.src = 'analysis.js';
+  document.body.appendChild(an);
 })();
