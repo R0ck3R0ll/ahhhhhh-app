@@ -1250,3 +1250,31 @@
   .al-nums{ display:flex; flex-direction:column; gap:8px; font-size:13px; }
   .al-nums label{ display:grid; grid-template-columns:1fr 6.5em; align-items:center; gap:10px; }
   .al-nums .txt-input{ width:100%; }
+  /* Mensajes (fase 6) */
+  body.is-supervisor [id$="-detail"] .btn-plan.sup-msg-task{ display:flex !important; margin-top:0; }
+  .sup-envelope{ right:60px; }
+  .msg-btn{ position:absolute; top:10px; right:10px; width:42px; height:42px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .msg-btn[hidden]{ display:none; }
+  .app-shell.is-today .msg-btn{ top:6px; }
+  .msg-meta{ margin:-6px 0 0; font-size:12px; color:var(--text-muted); }
+  .msg-text{ font-size:16px; line-height:1.35; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .msg-task{ align-self:flex-start; padding:0; border:0; background:none; font:inherit; font-size:14px; color:var(--accent-strong); text-decoration:underline; cursor:pointer; }
+  .msg-task[hidden], .msg-answered[hidden], #msg-step1[hidden], #msg-step2[hidden], #msg-close[hidden]{ display:none; }
+  .msg-answered{ font-size:13.5px; color:var(--text-muted); }
+  .msg-reply{ width:100%; box-sizing:border-box; resize:vertical; min-height:70px; font:inherit; }
+  .msgs-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; max-height:60vh; overflow:auto; }
+  .msg-item{ display:flex; flex-direction:column; gap:2px; padding:8px 10px; border-radius:10px; border:1px solid var(--border); cursor:pointer; }
+  .msg-item.is-pending{ border-color:var(--accent); }
+  .msg-when{ font-size:11.5px; color:var(--text-muted); }
+  .msg-body{ font-size:14px; overflow-wrap:anywhere; }
+  .msg-state{ font-size:12px; color:var(--text-muted); }
+  .msg-item.is-pending .msg-state{ color:var(--accent-strong); font-weight:600; }
+  .msg-push{ display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
+  .sm-compose{ display:flex; flex-direction:column; gap:8px; }
+  .sm-compose .card-hint{ margin:0; }
+  .sm-text{ width:100%; box-sizing:border-box; resize:vertical; min-height:70px; font:inherit; }
+  .sm-task{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13.5px; padding:6px 10px; border-radius:8px; background:var(--border); }
+  .sm-task .link-btn{ padding:0; border:0; background:none; font:inherit; color:var(--accent-strong); text-decoration:underline; cursor:pointer; }
+  .sm-state{ font-size:12px; color:var(--text-muted); }
+  .sm-state.is-seen{ color:var(--text); }
+  .sm-state.is-replied{ color:var(--cat-tarea-ink); font-weight:600; }

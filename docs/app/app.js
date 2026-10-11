@@ -891,6 +891,8 @@
                   '<button type="submit" class="btn-primary">' + t('sync.add') + '</button></form>'
                 : '<p class="card-hint">' + t('sync.viewerNone') + '</p>')) +
           (S.isOwner ? '<p class="card-hint">' + t('sync.viewerHint') + '</p>' : '') +
+          ((S.viewers || []).length && window.Notification && Notification.permission !== 'granted'
+            ? '<div class="msg-push"><p class="card-hint">' + t('msg.pushHint') + '</p><button type="button" class="btn-ghost" onclick="msgEnablePush(this)">' + t('msg.pushBtn') + '</button></div>' : '') +
           '<div><button type="button" class="btn-ghost" onclick="syncSignOut()">' + t('sync.signOut') + '</button></div>';
     }
     if(S.error){ h += '<p class="card-hint sync-error">' + esc(t('sync.error', { code: S.error })) + '</p>'; }
@@ -901,7 +903,103 @@
     if(hint){ hint.hidden = S.status !== 'out'; }
     // La lectura del calendario escolar con IA necesita la sesión iniciada
     renderSchoolCal();
+    // Mensajes del supervisor (solo quien usa la App; el modo supervisor tiene los suyos)
+    if(!IS_SUPERVISOR && S.status === 'in' && !MSG.watching && window.syncWatchMessages){ MSG.watching = true; window.syncWatchMessages(onMessages); }
   }
+  /* ---- Mensajes del supervisor ----
+     El supervisor escribe un mensaje (plans/{id}/messages). Aquí sale como aviso emergente, del más
+     antiguo al más reciente: «OK», «Responder» (con un texto) o «Ahora no» (vuelve a salir la próxima
+     vez que se abra la App). Con la App cerrada llega como notificación (si se ha dado permiso).
+     La lista de los mensajes recibidos se abre con el sobre de arriba a la derecha. */
+  var MSG = { list: [], watching: false, current: null, later: [], open: null };
+  try{ MSG.open = (new URLSearchParams(location.search).get('open') || '').replace(/^msg:/, '') || null; }catch(e){}
+  function onMessages(list){
+    MSG.list = list || [];
+    renderMsgButton();
+    if(el('msgs-dialog').open){ renderMsgList(); }
+    nextMessage();
+  }
+  function pendingMessages(){
+    return MSG.list.filter(function(m){ return !m.reply && MSG.later.indexOf(m.id) < 0; })
+      .sort(function(p, q){ return (p.createdAt || 0) - (q.createdAt || 0); });
+  }
+  function nextMessage(){
+    if(MSG.current || document.querySelector('dialog[open]')){ return; }
+    var m = null;
+    if(MSG.open){ m = MSG.list.filter(function(x){ return x.id === MSG.open; })[0] || null; if(m){ MSG.open = null; try{ history.replaceState(null, '', location.pathname); }catch(e){} } }
+    m = m || pendingMessages()[0];
+    if(m){ showMessage(m); }
+  }
+  function msgWhen(d){ return d ? fmtDay(isoOf(d)) + ' ' + fmtHour(d.getHours() + d.getMinutes() / 60) : ''; }
+  function showMessage(m){
+    MSG.current = m;
+    el('msg-title').textContent = t('msg.from', { who: m.fromName || m.fromEmail || '' });
+    el('msg-meta').textContent = msgWhen(m.createdAt);
+    el('msg-text').textContent = m.text;
+    el('msg-task').hidden = !m.taskKey;
+    if(m.taskKey){ el('msg-task').textContent = t('msg.seeTask', { name: m.taskName || '' }); }
+    el('msg-answered').hidden = !m.reply;
+    if(m.reply){ el('msg-answered').textContent = t('msg.yourReply', { r: m.reply.text || 'OK' }); }
+    el('msg-step1').hidden = !!m.reply; el('msg-step2').hidden = true; el('msg-close').hidden = !m.reply;
+    el('msg-dialog').showModal();
+    if(!m.seenAt && window.syncMessageSeen){ window.syncMessageSeen(m.id).catch(function(){}); }
+  }
+  function closeMessage(){ MSG.current = null; if(el('msg-dialog').open){ el('msg-dialog').close(); } setTimeout(nextMessage, 300); }
+  function msgLater(){ if(MSG.current){ MSG.later.push(MSG.current.id); } closeMessage(); }
+  function msgOk(){ msgReply({ ok: true }); }
+  function msgWrite(){ el('msg-step1').hidden = true; el('msg-step2').hidden = false; el('msg-reply').value = ''; el('msg-reply').focus(); }
+  function msgBack(){ el('msg-step1').hidden = false; el('msg-step2').hidden = true; }
+  function msgSend(){
+    var v = el('msg-reply').value.trim();
+    if(!v){ el('msg-reply').focus(); return; }
+    msgReply({ text: v.slice(0, 1000) });
+  }
+  function msgReply(r){
+    var m = MSG.current;
+    if(!m){ return; }
+    window.syncReplyMessage(m.id, r).then(function(){ toast(t('msg.sent')); }).catch(function(e){ toast(t('sync.error', { code: e && e.code || e })); });
+    closeMessage();
+  }
+  function msgOpenTask(){
+    var m = MSG.current;
+    if(!m || !m.taskKey){ return; }
+    msgLater();
+    document.querySelector('.tab[data-screen="tasks"]').click();
+    openTask(m.taskKey);
+  }
+  function renderMsgButton(){
+    var b = el('msg-btn');
+    if(!b){ return; }
+    var n = MSG.list.filter(function(m){ return !m.reply; }).length;
+    b.hidden = !MSG.list.length;
+    el('msg-badge').hidden = !n; el('msg-badge').textContent = n;
+    b.setAttribute('aria-label', t('msg.listTitle') + (n ? ' · ' + n : ''));
+  }
+  function openMsgList(){ renderMsgList(); el('msgs-dialog').showModal(); }
+  function renderMsgList(){
+    el('msgs-list').innerHTML = MSG.list.length ? MSG.list.map(function(m, i){
+      return '<li class="msg-item' + (m.reply ? '' : ' is-pending') + '" role="button" tabindex="0" onclick="openMsgItem(' + i + ')">' +
+        '<span class="msg-when">' + msgWhen(m.createdAt) + (m.taskName ? ' · «' + esc(m.taskName) + '»' : '') + '</span>' +
+        '<span class="msg-body">' + esc(m.text) + '</span>' +
+        '<span class="msg-state">' + (m.reply ? esc(t('msg.yourReply', { r: m.reply.text || 'OK' })) : t('msg.unanswered')) + '</span></li>';
+    }).join('') : '<li class="card-hint">' + t('msg.none') + '</li>';
+  }
+  function openMsgItem(i){
+    var m = MSG.list[i];
+    if(!m){ return; }
+    el('msgs-dialog').close();
+    MSG.later = MSG.later.filter(function(id){ return id !== m.id; });
+    showMessage(m);
+  }
+  el('msg-dialog').addEventListener('cancel', function(ev){ ev.preventDefault(); if(MSG.current && MSG.current.reply){ closeMessage(); } else { msgLater(); } });
+  // Si había otro aviso abierto (p. ej. «¿Cuánto has trabajado?»), el mensaje sale después
+  setInterval(function(){ if(!IS_SUPERVISOR){ nextMessage(); } }, 20000);
+  function msgEnablePush(btn){
+    btn.disabled = true;
+    window.syncEnablePush().then(function(st){ toast(t(st === 'on' ? 'al.pushOn' : st === 'unsupported' ? 'al.push.unsupported' : 'al.push.denied')); renderAccount(); })
+      .catch(function(e){ btn.disabled = false; toast(t('sync.error', { code: e && e.code || e })); });
+  }
+
   function addMember(ev){
     ev.preventDefault();
     var inp = el('member-email');

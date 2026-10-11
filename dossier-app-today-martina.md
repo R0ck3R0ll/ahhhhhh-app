@@ -8,7 +8,7 @@ Este documento resume el estudio y las decisiones tomadas en la fase de planific
 > - **GitHub Pages** (páginas de inicio, privacidad y condiciones que usa la pantalla de permisos de Google) aún se publica desde `claude/hopeful-lovelace-18fa2k`: hay que cambiar su origen a `main` / `docs` (GitHub > Settings > Pages) y después ya se puede borrar esa rama.
 > - **Hecho y probado por Carlo:** pantallas, tareas y bloques de trabajo, avisos de riesgo, sincronización entre móviles (Firebase), traslados con Google Maps (coche y a pie, ubicación por GPS), lectura del calendario escolar con IA (Gemini en Vertex AI, con preguntas cuando el calendario depende de la alumna).
 > - **Pendiente:** conexión con Classroom y Gmail (bloqueada por el colegio, punto 3), extracción con IA de correos y publicaciones con su pantalla de revisión (punto 4), exportación a Google Calendar.
-> - **Siguiente proyecto:** App de seguimiento para Carlo: contenido y plan de desarrollo decididos el 10/10/2026 (punto 7 bis).
+> - **App de seguimiento para Carlo** (punto 7 bis): fases 1 a 6 hechas y publicadas (10-11/10/2026).
 
 ---
 
@@ -602,7 +602,27 @@ Cada fase se publica y la prueba Carlo antes de pasar a la siguiente.
      - en **Config > Avisos**: «Activar avisos en este móvil» (pide permiso; en iPhone solo con la App en la pantalla de inicio), qué avisos llegan y sus umbrales, guardado en `users/{uid}.alerts`.
    - **Reglas:** cada usuario lee y escribe sus `devices` y solo lee sus `alerts`; `plans/{id}/sent` solo lo usa el servidor.
    - Los textos de los avisos del servidor van en español.
-6. **Mensajes:** envío, aviso emergente o notificación a Martina, respuesta «OK» o texto, y lista de mensajes en las dos apps.
+6. **Mensajes** (**hecha el 11/10/2026**): envío, aviso emergente o notificación a Martina, respuesta «OK» o texto, y lista de mensajes en las dos apps.
+   - **Datos:** `plans/{id}/messages/{id}` = `{ from, fromEmail, fromName, text, taskKey?, taskName?, createdAt, seenAt?, reply?: { ok } | { text }, repliedAt? }`.
+   - **Reglas** (probadas con el emulador):
+     - solo un supervisor del plan crea mensajes, en su nombre, de 1 a 1.000 caracteres y sin respuesta;
+     - los miembros solo pueden cambiar `seenAt`, `reply` y `repliedAt`;
+     - leen miembros y supervisores, nadie borra.
+   - **Servidor** (`onMessage`, región `europe-southwest1`):
+     - mensaje nuevo → notificación a los móviles de los miembros («Mensaje de Carlo»);
+     - respuesta → aviso en la campana del supervisor y notificación («Respuesta de *nombre*»).
+     - Probado con los emuladores.
+   - **App de Martina:**
+     - cada mensaje sin responder sale como aviso emergente, del más antiguo al más reciente, con **OK**, **Responder** (con un texto) o **Ahora no** (vuelve a salir la próxima vez);
+     - si va sobre una tarea, «Ver la tarea «…»»; al mostrarlo se marca como visto;
+     - si hay otro aviso abierto (p. ej. «¿Cuánto has trabajado?»), el mensaje sale después;
+     - el **sobre** de arriba a la derecha, con el número de mensajes sin responder, abre la lista de los recibidos con su respuesta;
+     - en Config > Cuenta, si hay supervisor y no hay permiso de notificaciones: «Activar notificaciones» para recibir los mensajes con la App cerrada (si ya había permiso, el móvil se registra solo).
+     - El mensaje no cambia nada del plan: si hay que cambiar algo, lo hace Martina.
+   - **App del supervisor:**
+     - **sobre** junto a la campana (con el número de respuestas nuevas) que abre «Mensajes»: escribir con los atajos «¿Cómo vas?», «¡Bien hecho!» y «Propongo un evento:»;
+     - lista de enviados con su estado: enviado, aún sin ver · visto (día y hora) · respuesta (OK o el texto, y la hora); los que van sobre una tarea abren su ficha;
+     - en la ficha de cada tarea, **«Enviar mensaje sobre esta tarea»**.
 
 ### 7 bis.8 Valores por defecto a confirmar al probar
 

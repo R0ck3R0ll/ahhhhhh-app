@@ -83,6 +83,24 @@ service cloud.firestore {
       match /private/{id} {
         allow read, write: if false;
       }
+      // Mensajes del supervisor a quien usa la App: el supervisor los escribe; los miembros solo marcan
+      // que los han visto y responden («OK» o un texto). No se borran.
+      match /messages/{id} {
+        function viewer() { return signedIn() && myEmail() in viewersOf(plan()); }
+        allow read: if reader();
+        allow create: if viewer()
+          && request.resource.data.keys().hasOnly(['from', 'fromEmail', 'fromName', 'text', 'taskKey', 'taskName', 'createdAt'])
+          && request.resource.data.from == request.auth.uid
+          && request.resource.data.fromEmail == myEmail()
+          && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000
+          && request.resource.data.createdAt == request.time;
+        allow update: if member()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenAt', 'reply', 'repliedAt'])
+          && (!('reply' in request.resource.data) || request.resource.data.reply == null
+              || (request.resource.data.reply is map && request.resource.data.reply.keys().hasOnly(['ok', 'text'])
+                  && (!('text' in request.resource.data.reply) || (request.resource.data.reply.text is string && request.resource.data.reply.text.size() <= 1000))));
+        allow delete: if false;
+      }
     }
   }
 }

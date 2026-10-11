@@ -15,6 +15,9 @@
    - Avisos (fase 5): campana arriba a la derecha con los avisos recibidos (users/{uid}/alerts, los escribe
      el servidor) y, en Config, activar las notificaciones en este móvil y elegir qué avisos llegan.
      Al pulsar una notificación, la App se abre con ?open=task:… y va a esa ficha.
+   - Mensajes (fase 6): el sobre de arriba abre la pantalla de mensajes: escribir (con atajos «¿Cómo vas?»,
+     «¡Bien hecho!», «Propongo un evento:») y ver los enviados con su estado (enviado · visto · respondido).
+     Desde la ficha de una tarea, «Enviar mensaje sobre esta tarea».
    - Config: la cuenta, los avisos y el idioma. */
 (function(){
   var ICONS = {
@@ -62,12 +65,18 @@
     nav.insertAdjacentHTML('beforeend', '<button class="tab sup-hidden-tab" hidden data-screen="' + s + '" data-title="tab.' + s + '" data-sub="sub.' + s + '" onclick="showScreen(this)"></button>');
   });
   nav.insertAdjacentHTML('beforeend', '<button class="tab sup-hidden-tab" hidden data-screen="sup-alerts" data-title="al.title" data-sub="al.sub" onclick="showScreen(this)"></button>');
+  nav.insertAdjacentHTML('beforeend', '<button class="tab sup-hidden-tab" hidden data-screen="sup-msgs" data-title="sm.title" data-sub="sm.sub" onclick="showScreen(this)"></button>');
+  var msSec = document.createElement('section');
+  msSec.className = 'screen'; msSec.id = 'screen-sup-msgs'; msSec.setAttribute('aria-labelledby', 'screen-heading');
+  msSec.innerHTML = '<div class="config-card sm-compose" id="sup-compose"></div><div id="sup-msgs-body"></div>';
+  main.appendChild(msSec);
   var alSec = document.createElement('section');
   alSec.className = 'screen'; alSec.id = 'screen-sup-alerts'; alSec.setAttribute('aria-labelledby', 'screen-heading');
   alSec.innerHTML = '<div id="sup-alerts-body"></div>';
   main.appendChild(alSec);
   // Campana arriba a la derecha, con el número de avisos sin ver
   document.querySelector('.topbar').insertAdjacentHTML('beforeend',
+    '<button type="button" class="sup-bell sup-envelope" id="sup-envelope" onclick="supMessages()"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span class="sup-badge" id="sup-msg-badge" hidden></span></button>' +
     '<button type="button" class="sup-bell" id="sup-bell" onclick="supAlerts()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="sup-badge" id="sup-badge" hidden></span></button>');
   main.parentNode.insertBefore(nav, main.nextSibling);
 
@@ -304,6 +313,7 @@
     if(window.SYNC && window.SYNC.status === 'in' && !LOG.loaded && document.getElementById('screen-sup-log').classList.contains('active')){ loadLog(false); }
     if(window.SYNC && window.SYNC.status === 'in' && window.renderStats && document.getElementById('screen-sup-stats').classList.contains('active')){ window.renderStats(); }
     if(window.SYNC && window.SYNC.status === 'in'){
+      watchMsgs();
       if(AL.items == null){ loadAlerts(); }
       if(document.getElementById('screen-sup-config').classList.contains('active')){ renderAlertCfg(); }
     }
@@ -328,14 +338,19 @@
       if(!box || box.hidden || box.dataset.key !== key){ return; }
       var old = box.querySelector('.sup-history');
       if(old){ old.remove(); }
-      box.querySelector('.detail-card').insertAdjacentHTML('afterend', historyHtml(r[0], r[1]));
+      var after = box.querySelector('.sup-msg-task') || box.querySelector('.detail-card');
+      after.insertAdjacentHTML('afterend', historyHtml(r[0], r[1]));
     }).catch(function(){});
   }
   var openTaskBase = window.openTask;
   window.openTask = function(key){
     openTaskBase.apply(this, arguments);
     var box = document.getElementById('task-detail');
-    if(box){ box.dataset.key = key; }
+    if(box){
+      box.dataset.key = key;
+      var card = box.querySelector('.detail-card');
+      if(card){ card.insertAdjacentHTML('afterend', '<button type="button" class="btn-plan sup-msg-task" onclick="supMessageTask(\'' + key + '\')">' + t('sm.aboutTask') + '</button>'); }
+    }
     addHistory(key);
   };
   // Tarea eliminada: su ficha sale del archivo (datos de cuando se eliminó, lo trabajado y su historia)
@@ -391,6 +406,7 @@
     var p = String(open || '').split(':'), kind = p.shift(), id = p.join(':');
     if(kind === 'task' || kind === 'event' || kind === 'activity'){ window.supOpenWith(kind, id, label, screen); }
     else if(kind === 'now' || kind === 'stats' || kind === 'log'){ nav.querySelector('.tab[data-screen="sup-' + kind + '"]').click(); }
+    else if(kind === 'msgs'){ window.supMessages(); }
   }
   window.supOpenAlert = function(i){ var a = (AL.items || [])[i]; if(a){ openTarget(a.open, 'al.back', 'sup-alerts'); } };
   function renderAlerts(){
@@ -458,6 +474,87 @@
       .catch(function(e){ btn.disabled = false; toast(t('sync.error', { code: e && e.code || e })); });
   };
 
+  /* ---- Mensajes ---- */
+  var SM = { list: null, task: null, sending: false };
+  var QUICK = ['sm.q.how', 'sm.q.well', 'sm.q.event'];
+  window.supMessages = function(task){
+    if(task){ SM.task = task; }
+    nav.querySelector('.tab[data-screen="sup-msgs"]').click();
+    renderCompose(); renderMsgs();
+    try{ localStorage.setItem('replies-seen', String(Date.now())); }catch(e){}
+    renderMsgBadge();
+  };
+  // Desde la ficha de una tarea
+  window.supMessageTask = function(key){
+    var x = allTasks().filter(function(it){ return it.key === key; })[0];
+    window.supMessages({ key: key, name: x ? x.name : '' });
+  };
+  function renderCompose(){
+    var box = document.getElementById('sup-compose');
+    if(!box){ return; }
+    var draft = document.getElementById('sm-text') ? document.getElementById('sm-text').value : '';
+    box.innerHTML = '<span class="field-label">' + t('sm.write', { name: KID || '' }) + '</span>' +
+      (SM.task ? '<div class="sm-task"><span>' + esc(t('sm.about', { name: SM.task.name })) + '</span><button type="button" class="link-btn" onclick="supMsgNoTask()">' + t('sm.noTask') + '</button></div>' : '') +
+      '<div class="sup-filters">' + QUICK.map(function(k){ return '<button type="button" class="cat-chip" onclick="supMsgQuick(\'' + k + '\')">' + t(k) + '</button>'; }).join('') + '</div>' +
+      '<textarea class="txt-input sm-text" id="sm-text" rows="3" maxlength="1000" placeholder="' + esc(t('sm.ph')) + '"></textarea>' +
+      '<div><button type="button" class="btn-primary" id="sm-send" onclick="supMsgSend()">' + t('msg.send') + '</button></div>' +
+      '<p class="card-hint">' + t('sm.hint') + '</p>';
+    document.getElementById('sm-text').value = draft;
+  }
+  window.supMsgNoTask = function(){ SM.task = null; renderCompose(); };
+  window.supMsgQuick = function(k){
+    var ta = document.getElementById('sm-text'), txt = t(k);
+    ta.value = k === 'sm.q.event' ? txt + ' ' : txt;
+    ta.focus();
+  };
+  window.supMsgSend = function(){
+    var ta = document.getElementById('sm-text'), v = ta.value.trim();
+    if(!v){ ta.focus(); return; }
+    if(SM.sending){ return; }
+    SM.sending = true; document.getElementById('sm-send').disabled = true;
+    window.syncSendMessage({ text: v, taskKey: SM.task && SM.task.key, taskName: SM.task && SM.task.name })
+      .then(function(ok){ if(ok){ ta.value = ''; SM.task = null; toast(t('msg.sent')); renderCompose(); } else { toast(t('log.signIn')); } })
+      .catch(function(e){ toast(t('sync.error', { code: e && e.code || e })); })
+      .then(function(){ SM.sending = false; var b = document.getElementById('sm-send'); if(b){ b.disabled = false; } });
+  };
+  function msgState(m){
+    if(m.reply){ return '<span class="sm-state is-replied">' + esc(t('sm.replied', { r: m.reply.text || 'OK' })) + (m.repliedAt ? ' · ' + whenText(m.repliedAt) : '') + '</span>'; }
+    if(m.seenAt){ return '<span class="sm-state is-seen">' + t('sm.seen', { t: fmtDay(isoOf(m.seenAt)) + ' ' + whenText(m.seenAt) }) + '</span>'; }
+    return '<span class="sm-state">' + t('sm.sentState') + '</span>';
+  }
+  function renderMsgs(){
+    var box = document.getElementById('sup-msgs-body');
+    if(!box){ return; }
+    if(SM.list == null){ box.innerHTML = '<p class="card-hint">' + t('log.loading') + '</p>'; return; }
+    box.innerHTML = '<h3 class="sup-h">' + t('sm.sentList') + '</h3>' + (SM.list.length ? '<ul class="sup-list">' + SM.list.map(function(m){
+      var open = m.taskKey ? ' is-open" role="button" tabindex="0" onclick="supOpenWith(\'task\', \'' + m.taskKey + '\', \'sm.back\', \'sup-msgs\')' : '';
+      return '<li class="sup-row sm-row' + (m.reply ? ' is-replied' : '') + open + '"><span class="sup-row-time">' + (m.createdAt ? fmtDay(isoOf(m.createdAt)) + '<br>' + whenText(m.createdAt) : '…') + '</span>' +
+        '<span class="sup-row-main">' + (m.taskName ? '<span class="sup-row-sub">«' + esc(m.taskName) + '»</span>' : '') +
+        '<span class="sup-row-title log-text">' + esc(m.text) + '</span>' + msgState(m) + '</span></li>';
+    }).join('') + '</ul>' : '<p class="card-hint">' + t('msg.none') + '</p>');
+  }
+  // Respuestas sin ver: número en el sobre
+  function renderMsgBadge(){
+    var seen = 0; try{ seen = +localStorage.getItem('replies-seen') || 0; }catch(e){}
+    var n = (SM.list || []).filter(function(m){ return m.repliedAt && m.repliedAt.getTime() > seen; }).length, b = document.getElementById('sup-msg-badge');
+    b.hidden = !n; b.textContent = n;
+    document.getElementById('sup-envelope').setAttribute('aria-label', t('sm.title') + (n ? ' · ' + n : ''));
+  }
+  var SM_WATCH = false;
+  function watchMsgs(){
+    if(SM_WATCH || !window.syncWatchMessages){ return; }
+    SM_WATCH = true;
+    window.syncWatchMessages(function(list){
+      SM.list = list || [];
+      renderMsgBadge();
+      if(document.getElementById('screen-sup-msgs').classList.contains('active')){
+        renderMsgs();
+        try{ localStorage.setItem('replies-seen', String(Date.now())); }catch(e){}
+        renderMsgBadge();
+      }
+    });
+  }
+
   // Al abrir la App desde una notificación: ?open=task:…
   var OPEN = new URLSearchParams(location.search).get('open');
   function openFromUrl(){
@@ -478,6 +575,7 @@
     if(active){ setScreenHeading(active); }
     renderNow();
     renderLog();
+    if(document.getElementById('screen-sup-msgs').classList.contains('active')){ renderCompose(); renderMsgs(); }
     if(window.renderStats && document.getElementById('screen-sup-stats').classList.contains('active')){ window.renderStats(); }
   }
   // Al cambiar de idioma se vuelven a escribir los textos del modo supervisor

@@ -28,6 +28,8 @@
     <span class="brand">AHHHHHH!!!!!</span>
     <h1 id="screen-heading" data-i18n="tab.today"></h1>
     <span class="subtitle" id="screen-subheading"></span>
+    <!-- Mensajes del supervisor (solo si hay alguno) -->
+    <button type="button" class="msg-btn" id="msg-btn" onclick="openMsgList()" hidden><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span class="sup-badge" id="msg-badge" hidden></span></button>
   </div>
 
   <main class="screen-container">
@@ -858,6 +860,35 @@
     <button type="button" class="btn-ghost" onclick="el('viewer-dialog').close()" data-i18n="btn.cancel"></button>
     <button type="button" class="btn-primary" onclick="confirmViewer()" data-i18n="sync.viewerConfirm"></button>
   </div>
+</dialog>
+
+<!-- Mensaje del supervisor: «OK», «Responder» o «Ahora no» -->
+<dialog class="confirm-dialog msg-dialog" id="msg-dialog" aria-labelledby="msg-title">
+  <h2 id="msg-title"></h2>
+  <p class="msg-meta" id="msg-meta"></p>
+  <p class="msg-text" id="msg-text"></p>
+  <button type="button" class="link-btn msg-task" id="msg-task" onclick="msgOpenTask()" hidden></button>
+  <p class="msg-answered" id="msg-answered" hidden></p>
+  <div class="form-actions" id="msg-step1">
+    <button type="button" class="btn-ghost" onclick="msgLater()" data-i18n="end.later"></button>
+    <button type="button" class="btn-ghost" onclick="msgWrite()" data-i18n="msg.reply"></button>
+    <button type="button" class="btn-primary" onclick="msgOk()">OK</button>
+  </div>
+  <div id="msg-step2" hidden>
+    <textarea class="txt-input msg-reply" id="msg-reply" rows="3" maxlength="1000" data-i18n-ph="msg.replyPh"></textarea>
+    <div class="form-actions">
+      <button type="button" class="btn-ghost" onclick="msgBack()" data-i18n="btn.cancel"></button>
+      <button type="button" class="btn-primary" onclick="msgSend()" data-i18n="msg.send"></button>
+    </div>
+  </div>
+  <div class="form-actions" id="msg-close" hidden><button type="button" class="btn-primary" onclick="closeMessage()" data-i18n="risk.close"></button></div>
+</dialog>
+
+<!-- Mensajes recibidos -->
+<dialog class="confirm-dialog msgs-dialog" id="msgs-dialog" aria-labelledby="msgs-title">
+  <h2 id="msgs-title" data-i18n="msg.listTitle"></h2>
+  <ul class="msgs-list" id="msgs-list"></ul>
+  <div class="form-actions"><button type="button" class="btn-primary" onclick="el('msgs-dialog').close()" data-i18n="risk.close"></button></div>
 </dialog>
 
 <!-- Salir de un formulario abierto con la barra de pestañas -->

@@ -268,7 +268,11 @@ function sentId(uid, key){ return (uid + '|' + key).replace(/\//g, '_').slice(0,
 // Guarda el aviso en la campana y lo envía a los móviles del supervisor
 async function deliver(plan, v, a){
   await v.ref.collection('alerts').add({ plan: plan.id, type: a.type, title: a.title, body: a.body, open: a.open || '', level: a.level || null, at: new Date() });
-  const devs = await v.ref.collection('devices').get();
+  await pushTo(v.ref, a);
+}
+// Notificación a todos los móviles de un usuario (users/{uid}/devices)
+async function pushTo(userRef, a){
+  const devs = await userRef.collection('devices').get();
   if(devs.empty){ return; }
   const tokens = devs.docs.map(function(d){ return d.data().token; }).filter(Boolean);
   if(!tokens.length){ return; }
@@ -335,5 +339,36 @@ async function sendSummary(kind){
     }
   }
 }
+/* ================= MENSAJES (supervisor → quien usa la App) =================
+   plans/{id}/messages/{id}: el supervisor escribe { text, taskKey?, … }; quien usa la App lo ve como
+   aviso emergente (o notificación, con la App cerrada) y responde «OK» o con un texto.
+   onMessage: mensaje nuevo → notificación a los miembros del plan; respuesta → notificación y aviso
+   en la campana del supervisor que lo envió. */
+export const onMessage = onDocumentWritten({ document: 'plans/{planId}/messages/{msgId}', region: LOG_REGION }, async function(event){
+  const before = event.data.before.exists ? event.data.before.data() : null;
+  const after = event.data.after.exists ? event.data.after.data() : null;
+  if(!after){ return; }
+  const plan = db.collection('plans').doc(event.params.planId);
+  const short = function(t){ t = String(t || ''); return t.length > 160 ? t.slice(0, 157) + '…' : t; };
+  if(!before){
+    const pd = (await plan.get()).data() || {};
+    for(const email of pd.memberEmails || []){
+      let uid = null;
+      try{ uid = (await getAuth().getUserByEmail(email)).uid; }catch(e){ continue; }
+      await pushTo(db.collection('users').doc(uid), { type: 'message', title: 'Mensaje de ' + (after.fromName || after.fromEmail || 'tu supervisor'),
+        body: (after.taskName ? '«' + after.taskName + '»: ' : '') + short(after.text), open: 'msg:' + event.params.msgId }).catch(function(e){ logger.error('onMessage: envío', String(e)); });
+    }
+    return;
+  }
+  if(!before.reply && after.reply && after.from){
+    const r = after.reply, body = (r.text ? short(r.text) : 'OK') + ' · a «' + short(after.text).slice(0, 60) + '»';
+    const user = db.collection('users').doc(after.from);
+    const kid = (await plan.collection('kv').doc('kid-name').get()).data();
+    const title = kid && kid.v ? 'Respuesta de ' + kid.v : 'Respuesta a tu mensaje';
+    await user.collection('alerts').add({ plan: plan.id, type: 'reply', title, body, open: 'msgs', at: new Date() }).catch(function(){});
+    await pushTo(user, { type: 'reply', title, body, open: 'msgs' }).catch(function(e){ logger.error('onMessage: respuesta', String(e)); });
+  }
+});
+
 export const dailySummaryJob = onSchedule({ schedule: '0 22 * * *', region: ALERT_REGION, timeZone: 'Europe/Madrid' }, function(){ return sendSummary('daily'); });
 export const weeklySummaryJob = onSchedule({ schedule: '1 22 * * 0', region: ALERT_REGION, timeZone: 'Europe/Madrid' }, function(){ return sendSummary('weekly'); });

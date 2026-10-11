@@ -22,7 +22,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  doc, getDoc, setDoc, updateDoc, collection, query, where, limit, getDocs, onSnapshot, orderBy, startAfter,
+  doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, limit, getDocs, onSnapshot, orderBy, startAfter,
   serverTimestamp, arrayUnion, arrayRemove, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
@@ -250,8 +250,13 @@ async function start(){
     }
     if(setRole(role)){ location.reload(); return; }
     SYNC.status = 'in';
+    watchMessages();
     // Notificaciones ya activadas: se renueva el registro de este móvil (el token puede cambiar)
     if(window.Notification && Notification.permission === 'granted' && localStorage.getItem('push-token')){ registerPush().catch(function(){}); }
+    // Quien usa la App, si tiene supervisor y ya dio permiso de notificaciones: recibe los mensajes con la App cerrada
+    else if(role === 'member' && window.Notification && Notification.permission === 'granted'){
+      getDoc(doc(db, 'plans', planId)).then(function(p){ if(p.exists() && (p.data().viewerEmails || []).length){ return registerPush(); } }).catch(function(){});
+    }
     listen();
     changed();
   }
@@ -284,6 +289,7 @@ async function start(){
   };
   window.syncSignOut = async function(){
     await flushPush();
+    if(unsubMsgs){ unsubMsgs(); unsubMsgs = null; }
     if(unsubKv){ unsubKv(); unsubKv = null; }
     if(unsubPlan){ unsubPlan(); unsubPlan = null; }
     planId = null;
@@ -369,6 +375,39 @@ async function start(){
     if(!user){ return null; }
     const snap = await getDocs(query(collection(db, 'users', user.uid, 'alerts'), orderBy('at', 'desc'), limit(n || 50)));
     return snap.docs.map(function(d){ const x = d.data(); x.id = d.id; x.at = x.at && x.at.toDate ? x.at.toDate() : null; return x; });
+  };
+
+  // ---- Mensajes del supervisor (plans/{id}/messages) ----
+  // syncWatchMessages(cb): cb(lista) con los últimos 50, del más reciente al más antiguo, cada vez que cambian
+  let unsubMsgs = null, msgCb = null;
+  function watchMessages(){
+    if(unsubMsgs){ unsubMsgs(); unsubMsgs = null; }
+    if(!planId || !msgCb){ return; }
+    unsubMsgs = onSnapshot(query(collection(db, 'plans', planId, 'messages'), orderBy('createdAt', 'desc'), limit(50)), function(snap){
+      msgCb(snap.docs.map(function(d){
+        const x = d.data(); x.id = d.id;
+        ['createdAt', 'seenAt', 'repliedAt'].forEach(function(k){ if(x[k] && x[k].toDate){ x[k] = x[k].toDate(); } });
+        return x;
+      }));
+    }, function(e){ SYNC.error = String(e.code || e); changed(); });
+  }
+  window.syncWatchMessages = function(cb){ msgCb = cb; if(SYNC.status === 'in'){ watchMessages(); } };
+  window.syncSendMessage = async function(m){
+    if(!planId || !user || SYNC.role !== 'viewer'){ return false; }
+    const data = { from: user.uid, fromEmail: user.email.toLowerCase(), fromName: user.displayName || '', text: String(m.text || '').slice(0, 1000), createdAt: serverTimestamp() };
+    if(m.taskKey){ data.taskKey = m.taskKey; data.taskName = String(m.taskName || '').slice(0, 200); }
+    await addDoc(collection(db, 'plans', planId, 'messages'), data);
+    return true;
+  };
+  window.syncMessageSeen = async function(id){
+    if(!planId || SYNC.role === 'viewer'){ return; }
+    await updateDoc(doc(db, 'plans', planId, 'messages', id), { seenAt: serverTimestamp() });
+  };
+  // reply: { ok: true } o { text }
+  window.syncReplyMessage = async function(id, reply){
+    if(!planId || SYNC.role === 'viewer'){ return false; }
+    await updateDoc(doc(db, 'plans', planId, 'messages', id), { reply: reply, repliedAt: serverTimestamp() });
+    return true;
   };
 
   // Todo el archivo (para Análisis: también las tareas eliminadas, con lo trabajado)
