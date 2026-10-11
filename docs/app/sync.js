@@ -27,11 +27,8 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
 
-// Datos compartidos del plan. El idioma, el aspecto y los avisos ya vistos son de cada móvil.
-const SHARED_KEYS = [
-  'kid-name', 'app-settings', 'app-activities', 'app-events', 'app-tasks', 'app-blocks',
-  'deleted-cats', 'addresses', 'places', 'school-cal', 'school-cal-mode', 'no-school-manual', 'no-school-read', 'school-read-answers'
-];
+// Datos compartidos del plan (la lista está en app.js). El idioma, el aspecto y los avisos ya vistos son de cada móvil.
+const SHARED_KEYS = window.SHARED_KEYS;
 
 // El inicio de sesión solo funciona en la dirección de Firebase (o en local, para probar)
 const HOST = location.hostname;
@@ -112,9 +109,9 @@ async function start(){
   // ---- Nube → este móvil ----
   function applyRemote(k, v){
     if(localStorage.getItem(k) === v){ return false; }
-    applyingRemote = true;
+    applyingRemote = true; window.SYNC_APPLYING = true;
     try{ if(v === null || v === undefined){ localStorage.removeItem(k); } else { localStorage.setItem(k, v); } }
-    finally{ applyingRemote = false; }
+    finally{ applyingRemote = false; window.SYNC_APPLYING = false; }
     return true;
   }
   // La App lee sus datos al abrirse: con datos nuevos de otro móvil se vuelve a cargar,
@@ -126,8 +123,20 @@ async function start(){
   function busy(){
     return !!document.querySelector('.screen.active form.evt-form:not([hidden])') || !!document.querySelector('dialog[open]');
   }
+  // Freno: si la App se ha recargado 3 veces en el último minuto, no se recarga más (se avisa)
+  function reloadLoop(){
+    let list = [];
+    try{ list = JSON.parse(sessionStorage.getItem('sync-reloads') || '[]'); }catch(e){}
+    const now = Date.now();
+    list = list.filter(function(x){ return now - x < 60000; });
+    if(list.length >= 3){ return true; }
+    list.push(now);
+    try{ sessionStorage.setItem('sync-reloads', JSON.stringify(list)); }catch(e){}
+    return false;
+  }
   function tryReload(){
     if(!reloadPending){ return; }
+    if(reloadLoop()){ reloadPending = false; SYNC.error = 'reload-loop'; changed(); return; }
     if(document.hidden){ location.reload(); return; }
     if(busy()){ setTimeout(tryReload, 3000); return; }
     if(typeof window.toast === 'function' && window.t){ window.toast(window.t('sync.updated')); }
