@@ -31,6 +31,22 @@
   // Modo supervisor (App de seguimiento): quien entra como supervisor del plan lo ve todo, pero no
   // cambia nada. Lo decide sync.js y lo deja guardado en el móvil para abrir ya en ese modo.
   var IS_SUPERVISOR = (function(){ try{ return localStorage.getItem('sync-role') === 'viewer'; }catch(e){ return false; } })();
+  // Datos del plan que se comparten entre móviles (sync.js los sube y los baja)
+  var SHARED_KEYS = [
+    'kid-name', 'app-settings', 'app-activities', 'app-events', 'app-tasks', 'app-blocks',
+    'deleted-cats', 'addresses', 'places', 'school-cal', 'school-cal-mode', 'no-school-manual', 'no-school-read', 'school-read-answers'
+  ];
+  // El supervisor no guarda nada suyo en los datos del plan: solo los escribe sync.js con lo que llega
+  // del servidor (SYNC_APPLYING). Si la App los cambiara al arrancar (p. ej. al rehacer la configuración),
+  // nunca coincidirían con los del servidor y la App se recargaría sin fin.
+  if(IS_SUPERVISOR){
+    (function(){
+      var set = Storage.prototype.setItem, rem = Storage.prototype.removeItem;
+      function blocked(st, k){ return st === window.localStorage && !window.SYNC_APPLYING && SHARED_KEYS.indexOf(k) >= 0; }
+      Storage.prototype.setItem = function(k, v){ if(!blocked(this, k)){ return set.call(this, k, v); } };
+      Storage.prototype.removeItem = function(k){ if(!blocked(this, k)){ return rem.call(this, k); } };
+    })();
+  }
   function todaySubtitle(){
     return cap(fmtDate(TODAY_DATE, { weekday:'long', day:'numeric', month:'long' })) + ' · ' + t('planOf');
   }
