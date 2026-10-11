@@ -10,7 +10,12 @@
    - Solo la pueden usar personas con sesión iniciada que estén en algún plan, y como mucho
      DAILY_LIMIT veces al día cada una (para que nadie gaste a costa del proyecto). */
 
+// Todas las fechas en hora de Madrid (los cálculos del plan usan la hora local, como la App)
+process.env.TZ = 'Europe/Madrid';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { getMessaging } from 'firebase-admin/messaging';
+import { getAuth } from 'firebase-admin/auth';
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { defineString } from 'firebase-functions/params';
 import { logger } from 'firebase-functions';
@@ -22,6 +27,8 @@ import {
   ReadError, MAX_BYTES, fetchSource, toPart, SYSTEM, userPrompt, SCHEMA, cleanResult, cleanAnswers
 } from './schoolcal.js';
 import { TRACKED, parse, taskMap, diffTasks, diffItems, diffBlocks, mergeBlocks } from './planlog.js';
+import { makePlan, minuteOf } from './plancore.js';
+import { config, computeAlerts, newsAlert, dailySummary, weeklySummary } from './alerts.js';
 
 initializeApp();
 const db = getFirestore();
@@ -219,4 +226,114 @@ export const onPlanChange = onDocumentWritten({ document: 'plans/{planId}/kv/{ke
   // Id fijo por evento: si el disparador se repite, no se duplica
   entries.forEach(function(e, i){ ops.push([plan.collection('log').doc(event.id + '-' + i), Object.assign({ at, by, src: kvKey }, e)]); });
   if(ops.length){ await commitAll(ops); }
+  // Novedades para los supervisores: tarea nueva, evento nuevo, entrega cambiada
+  const news = entries.map(function(e, i){ const a = newsAlert(e); return a && Object.assign(a, { key: 'news|' + event.id + '-' + i }); }).filter(Boolean);
+  if(news.length){
+    const pd = await plan.get();
+    for(const v of await viewersOf(pd.data() || {})){
+      if(!v.cfg.news){ continue; }
+      for(const a of news){ await deliverOnce(plan, v, a); }
+    }
+  }
 });
+
+/* ================= AVISOS Y RESÚMENES PARA EL SUPERVISOR =================
+   - checkAlerts (cada 15 min): alerts.js dice qué avisos tocan para cada supervisor de cada plan; los
+     nuevos se guardan en users/{uid}/alerts (la campana de la App) y se envían a sus móviles
+     (users/{uid}/devices, notificaciones de Firebase Cloud Messaging).
+   - plans/{id}/sent/{uid|clave}: avisos ya enviados, para no repetirlos. La primera vez que un
+     supervisor tiene avisos (users/{uid}.alertsSince) se dan por enviados los que ya tocaban: así no
+     le llega de golpe todo lo atrasado.
+   - Resúmenes: cada día a las 22:00 y el domingo a las 22:01 (la semana que viene).
+   - Configuración de cada supervisor en users/{uid}.alerts (Config de la App de seguimiento). */
+const ALERT_REGION = 'europe-west1';
+
+async function loadKv(plan){
+  const kv = {};
+  (await plan.collection('kv').get()).forEach(function(d){ kv[d.id] = d.data().v; });
+  return kv;
+}
+// Supervisores del plan: { email, uid, cfg, user (ref), since }
+async function viewersOf(planData){
+  const out = [];
+  for(const email of planData.viewerEmails || []){
+    let uid = null;
+    try{ uid = (await getAuth().getUserByEmail(email)).uid; }catch(e){ continue; }   // aún no ha entrado nunca
+    const ref = db.collection('users').doc(uid), u = (await ref.get()).data() || {};
+    out.push({ email, uid, ref, cfg: config(u.alerts), since: u.alertsSince || null });
+  }
+  return out;
+}
+function sentId(uid, key){ return (uid + '|' + key).replace(/\//g, '_').slice(0, 1400); }
+// Guarda el aviso en la campana y lo envía a los móviles del supervisor
+async function deliver(plan, v, a){
+  await v.ref.collection('alerts').add({ plan: plan.id, type: a.type, title: a.title, body: a.body, open: a.open || '', level: a.level || null, at: new Date() });
+  const devs = await v.ref.collection('devices').get();
+  if(devs.empty){ return; }
+  const tokens = devs.docs.map(function(d){ return d.data().token; }).filter(Boolean);
+  if(!tokens.length){ return; }
+  const res = await getMessaging().sendEachForMulticast({
+    tokens,
+    data: { title: a.title, body: a.body, open: a.open || '', tag: a.type },
+    webpush: { headers: { Urgency: 'high', TTL: '86400' } }
+  });
+  // Los móviles que ya no reciben (App desinstalada, permiso quitado…) se borran
+  res.responses.forEach(function(r, i){
+    const code = r.error && r.error.code;
+    if(code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token'){
+      devs.docs.filter(function(d){ return d.data().token === tokens[i]; }).forEach(function(d){ d.ref.delete().catch(function(){}); });
+    }
+  });
+}
+// Solo si no se envió ya (con transacción: si dos ejecuciones coinciden, solo una lo envía)
+async function deliverOnce(plan, v, a){
+  const ref = plan.collection('sent').doc(sentId(v.uid, a.key));
+  const fresh = await db.runTransaction(async function(tx){
+    if((await tx.get(ref)).exists){ return false; }
+    tx.create(ref, { at: new Date() });
+    return true;
+  });
+  if(fresh){ await deliver(plan, v, a); }
+  for(const k of a.silent || []){ await plan.collection('sent').doc(sentId(v.uid, k)).set({ at: new Date(), silent: true }); }
+}
+async function plansWithViewers(){
+  const out = [];
+  (await db.collection('plans').get()).forEach(function(d){ if((d.data().viewerEmails || []).length){ out.push(d); } });
+  return out;
+}
+
+export const checkAlerts = onSchedule({ schedule: 'every 15 minutes', region: ALERT_REGION, timeZone: 'Europe/Madrid' }, async function(){
+  const now = minuteOf(new Date());
+  for(const pd of await plansWithViewers()){
+    const plan = pd.ref, P = makePlan(await loadKv(plan));
+    for(const v of await viewersOf(pd.data())){
+      const list = computeAlerts(P, now, v.cfg);
+      if(!v.since){
+        // Primera vez: lo que ya tocaba se da por enviado
+        const ops = [];
+        list.forEach(function(a){ [a.key].concat(a.silent || []).forEach(function(k){ ops.push([plan.collection('sent').doc(sentId(v.uid, k)), { at: now, baseline: true }]); }); });
+        ops.push([v.ref, { alertsSince: now }, true]);
+        await commitAll(ops);
+        continue;
+      }
+      for(const a of list){
+        try{ await deliverOnce(plan, v, a); }catch(e){ logger.error('checkAlerts: envío', { plan: plan.id, key: a.key, error: String(e) }); }
+      }
+    }
+  }
+});
+
+async function sendSummary(kind){
+  const now = minuteOf(new Date()), day = now.toISOString().slice(0, 10);
+  for(const pd of await plansWithViewers()){
+    const plan = pd.ref, P = makePlan(await loadKv(plan));
+    const s = kind === 'daily' ? dailySummary(P, now) : weeklySummary(P, now);
+    for(const v of await viewersOf(pd.data())){
+      if(!v.cfg[kind]){ continue; }
+      try{ await deliverOnce(plan, v, Object.assign({ type: kind, key: kind + '|' + day }, s)); }
+      catch(e){ logger.error('resumen', { plan: plan.id, kind, error: String(e) }); }
+    }
+  }
+}
+export const dailySummaryJob = onSchedule({ schedule: '0 22 * * *', region: ALERT_REGION, timeZone: 'Europe/Madrid' }, function(){ return sendSummary('daily'); });
+export const weeklySummaryJob = onSchedule({ schedule: '1 22 * * 0', region: ALERT_REGION, timeZone: 'Europe/Madrid' }, function(){ return sendSummary('weekly'); });

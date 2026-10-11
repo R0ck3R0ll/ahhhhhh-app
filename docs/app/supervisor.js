@@ -12,7 +12,10 @@
      cada entrada abre su ficha (las tareas eliminadas, desde el archivo). La ficha de cada tarea añade
      su historia.
    - Análisis (fase 4): estado de las tareas e indicadores (analysis.js, que se carga desde aquí).
-   - Config: la cuenta y el idioma. */
+   - Avisos (fase 5): campana arriba a la derecha con los avisos recibidos (users/{uid}/alerts, los escribe
+     el servidor) y, en Config, activar las notificaciones en este móvil y elegir qué avisos llegan.
+     Al pulsar una notificación, la App se abre con ?open=task:… y va a esa ficha.
+   - Config: la cuenta, los avisos y el idioma. */
 (function(){
   var ICONS = {
     now: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
@@ -51,13 +54,21 @@
       : tab.id === 'log' ? '<div class="sup-filters" id="sup-log-filters" role="radiogroup"></div><div id="sup-log-body"></div>'
       : tab.id === 'stats' ? '<div id="sup-stats-body" class="an-body"></div>'
       : tab.phase ? '<div class="config-card sup-soon"><p class="card-hint" data-sup-soon="' + tab.phase + '"></p></div>'
-      : '<div class="config-card" id="sup-account"></div><div class="config-card" id="sup-lang"></div>';
+      : '<div class="config-card" id="sup-account"></div><div class="config-card" id="sup-alerts-cfg"></div><div class="config-card" id="sup-lang"></div>';
     main.appendChild(sec);
   });
-  // Fichas de actividades y eventos (desde Ahora o el Calendario): pestañas ocultas
+  // Fichas de actividades y eventos (desde Ahora o el Calendario) y la lista de avisos: pestañas ocultas
   ['activities', 'events'].forEach(function(s){
     nav.insertAdjacentHTML('beforeend', '<button class="tab sup-hidden-tab" hidden data-screen="' + s + '" data-title="tab.' + s + '" data-sub="sub.' + s + '" onclick="showScreen(this)"></button>');
   });
+  nav.insertAdjacentHTML('beforeend', '<button class="tab sup-hidden-tab" hidden data-screen="sup-alerts" data-title="al.title" data-sub="al.sub" onclick="showScreen(this)"></button>');
+  var alSec = document.createElement('section');
+  alSec.className = 'screen'; alSec.id = 'screen-sup-alerts'; alSec.setAttribute('aria-labelledby', 'screen-heading');
+  alSec.innerHTML = '<div id="sup-alerts-body"></div>';
+  main.appendChild(alSec);
+  // Campana arriba a la derecha, con el número de avisos sin ver
+  document.querySelector('.topbar').insertAdjacentHTML('beforeend',
+    '<button type="button" class="sup-bell" id="sup-bell" onclick="supAlerts()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="sup-badge" id="sup-badge" hidden></span></button>');
   main.parentNode.insertBefore(nav, main.nextSibling);
 
   // Al abrir una ficha de actividad o evento, la pestaña de la que se viene sigue marcada
@@ -69,6 +80,7 @@
     if(btn.dataset.screen === 'sup-now'){ renderNow(); }
     if(btn.dataset.screen === 'sup-log' && !LOG.loaded){ loadLog(false); }
     if(btn.dataset.screen === 'sup-stats' && window.renderStats){ window.renderStats(); }
+    if(btn.dataset.screen === 'sup-config'){ renderAlertCfg(); }
   };
 
   // Config: la cuenta (la dibuja renderAccount en #account-body) y el idioma: se traen aquí de la Config de la App
@@ -291,6 +303,10 @@
     renderAccountBase.apply(this, arguments);
     if(window.SYNC && window.SYNC.status === 'in' && !LOG.loaded && document.getElementById('screen-sup-log').classList.contains('active')){ loadLog(false); }
     if(window.SYNC && window.SYNC.status === 'in' && window.renderStats && document.getElementById('screen-sup-stats').classList.contains('active')){ window.renderStats(); }
+    if(window.SYNC && window.SYNC.status === 'in'){
+      if(AL.items == null){ loadAlerts(); }
+      if(document.getElementById('screen-sup-config').classList.contains('active')){ renderAlertCfg(); }
+    }
   };
 
   /* ---- Historia de cada tarea (en su ficha) y tareas eliminadas (desde el archivo) ---- */
@@ -347,6 +363,110 @@
     }).catch(function(e){ toast(t('sync.error', { code: e && e.code || e })); });
   }
 
+  /* ---- Avisos: campana y lista ---- */
+  var AL = { items: null, busy: false, error: '' };
+  function seenAt(){ try{ return +localStorage.getItem('alerts-seen') || 0; }catch(e){ return 0; } }
+  function loadAlerts(){
+    if(AL.busy || !window.syncReadAlerts || !(window.SYNC && window.SYNC.status === 'in')){ return; }
+    AL.busy = true;
+    window.syncReadAlerts(80).then(function(l){ AL.items = l || []; AL.error = ''; })
+      .catch(function(e){ AL.error = String(e && e.code || e); })
+      .then(function(){ AL.busy = false; renderBadge(); if(document.getElementById('screen-sup-alerts').classList.contains('active')){ renderAlerts(); } });
+  }
+  function renderBadge(){
+    var n = (AL.items || []).filter(function(a){ return a.at && a.at.getTime() > seenAt(); }).length, b = document.getElementById('sup-badge');
+    b.hidden = !n; b.textContent = n > 9 ? '9+' : n;
+    document.getElementById('sup-bell').setAttribute('aria-label', t('al.title') + (n ? ' · ' + n : ''));
+  }
+  window.supAlerts = function(){
+    nav.querySelector('.tab[data-screen="sup-alerts"]').click();
+    // Los que eran nuevos al abrir la lista se siguen marcando como nuevos mientras se mira
+    try{ sessionStorage.setItem('alerts-prev-seen', String(seenAt())); localStorage.setItem('alerts-seen', String(Date.now())); }catch(e){}
+    renderAlerts();
+    renderBadge();
+    loadAlerts();
+  };
+  // Abre lo que dice el aviso: task:clave · event:id · now · stats
+  function openTarget(open, label, screen){
+    var p = String(open || '').split(':'), kind = p.shift(), id = p.join(':');
+    if(kind === 'task' || kind === 'event' || kind === 'activity'){ window.supOpenWith(kind, id, label, screen); }
+    else if(kind === 'now' || kind === 'stats' || kind === 'log'){ nav.querySelector('.tab[data-screen="sup-' + kind + '"]').click(); }
+  }
+  window.supOpenAlert = function(i){ var a = (AL.items || [])[i]; if(a){ openTarget(a.open, 'al.back', 'sup-alerts'); } };
+  function renderAlerts(){
+    var box = document.getElementById('sup-alerts-body');
+    if(!box){ return; }
+    if(AL.items == null){ box.innerHTML = '<p class="card-hint">' + (AL.error ? esc(t('sync.error', { code: AL.error })) : t('log.loading')) + '</p>'; return; }
+    if(!AL.items.length){ box.innerHTML = '<p class="card-hint">' + t('al.empty') + '</p>'; return; }
+    var seen = +(sessionStorage.getItem('alerts-prev-seen') || seenAt());
+    box.innerHTML = '<ul class="sup-list">' + AL.items.map(function(a, i){
+      var open = a.open ? ' is-open" role="button" tabindex="0" onclick="supOpenAlert(' + i + ')' : '';
+      return '<li class="sup-row al-' + esc(a.type) + (a.level ? ' lv-' + a.level : '') + (a.at && a.at.getTime() > seen ? ' is-new' : '') + open + '">' +
+        '<span class="sup-row-time">' + (a.at ? fmtDay(isoOf(a.at)) + '<br>' + fmtHour(a.at.getHours() + a.at.getMinutes() / 60) : '') + '</span>' +
+        '<span class="sup-row-main"><span class="sup-row-title">' + esc(a.title) + '</span><span class="al-body">' + esc(a.body).replace(/\n/g, '<br>') + '</span></span></li>';
+    }).join('') + '</ul>';
+  }
+  setInterval(loadAlerts, 5 * 60000);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden){ loadAlerts(); } });
+
+  /* ---- Config: avisos ---- */
+  var ALERT_TYPES = ['overdue', 'risk', 'dueSoon', 'big', 'noEst', 'unlogged', 'skipped', 'news', 'daily', 'weekly'];
+  var CFG = { data: null, push: null, saving: false };
+  var DEF = { overdue: true, risk: true, dueSoon: true, big: true, noEst: true, unlogged: true, skipped: true, news: true, daily: true, weekly: true,
+              dueHours: [24, 3], amberMargin: 60, bigMin: 180, bigDays: 3, unloggedH: 2 };
+  function renderAlertCfg(){
+    var box = document.getElementById('sup-alerts-cfg');
+    if(!box){ return; }
+    if(!(window.SYNC && window.SYNC.status === 'in')){ box.innerHTML = '<span class="field-label">' + t('al.cfgTitle') + '</span><p class="card-hint">' + t('log.loading') + '</p>'; return; }
+    if(CFG.data == null){
+      box.innerHTML = '<span class="field-label">' + t('al.cfgTitle') + '</span><p class="card-hint">' + t('log.loading') + '</p>';
+      Promise.all([window.syncAlertConfig(), window.syncPushState()]).then(function(r){ CFG.data = Object.assign({}, DEF, r[0] || {}); CFG.push = r[1]; renderAlertCfg(); })
+        .catch(function(e){ box.innerHTML = '<p class="card-hint sync-error">' + esc(t('sync.error', { code: e && e.code || e })) + '</p>'; });
+      return;
+    }
+    var c = CFG.data, num = function(id, v, step){ return '<input class="txt-input al-num" type="number" inputmode="decimal" min="0" step="' + (step || 1) + '" id="al-' + id + '" value="' + v + '">'; };
+    box.innerHTML = '<span class="field-label">' + t('al.cfgTitle') + '</span>' +
+      '<div class="al-push"><p class="card-hint">' + t('al.push.' + CFG.push) + '</p>' +
+        (CFG.push === 'off' ? '<button type="button" class="btn-primary" onclick="supEnablePush(this)">' + t('al.enable') + '</button>' : '') + '</div>' +
+      '<ul class="al-types">' + ALERT_TYPES.map(function(k){
+        return '<li><label><input type="checkbox" id="al-t-' + k + '"' + (c[k] ? ' checked' : '') + '> <span>' + t('al.t.' + k) + '</span></label></li>';
+      }).join('') + '</ul>' +
+      '<div class="al-nums">' +
+        '<label>' + t('al.n.dueHours') + '<input class="txt-input" type="text" inputmode="numeric" id="al-dueHours" value="' + esc((c.dueHours || []).join(', ')) + '"></label>' +
+        '<label>' + t('al.n.amberMargin') + num('amberMargin', c.amberMargin, 5) + '</label>' +
+        '<label>' + t('al.n.bigMin') + num('bigMin', Math.round(c.bigMin / 6) / 10, 0.5) + '</label>' +
+        '<label>' + t('al.n.bigDays') + num('bigDays', c.bigDays) + '</label>' +
+        '<label>' + t('al.n.unloggedH') + num('unloggedH', c.unloggedH, 0.5) + '</label>' +
+      '</div>' +
+      '<div><button type="button" class="btn-primary" onclick="supSaveAlertCfg(this)">' + t('btn.save') + '</button></div>';
+  }
+  window.supEnablePush = function(btn){
+    btn.disabled = true;
+    window.syncEnablePush().then(function(st){ CFG.push = st; renderAlertCfg(); if(st === 'on'){ toast(t('al.pushOn')); } })
+      .catch(function(e){ btn.disabled = false; toast(t('sync.error', { code: e && e.code || e })); });
+  };
+  window.supSaveAlertCfg = function(btn){
+    var c = {}, v = function(id){ return parseFloat(String(document.getElementById('al-' + id).value).replace(',', '.')); };
+    ALERT_TYPES.forEach(function(k){ c[k] = document.getElementById('al-t-' + k).checked; });
+    c.dueHours = String(document.getElementById('al-dueHours').value).split(/[^0-9.]+/).map(Number).filter(function(h){ return h > 0 && h <= 168; });
+    c.amberMargin = Math.max(0, Math.round(v('amberMargin')) || DEF.amberMargin);
+    c.bigMin = Math.max(30, Math.round((v('bigMin') || 3) * 60));
+    c.bigDays = Math.max(1, Math.round(v('bigDays')) || DEF.bigDays);
+    c.unloggedH = Math.max(0.5, v('unloggedH') || DEF.unloggedH);
+    btn.disabled = true;
+    window.syncSaveAlertConfig(c).then(function(){ CFG.data = Object.assign({}, DEF, c); renderAlertCfg(); toast(t('al.saved')); })
+      .catch(function(e){ btn.disabled = false; toast(t('sync.error', { code: e && e.code || e })); });
+  };
+
+  // Al abrir la App desde una notificación: ?open=task:…
+  var OPEN = new URLSearchParams(location.search).get('open');
+  function openFromUrl(){
+    if(!OPEN){ return; }
+    var o = OPEN; OPEN = null;
+    try{ history.replaceState(null, '', location.pathname); }catch(e){}
+    openTarget(o, 'al.back', 'sup-alerts');
+  }
+
   function texts(){
     document.querySelectorAll('[data-sup-soon]').forEach(function(p){
       var n = +p.getAttribute('data-sup-soon');
@@ -369,6 +489,7 @@
   if(typeof window.renderAccount === 'function'){ window.renderAccount(); }
   showScreen(nav.querySelector('.tab'));
   texts();
+  openFromUrl();
   var an = document.createElement('script');
   an.src = 'analysis.js';
   document.body.appendChild(an);

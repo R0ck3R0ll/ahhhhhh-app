@@ -1230,3 +1230,23 @@
   .an-legend i{ display:inline-block; width:14px; height:8px; border-radius:4px; position:static; }
   .an-legend i.an-need{ height:8px !important; top:auto !important; }
   :root[data-theme="dark"] .an-flag.lv-red{ color:#ff8f86; } :root[data-theme="dark"] .an-flag.lv-amber{ color:#e8b839; }
+  /* Avisos del supervisor: campana, lista y Config */
+  .topbar{ position:relative; }
+  .sup-bell{ position:absolute; top:10px; right:10px; width:42px; height:42px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .sup-bell:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .sup-badge{ position:absolute; top:-4px; right:-4px; min-width:18px; height:18px; padding:0 4px; border-radius:9px; background:var(--accent); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px var(--surface); }
+  .sup-badge[hidden]{ display:none; }
+  .al-body{ font-size:13px; color:var(--text-muted); overflow-wrap:anywhere; }
+  .sup-row.is-new{ box-shadow:inset 0 0 0 1.5px var(--accent); }
+  .sup-row.al-risk.lv-red, .sup-row.al-overdue{ border-left-color:var(--red-line); }
+  .sup-row.al-risk.lv-amber, .sup-row.al-dueSoon, .sup-row.al-big{ border-left-color:var(--amber-line); }
+  .sup-row.al-daily, .sup-row.al-weekly{ border-left-color:var(--accent); }
+  #sup-alerts-body .sup-row-time{ width:62px; font-size:11.5px; }
+  .al-push{ display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+  .al-push .card-hint{ margin:0; }
+  .al-types{ list-style:none; margin:4px 0; padding:0; display:flex; flex-direction:column; gap:6px; font-size:14px; }
+  .al-types label{ display:flex; align-items:center; gap:8px; cursor:pointer; }
+  .al-types input{ width:18px; height:18px; accent-color:var(--accent); }
+  .al-nums{ display:flex; flex-direction:column; gap:8px; font-size:13px; }
+  .al-nums label{ display:grid; grid-template-columns:1fr 6.5em; align-items:center; gap:10px; }
+  .al-nums .txt-input{ width:100%; }

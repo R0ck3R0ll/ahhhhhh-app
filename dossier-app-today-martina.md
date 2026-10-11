@@ -476,7 +476,7 @@ Un **único instrumento** sirve para todo: sugerencias, ánimos, proponer un eve
 2. **Supervisor en Config > Cuenta**, con su aviso (7 bis.3).
 3. **Mensajes:** aviso emergente con «OK» / «Responder», lista de mensajes recibidos y notificaciones con la App cerrada. Necesita el permiso de notificaciones (ya se pide en la configuración del primer inicio) y registrar el móvil para recibir notificaciones.
 4. **`sync.js`:** detecta el rol (miembro o supervisor). En modo supervisor no sube nada.
-5. **Cálculos a un módulo común, `docs/app/core.js`** (en la fase 5). Incluye sacar de `app.js` las funciones puras:
+5. **Cálculos para el servidor** (fase 5): en vez de sacar `core.js` de `app.js` (arriesgado), `functions/plancore.js` repite esos cálculos y una prueba con el navegador comprueba que dan lo mismo que la App. Incluye sacar de `app.js` las funciones puras:
    - la lista de tareas a partir de tareas, eventos y actividades (hoy `allTasks`);
    - las sesiones de actividades, los huecos y el tiempo libre;
    - el riesgo y el progreso.
@@ -577,7 +577,31 @@ Cada fase se publica y la prueba Carlo antes de pasar a la siguiente.
      - **Trabajo de última hora:** parte del tiempo de las tareas hechas que se trabajó en las 24 h antes de la entrega.
      - **Horas de estudio:** total y media, barras por día (semana) o por semana (4 semanas y curso), y reparto por asignatura (curso de Classroom) u origen (sueltas, eventos, actividad).
      - **Carga de los próximos 7 días:** por día, lo que falta de las tareas que vencen ese día frente al tiempo libre, con «⚠ no da tiempo» o «⚠ muy justo» según el mismo cálculo de riesgo de la App.
-5. **Avisos y resúmenes:** notificaciones (FCM), `checkAlerts`, novedades, resúmenes de las 22:00, campana y Config de avisos.
+5. **Avisos y resúmenes** (**hecha el 11/10/2026**): notificaciones (FCM), `checkAlerts`, novedades, resúmenes de las 22:00, campana y Config de avisos.
+   - **Cálculos en el servidor** (`functions/plancore.js`): los mismos de la App (lista de tareas, sesiones con festivos y «Hoy no voy», días sin cole, huecos libres, tiempo libre y riesgo), sin tocar `app.js`.
+     - Comprobado con el navegador que dan exactamente lo mismo que la App con los mismos datos: entregas, lo trabajado y avisos de riesgo con su nivel, tiempo necesario y libre.
+     - El servidor trabaja en hora de Madrid (`TZ`).
+   - **Avisos** (`functions/alerts.js`, con pruebas):
+     - atrasada; riesgo rojo/ámbar (con el margen de Config); entrega próxima (solo el plazo más corto que ya toca; los más largos se dan por avisados);
+     - tarea grande sin bloques; sin tiempo estimado; bloque sin registrar (pasadas N horas, solo de las últimas 48 h); bloque no completado (anotó menos de lo planificado; no cuenta lo anotado a mano);
+     - novedades (tarea nueva, evento nuevo, entrega cambiada, al momento desde `onPlanChange`).
+     - Cada aviso tiene una clave fija y se apunta en `plans/{id}/sent` para no repetirlo.
+     - La primera vez, lo que ya tocaba se da por avisado (`users/{uid}.alertsSince`), para que no llegue de golpe todo lo atrasado.
+   - **Funciones** (región `europe-west1`):
+     - `checkAlerts` cada 15 min;
+     - `dailySummaryJob` a las 22:00 (hoy: tareas hechas, tiempo trabajado, bloques completos, a medias y sin registrar; mañana: entregas con lo que falta, actividades y eventos);
+     - `weeklySummaryJob` el domingo a las 22:01 (la semana que viene: entregas, trabajo que falta frente a tiempo libre y días críticos).
+     - Probado con los emuladores (Firestore, Auth y funciones): la primera vez solo marca lo pendiente sin avisar, después avisa de lo nuevo, no repite y genera el resumen.
+   - **Envío:** cada aviso se guarda en `users/{uid}/alerts` (la campana) y se envía con Firebase Cloud Messaging a los móviles de `users/{uid}/devices`.
+     - Son mensajes de solo datos; `sw.js` los muestra, también con la App cerrada.
+     - Al pulsar una notificación, la App se abre en esa ficha (`?open=task:…`).
+     - Los móviles que ya no reciben se borran.
+     - La publicación activa Cloud Scheduler y Cloud Messaging.
+   - **En la App del supervisor:**
+     - **campana** arriba a la derecha con el número de avisos sin ver; la lista marca los nuevos y cada aviso abre su ficha con «‹ Volver a Avisos»;
+     - en **Config > Avisos**: «Activar avisos en este móvil» (pide permiso; en iPhone solo con la App en la pantalla de inicio), qué avisos llegan y sus umbrales, guardado en `users/{uid}.alerts`.
+   - **Reglas:** cada usuario lee y escribe sus `devices` y solo lee sus `alerts`; `plans/{id}/sent` solo lo usa el servidor.
+   - Los textos de los avisos del servidor van en español.
 6. **Mensajes:** envío, aviso emergente o notificación a Martina, respuesta «OK» o texto, y lista de mensajes en las dos apps.
 
 ### 7 bis.8 Valores por defecto a confirmar al probar

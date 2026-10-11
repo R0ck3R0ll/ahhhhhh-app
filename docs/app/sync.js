@@ -26,6 +26,7 @@ import {
   serverTimestamp, arrayUnion, arrayRemove, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
+import { getMessaging, getToken, isSupported as messagingSupported } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging.js';
 
 // Datos compartidos del plan (la lista está en app.js). El idioma, el aspecto y los avisos ya vistos son de cada móvil.
 const SHARED_KEYS = window.SHARED_KEYS;
@@ -249,6 +250,8 @@ async function start(){
     }
     if(setRole(role)){ location.reload(); return; }
     SYNC.status = 'in';
+    // Notificaciones ya activadas: se renueva el registro de este móvil (el token puede cambiar)
+    if(window.Notification && Notification.permission === 'granted' && localStorage.getItem('push-token')){ registerPush().catch(function(){}); }
     listen();
     changed();
   }
@@ -324,6 +327,48 @@ async function start(){
     const x = d.data();
     ['createdAt', 'existedAt', 'deletedAt', 'updatedAt'].forEach(function(k){ if(x[k] && x[k].toDate){ x[k] = x[k].toDate(); } });
     return x;
+  };
+
+  // ---- Notificaciones en este móvil (Firebase Cloud Messaging) ----
+  // El servidor envía los avisos a los móviles de users/{uid}/devices; sw.js los muestra.
+  // syncPushState(): 'unsupported' (el navegador no puede; en iPhone, solo con la App en la pantalla
+  // de inicio) · 'denied' · 'off' (aún sin activar) · 'on'
+  window.syncPushState = async function(){
+    if(!('Notification' in window) || !('serviceWorker' in navigator) || !(await messagingSupported().catch(function(){ return false; }))){ return 'unsupported'; }
+    if(Notification.permission === 'denied'){ return 'denied'; }
+    return Notification.permission === 'granted' && localStorage.getItem('push-token') ? 'on' : 'off';
+  };
+  async function registerPush(){
+    const reg = await navigator.serviceWorker.ready;
+    const token = await getToken(getMessaging(app), { serviceWorkerRegistration: reg });
+    if(!token || !user){ return false; }
+    const id = token.replace(/[^A-Za-z0-9_-]/g, '').slice(-120);
+    await setDoc(doc(db, 'users', user.uid, 'devices', id), { token: token, role: SYNC.role || 'member', at: serverTimestamp(), ua: navigator.userAgent.slice(0, 200) });
+    localStorage.setItem('push-token', token);
+    return true;
+  }
+  // Tiene que llamarse al pulsar un botón (el navegador pide permiso)
+  window.syncEnablePush = async function(){
+    if((await window.syncPushState()) === 'unsupported'){ return 'unsupported'; }
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){ return perm === 'denied' ? 'denied' : 'off'; }
+    return (await registerPush()) ? 'on' : 'off';
+  };
+  // Configuración de los avisos del supervisor (users/{uid}.alerts) y avisos recibidos (users/{uid}/alerts)
+  window.syncAlertConfig = async function(){
+    if(!user){ return null; }
+    const d = await getDoc(doc(db, 'users', user.uid));
+    return (d.exists() && d.data().alerts) || {};
+  };
+  window.syncSaveAlertConfig = async function(cfg){
+    if(!user){ return false; }
+    await setDoc(doc(db, 'users', user.uid), { alerts: cfg }, { merge: true });
+    return true;
+  };
+  window.syncReadAlerts = async function(n){
+    if(!user){ return null; }
+    const snap = await getDocs(query(collection(db, 'users', user.uid, 'alerts'), orderBy('at', 'desc'), limit(n || 50)));
+    return snap.docs.map(function(d){ const x = d.data(); x.id = d.id; x.at = x.at && x.at.toDate ? x.at.toDate() : null; return x; });
   };
 
   // Todo el archivo (para Análisis: también las tareas eliminadas, con lo trabajado)

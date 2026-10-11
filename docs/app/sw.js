@@ -2,7 +2,7 @@
    y funcione sin conexión. Estrategia: primero la red (así siempre se ve la última versión
    publicada) y, si no hay conexión, la copia guardada. Al publicar una versión nueva basta con
    cambiar VERSION para que se renueve la copia. */
-var VERSION = 'v27';
+var VERSION = 'v28';
 var CACHE = 'ahhhhhh-' + VERSION;
 var SHELL = [
   './', 'index.html', 'styles.css', 'i18n.js', 'app.js', 'sync.js', 'manifest.webmanifest',
@@ -41,4 +41,26 @@ self.addEventListener('fetch', function(e){
       return caches.match(req, { ignoreSearch: true }).then(function(hit){ return hit || caches.match('index.html'); });
     })
   );
+});
+
+/* ---- Notificaciones (avisos del supervisor y, más adelante, mensajes) ----
+   Llegan por Firebase Cloud Messaging como mensajes de solo datos { title, body, open, tag } (los
+   envía el servidor, functions/index.js) y aquí se muestran, también con la App cerrada.
+   Al pulsar una, se abre la App (o se trae al frente) en lo que corresponde: ?open=task:s:123 */
+self.addEventListener('push', function(e){
+  var d = {};
+  try{ var j = e.data ? e.data.json() : {}; d = j.data || j; }catch(err){ d = { title: 'AHHHHHH', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'AHHHHHH', {
+    body: d.body || '', tag: d.tag ? d.tag + '-' + Date.now() : undefined,
+    icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { open: d.open || '' }
+  }));
+});
+self.addEventListener('notificationclick', function(e){
+  e.notification.close();
+  var url = new URL('./' + (e.notification.data && e.notification.data.open ? '?open=' + encodeURIComponent(e.notification.data.open) : ''), self.location.href).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list){
+    var c = list.filter(function(w){ return w.url.indexOf(self.location.origin) === 0; })[0];
+    if(c){ return c.navigate(url).then(function(w){ return (w || c).focus(); }).catch(function(){ return c.focus(); }); }
+    return self.clients.openWindow(url);
+  }));
 });
