@@ -530,6 +530,10 @@ Cada fase se publica y la prueba Carlo antes de pasar a la siguiente.
    - **Historial** (`functions/planlog.js` y `onPlanChange` en `functions/index.js`, región `europe-southwest1`, la de la base de datos):
      - Pruebas con `npm test`; probado también con los emuladores de Firestore y de funciones (tarea creada, entrega movida, bloques planificados y trabajados, trabajo anotado a mano y tarea eliminada con sus bloques en el archivo).
      - La publicación activa la API de Eventarc y, como la primera vez Google tarda unos minutos en preparar sus permisos, reintenta una vez a los 3 minutos.
+     - **Publicada el 11/10/2026.** Antes, Carlo (dueño del proyecto de Google Cloud) tuvo que dar una vez, desde Cloud Shell, tres permisos que la cuenta de publicación no puede dar:
+       - `roles/iam.serviceAccountTokenCreator` a `service-356797407017@gcp-sa-pubsub.iam.gserviceaccount.com`;
+       - `roles/run.invoker` y `roles/eventarc.eventReceiver` a `356797407017-compute@developer.gserviceaccount.com`.
+     - El historial cuenta desde ese momento.
 2. **Ver:** Ahora, Calendario (con lo trabajado y los ✓) y Tareas con sus fichas.
 3. **Historial:** pestaña Historial (línea de tiempo con filtros por tipo; cada entrada abre su ficha) e historia en la ficha de cada tarea.
 4. **Análisis:** Estado de las tareas (totales → lista → ficha) e indicadores.
