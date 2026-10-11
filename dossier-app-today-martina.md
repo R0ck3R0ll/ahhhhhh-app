@@ -3,12 +3,13 @@
 
 Este documento resume el estudio y las decisiones tomadas en la fase de planificación, como base para el desarrollo del proyecto en Claude Code.
 
-> **Estado (9/10/2026)**
+> **Estado (11/10/2026)**
 > - **App publicada** en https://ahhhhhh-today.web.app desde **`main`** (9/10/2026: todo el trabajo está en `main` y solo `main` publica). Las sesiones nuevas trabajan en su rama y lo pasan a `main` para publicarlo.
 > - **GitHub Pages** (páginas de inicio, privacidad y condiciones que usa la pantalla de permisos de Google) aún se publica desde `claude/hopeful-lovelace-18fa2k`: hay que cambiar su origen a `main` / `docs` (GitHub > Settings > Pages) y después ya se puede borrar esa rama.
 > - **Hecho y probado por Carlo:** pantallas, tareas y bloques de trabajo, avisos de riesgo, sincronización entre móviles (Firebase), traslados con Google Maps (coche y a pie, ubicación por GPS), lectura del calendario escolar con IA (Gemini en Vertex AI, con preguntas cuando el calendario depende de la alumna).
 > - **Pendiente:** conexión con Classroom y Gmail (bloqueada por el colegio, punto 3), extracción con IA de correos y publicaciones con su pantalla de revisión (punto 4), exportación a Google Calendar.
-> - **App de seguimiento para Carlo** (punto 7 bis): fases 1 a 6 hechas y publicadas (10-11/10/2026).
+> - **Mejoras en la App de Martina (10/10/2026):** anotar trabajo hecho sin planificar, festivos nacionales en las actividades y «Hoy no voy» (puntos 2.2 y 2.3 bis).
+> - **App de seguimiento para Carlo** (punto 7 bis): fases 1 a 6 hechas y publicadas (10-11/10/2026). Carlo ya entra como supervisor. **Pendiente: probar avisos y mensajes en los móviles (7 bis.9)** y, después, la fase 7 (por definir).
 
 ---
 
@@ -633,6 +634,42 @@ Todos se pueden cambiar en Config del supervisor:
 - Bloque sin registrar: 2 h después de su fin.
 - Procrastinación: últimas 24 h antes de la entrega.
 - Resumen semanal: el domingo a las 22:00, además del diario.
+
+### 7 bis.9 Para la próxima sesión (cerrada el 11/10/2026)
+
+**Estado:**
+- Las seis fases están publicadas desde `main` (último despliegue: fase 6, sin errores). La rama de trabajo fue `claude/affectionate-wright-qj5lma` y está igual que `main`.
+- En el servidor (`functions/`) hay estas funciones:
+  - `readSchoolCalendar` (europe-west1);
+  - `onPlanChange` y `onMessage` (europe-southwest1, disparadas por Firestore);
+  - `checkAlerts` (cada 15 min), `dailySummaryJob` (22:00) y `weeklySummaryJob` (domingo, 22:01), en europe-west1.
+- Carlo ya entra como supervisor del plan de Martina.
+- Su plan propio antiguo (creado por error por la App anterior, solo con él) queda sin usar; las reglas no dejan borrarlo.
+
+**Prueba que hará Carlo antes de seguir** (traer el resultado a la sesión siguiente):
+1. **Avisos en el móvil de Carlo:** Config > Avisos > «Activar avisos en este móvil». Comprobar que pone «Notificaciones activadas en este móvil». Comprobar que llegan avisos (p. ej. al crear Martina una tarea: «Tarea nueva») y que la campana los muestra.
+2. **Resúmenes:** a las 22:00 el diario; el domingo a las 22:01, también el semanal.
+3. **Mensajes:**
+   - Martina activa las notificaciones (Config > Cuenta > «Activar notificaciones»).
+   - Carlo le envía un mensaje desde el sobre: le tiene que salir el aviso emergente (o la notificación, con la App cerrada).
+   - Martina responde «OK» o con un texto: a Carlo le llega la respuesta (notificación y campana) y la ve en Mensajes como «Respuesta: …».
+   - Probar también «Enviar mensaje sobre esta tarea» y «Ver la tarea» en el lado de Martina.
+4. **Pantallas del supervisor con datos reales:** Ahora, Calendario (lo trabajado sobre los bloques, ✓ a la hora de hecha), Tareas («Hechas» por semanas), Análisis, Historial.
+
+**Si algo falla, posibles causas a revisar primero:**
+- **Notificaciones que no llegan:**
+  - en iPhone solo funcionan con la App en la pantalla de inicio;
+  - la clave web de Firebase podría estar restringida y no permitir la API de registro de Cloud Messaging (`fcmregistrations.googleapis.com`);
+  - registros de `checkAlerts` y `onMessage` en Google Cloud.
+- **La primera ejecución de `checkAlerts`** no avisa de nada (solo marca lo que ya tocaba, `alertsSince`): los avisos llegan a partir de la siguiente novedad.
+- **El historial** cuenta desde el 11/10/2026 a las 9:43, y la antelación solo con las tareas marcadas desde la fase 1 (`doneAt` con hora).
+
+**Fase 7:** por definir con Carlo al empezar la próxima sesión, después de la prueba.
+
+**Otros pendientes que vienen de antes:**
+- GitHub Pages aún publica desde `claude/hopeful-lovelace-18fa2k` (ver el estado al principio).
+- Conexión con Classroom y Gmail (bloqueada por el colegio).
+- Alerta de presupuesto de Google Cloud, y pasar la facturación a cuenta de pago antes del 6/1/2027 (punto 2 ter).
 
 ---
 
