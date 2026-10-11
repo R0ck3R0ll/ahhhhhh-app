@@ -1170,3 +1170,14 @@
   /* Supervisor: periodo de «Hechas» */
   .done-filter{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:4px 0 10px; }
   .done-filter[hidden]{ display:none; }
+  /* Historial del supervisor */
+  .sup-filters{ display:flex; flex-wrap:wrap; gap:6px; }
+  .sup-row.log-task{ border-left-color:var(--cat-tarea-ink); }
+  .sup-row.log-block{ border-left-color:var(--cat-tarea); }
+  .sup-row.log-item{ border-left-color:var(--cat-actividad); }
+  #sup-log-body .sup-row-time{ width:46px; }
+  .log-text{ font-weight:500; }
+  .sup-history h4{ margin:0 0 8px; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+  .sup-history ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; font-size:13.5px; }
+  .sup-history li{ display:flex; flex-direction:column; }
+  .sup-history .hist-when{ font-size:11.5px; color:var(--text-muted); font-variant-numeric:tabular-nums; }

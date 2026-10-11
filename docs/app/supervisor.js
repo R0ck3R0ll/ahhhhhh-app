@@ -8,7 +8,10 @@
    - Calendario y Tareas (fase 2): las pantallas de la App, de solo lectura, con lo trabajado sobre lo
      planificado, el ✓ en el momento en que se marcó cada tarea y, en la ficha, planificado, trabajado,
      lo que falta y la antelación con que se hizo (lo añade app.js cuando IS_SUPERVISOR).
-   - Análisis (fase 4) e Historial (fase 3): por llegar.
+   - Historial (fase 3): lo que ha hecho y cuándo (plans/{id}/log, lo escribe el servidor), con filtros;
+     cada entrada abre su ficha (las tareas eliminadas, desde el archivo). La ficha de cada tarea añade
+     su historia.
+   - Análisis (fase 4): por llegar.
    - Config: la cuenta y el idioma. */
 (function(){
   var ICONS = {
@@ -22,7 +25,7 @@
   // screen: pantalla de la App que se usa tal cual (de solo lectura); phase: fase en la que llega
   var TABS = [
     { id: 'now' }, { id: 'cal', screen: 'calendar' }, { id: 'tasks', screen: 'tasks' },
-    { id: 'stats', phase: 4 }, { id: 'log', phase: 3 }, { id: 'config' }
+    { id: 'stats', phase: 4 }, { id: 'log' }, { id: 'config' }
   ];
 
   document.body.classList.add('is-supervisor');
@@ -45,6 +48,7 @@
     sec.id = 'screen-' + screen;
     sec.setAttribute('aria-labelledby', 'screen-heading');
     sec.innerHTML = tab.id === 'now' ? '<div id="sup-now-body" class="sup-now"></div>'
+      : tab.id === 'log' ? '<div class="sup-filters" id="sup-log-filters" role="radiogroup"></div><div id="sup-log-body"></div>'
       : tab.phase ? '<div class="config-card sup-soon"><p class="card-hint" data-sup-soon="' + tab.phase + '"></p></div>'
       : '<div class="config-card" id="sup-account"></div><div class="config-card" id="sup-lang"></div>';
     main.appendChild(sec);
@@ -62,6 +66,7 @@
     showScreenBase(btn);
     if(btn.classList.contains('sup-hidden-tab') && prev){ prev.classList.add('is-active'); }
     if(btn.dataset.screen === 'sup-now'){ renderNow(); }
+    if(btn.dataset.screen === 'sup-log' && !LOG.loaded){ loadLog(false); }
   };
 
   // Config: la cuenta (la dibuja renderAccount en #account-body) y el idioma: se traen aquí de la Config de la App
@@ -157,6 +162,176 @@
   var renderTodayBase = window.renderToday;
   window.renderToday = function(){ renderTodayBase.apply(this, arguments); if(document.getElementById('screen-sup-now').classList.contains('active')){ renderNow(); } };
 
+  /* ---- Historial ---- */
+  var LOG = { items: [], loaded: false, busy: false, end: false, filter: 'all', error: '' };
+  var LOG_PAGE = 60;
+  var FILTERS = ['all', 'task', 'block', 'item'];
+  function filterOf(e){ var k = String(e.type).split('.')[0]; return k === 'event' || k === 'activity' ? 'item' : k; }
+  // '2026-10-14 18:00' → 'Mié 14/10 18:00'
+  function dueText(v){ if(!v){ return '—'; } var p = String(v).split(' '); return fmtDay(p[0]) + (p[1] ? ' ' + p[1] : ''); }
+  function sessionText(v){ var p = String(v || '').split('T'); return p[0] ? fmtDay(p[0]) + (p[1] ? ' ' + p[1] : '') : ''; }
+  function plural(base, n){ return t(n === 1 ? base + '1' : base, { n: n }); }
+  // Texto de una entrada del historial
+  function describe(e){
+    // Sin nombre (p. ej. bloques de una tarea recién creada): el nombre actual de la tarea
+    var name = e.name || (e.key && (allTasks().filter(function(x){ return x.key === e.key; })[0] || {}).name) || '', v = { name: name };
+    switch(e.type){
+      case 'task.created': return t('log.taskCreated', v) + (e.due ? ' · ' + t('log.dueIs', { t: dueText(e.due) }) : '') + (e.est ? ' · ' + fmtEst(e.est) : '');
+      case 'task.renamed': return t('log.taskRenamed', { a: e.before || '', b: e.after || '' });
+      case 'task.due-changed': return t('log.taskDue', v) + ': ' + dueText(e.before) + ' → ' + dueText(e.after);
+      case 'task.est-changed': return t('log.taskEst', v) + ': ' + (e.before ? fmtEst(e.before) : '—') + ' → ' + (e.after ? fmtEst(e.after) : '—');
+      case 'task.done': return t('log.taskDone', v) + (e.session ? ' (' + sessionText(e.session) + ')' : '');
+      case 'task.reopened': return t('log.taskReopened', v) + (e.session ? ' (' + sessionText(e.session) + ')' : '');
+      case 'task.deleted': return t('log.taskDeleted', v);
+      case 'block.planned': return plural('log.blockPlanned', e.n) + ' (' + fmtEst(e.min || 0) + ') · «' + name + '»';
+      case 'block.moved': return plural('log.blockMoved', e.n) + ' · «' + name + '»';
+      case 'block.removed': return plural('log.blockRemoved', e.n) + ' · «' + name + '»';
+      case 'block.logged': return e.manual ? t('log.workManual', { t: fmtEst(e.min || 0), name: name })
+        : t('log.blockLogged', { t: e.min ? fmtEst(e.min) : '0 min', p: fmtEst(e.planned || 0), name: name });
+      case 'event.created': return t('log.evtCreated', v) + (e.date ? ' · ' + dueText(e.date + (e.time ? ' ' + e.time : '')) : '');
+      case 'event.changed': return t('log.evtChanged', v) + changedText(e);
+      case 'event.deleted': return t('log.evtDeleted', v);
+      case 'activity.created': return t('log.actCreated', v);
+      case 'activity.changed': return t('log.actChanged', v) + changedText(e);
+      case 'activity.deleted': return t('log.actDeleted', v);
+      case 'activity.skipped': return t('log.actSkipped', v) + ' (' + sessionText(e.session) + ')';
+      case 'activity.unskipped': return t('log.actUnskipped', v) + ' (' + sessionText(e.session) + ')';
+      case 'plan.tracked': return t('log.tracked');
+    }
+    return e.type;
+  }
+  function changedText(e){
+    var f = (e.fields || []).filter(function(k){ return k === 'date' || k === 'time'; });
+    if(!f.length){ return ''; }
+    var b = e.before || {}, a = e.after || {};
+    return ': ' + dueText([b.date || a.date, b.time || a.time].join(' ')) + ' → ' + dueText([a.date || b.date, a.time || b.time].join(' '));
+  }
+  function whenText(d){ return d ? fmtHour(d.getHours() + d.getMinutes() / 60) : ''; }
+  function dayTitle(d){
+    var iso = isoOf(d), today = isoOf(TODAY_DATE), y = new Date(TODAY_DATE); y.setDate(y.getDate() - 1);
+    return iso === today ? t('log.today') : iso === isoOf(y) ? t('log.yesterday') : fmtDay(iso);
+  }
+  // Lo que abre cada entrada: la tarea (o su archivo, si se eliminó), el evento o la actividad
+  function entryOpen(e){
+    if(e.key){ return ' role="button" tabindex="0" onclick="supOpenLog(\'task\', \'' + e.key + '\')"'; }
+    if(e.id && /^(event|activity)\./.test(e.type)){
+      var kind = e.type.split('.')[0], list = kind === 'event' ? USER_EVENTS : USER_ACTS;
+      if(list.some(function(x){ return x.id === e.id; })){ return ' role="button" tabindex="0" onclick="supOpenLog(\'' + kind + '\', \'' + e.id + '\')"'; }
+    }
+    return '';
+  }
+  window.supOpenLog = function(kind, id){
+    var sc = KIND_SCREEN[kind];
+    nav.querySelector('.tab[data-screen="' + sc[0] + '"]').click();
+    DETAIL_BACK = { label: t('sup.backLog'), fn: "supBackLog('" + sc[1] + "')", go: function(){ window.supBackLog(sc[1]); } };
+    if(kind === 'activity'){ openActivity(id); } else if(kind === 'event'){ openEvent(id); }
+    else if(allTasks().some(function(x){ return x.key === id; })){ openTask(id); } else { openArchived(id); }
+  };
+  window.supBackLog = function(f){
+    showView(f, 'list');
+    nav.querySelector('.tab[data-screen="sup-log"]').click();
+  };
+  function loadLog(more){
+    if(LOG.busy){ return; }
+    if(!window.syncReadLog || !(window.SYNC && window.SYNC.status === 'in')){ LOG.error = ''; renderLog(); return; }
+    LOG.busy = true; renderLog();
+    window.syncReadLog(LOG_PAGE, more).then(function(list){
+      list = list || [];
+      LOG.items = more ? LOG.items.concat(list) : list;
+      LOG.end = list.length < LOG_PAGE; LOG.loaded = true; LOG.error = '';
+    }).catch(function(e){ LOG.error = String(e && e.code || e); })
+      .then(function(){ LOG.busy = false; renderLog(); });
+  }
+  window.supLogMore = function(){ loadLog(true); };
+  window.supLogFilter = function(f){ LOG.filter = f; renderLog(); };
+  function renderLog(){
+    var fb = document.getElementById('sup-log-filters'), box = document.getElementById('sup-log-body');
+    if(!box){ return; }
+    fb.innerHTML = FILTERS.map(function(f){
+      var on = LOG.filter === f;
+      return '<button type="button" class="cat-chip' + (on ? ' is-active' : '') + '" role="radio" aria-checked="' + on + '" onclick="supLogFilter(\'' + f + '\')">' + t('log.f.' + f) + '</button>';
+    }).join('');
+    if(!LOG.loaded){
+      var st = window.SYNC ? window.SYNC.status : 'loading';
+      box.innerHTML = '<p class="card-hint">' + (LOG.error ? esc(t('sync.error', { code: LOG.error })) : t(st === 'in' || st === 'loading' ? 'log.loading' : 'log.signIn')) + '</p>';
+      return;
+    }
+    var items = LOG.items.filter(function(e){ return LOG.filter === 'all' || filterOf(e) === LOG.filter || e.type === 'plan.tracked'; });
+    var h = '', day = '';
+    items.forEach(function(e){
+      var d = e.at ? isoOf(e.at) : '';
+      if(d !== day){ if(day){ h += '</ul>'; } day = d; h += '<h3 class="sup-h">' + (e.at ? dayTitle(e.at) : '—') + '</h3><ul class="sup-list">'; }
+      var open = entryOpen(e);
+      h += '<li class="sup-row log-' + filterOf(e) + (open ? ' is-open' : '') + '"' + open + '>' +
+        '<span class="sup-row-time">' + whenText(e.at) + '</span><span class="sup-row-main"><span class="sup-row-title log-text">' + esc(describe(e)) + '</span></span></li>';
+    });
+    if(day){ h += '</ul>'; }
+    if(!items.length){ h = '<p class="card-hint">' + t('log.empty') + '</p>'; }
+    if(!LOG.end){ h += '<div><button type="button" class="btn-ghost" onclick="supLogMore()"' + (LOG.busy ? ' disabled' : '') + '>' + t(LOG.busy ? 'log.loading' : 'log.more') + '</button></div>'; }
+    if(LOG.error){ h += '<p class="card-hint sync-error">' + esc(t('sync.error', { code: LOG.error })) + '</p>'; }
+    box.innerHTML = h;
+  }
+  // Cuando sync.js termina de conectar, se carga el historial si está a la vista
+  var renderAccountBase = window.renderAccount;
+  window.renderAccount = function(){
+    renderAccountBase.apply(this, arguments);
+    if(window.SYNC && window.SYNC.status === 'in' && !LOG.loaded && document.getElementById('screen-sup-log').classList.contains('active')){ loadLog(false); }
+  };
+
+  /* ---- Historia de cada tarea (en su ficha) y tareas eliminadas (desde el archivo) ---- */
+  function historyHtml(list, arch){
+    var rows = (list || []).map(function(e){
+      return '<li><span class="hist-when">' + (e.at ? fmtDay(isoOf(e.at)) + ' ' + whenText(e.at) : '') + '</span><span>' + esc(describe(e)) + '</span></li>';
+    });
+    if(arch && arch.existedAt && !(list || []).some(function(e){ return e.type === 'task.created'; })){
+      rows.push('<li><span class="hist-when">' + fmtDay(isoOf(arch.existedAt)) + '</span><span>' + esc(t('log.existed')) + '</span></li>');
+    }
+    return '<div class="detail-card sup-history"><h4>' + t('log.history') + '</h4>' +
+      (rows.length ? '<ul>' + rows.join('') + '</ul>' : '<p class="card-hint">' + t('log.noHistory') + '</p>') + '</div>';
+  }
+  function addHistory(key){
+    if(!window.syncTaskLog || !(window.SYNC && window.SYNC.status === 'in')){ return; }
+    Promise.all([window.syncTaskLog(key), window.syncArchive(key)]).then(function(r){
+      var box = document.getElementById('task-detail');
+      // Solo si sigue abierta la ficha de esa tarea
+      if(!box || box.hidden || box.dataset.key !== key){ return; }
+      var old = box.querySelector('.sup-history');
+      if(old){ old.remove(); }
+      box.querySelector('.detail-card').insertAdjacentHTML('afterend', historyHtml(r[0], r[1]));
+    }).catch(function(){});
+  }
+  var openTaskBase = window.openTask;
+  window.openTask = function(key){
+    openTaskBase.apply(this, arguments);
+    var box = document.getElementById('task-detail');
+    if(box){ box.dataset.key = key; }
+    addHistory(key);
+  };
+  // Tarea eliminada: su ficha sale del archivo (datos de cuando se eliminó, lo trabajado y su historia)
+  function openArchived(key){
+    var box = document.getElementById('task-detail');
+    box.dataset.key = key;
+    Promise.all([window.syncArchive(key), window.syncTaskLog(key)]).then(function(r){
+      var a = r[0] || { name: key, blocks: [] }, worked = (a.blocks || []).reduce(function(s, b){ return s + (typeof b.logged === 'number' ? b.logged : 0); }, 0);
+      renderDetail('task', {
+        title: a.name || '—', prio: 'Media',
+        rows: [
+          [t('d.origin'), esc(a.from || '')],
+          [t('task.dueDate'), dueText(a.due)],
+          [t('task.est'), a.est ? fmtEst(a.est) : ''],
+          [t('d.status'), t(a.deletedAt ? 'log.deletedOn' : 'status.pending', { t: a.deletedAt ? fmtDay(isoOf(a.deletedAt)) + ' ' + whenText(a.deletedAt) : '' })],
+          [t('d.worked'), worked ? fmtEst(worked) : '—'],
+          [t('d.blocks'), (a.blocks || []).map(function(b){
+            return '<span class="block-line">' + fmtDay(b.date) + ' ' + fmtHour(b.start) + '–' + fmtHour(b.end) + (typeof b.logged === 'number' ? ' <span class="muted">· ' + t('prog.logged', { t: b.logged ? fmtEst(b.logged) : '0 min' }) + (b.manual ? ' · ' + t('work.manual') : '') + '</span>' : '') + '</span>';
+          }).join('')]
+        ],
+        edit: '', del: '', delLabel: ''
+      });
+      box.querySelector('.detail-head .prio-chip').remove();
+      box.querySelector('.detail-card').insertAdjacentHTML('afterend', historyHtml(r[1], a));
+    }).catch(function(e){ toast(t('sync.error', { code: e && e.code || e })); });
+  }
+
   function texts(){
     document.querySelectorAll('[data-sup-soon]').forEach(function(p){
       var n = +p.getAttribute('data-sup-soon');
@@ -167,6 +342,7 @@
     var active = nav.querySelector('.tab.is-active');
     if(active){ setScreenHeading(active); }
     renderNow();
+    renderLog();
   }
   // Al cambiar de idioma se vuelven a escribir los textos del modo supervisor
   var applyI18nBase = window.applyI18n;

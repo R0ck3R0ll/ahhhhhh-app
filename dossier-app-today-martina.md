@@ -550,7 +550,14 @@ Cada fase se publica y la prueba Carlo antes de pasar a la siguiente.
      - Después, semanas anteriores de 7 días hacia atrás («30/09 – 06/10», «23/09 – 29/09»…), hasta la de la entrega más antigua.
      - El número de «Hechas · n» es el del periodo elegido.
    - **Ficha de la tarea:** añade Planificado (bloques sin registrar), Trabajado, Falta y «Marcada como hecha» (día y hora, y «1 d 23 h antes de la entrega» o «… después de la entrega»).
-3. **Historial:** pestaña Historial (línea de tiempo con filtros por tipo; cada entrada abre su ficha) e historia en la ficha de cada tarea.
+3. **Historial** (**hecha el 11/10/2026**): pestaña Historial (línea de tiempo con filtros por tipo; cada entrada abre su ficha) e historia en la ficha de cada tarea.
+   - **Pestaña Historial** (`supervisor.js`): entradas de la más reciente a la más antigua, agrupadas por día («Hoy», «Ayer», «Dom 11/10»…), con la hora.
+     - Ejemplos: «Movió la entrega de «Mates»: Mié 14/10 18:00 → Jue 15/10 18:00», «Planificó 2 bloques (1 h 30 min)», «Registró 45 min de 1 h planificados», «Anotó 30 min de trabajo sin planificar», «Hoy no voy» en…
+     - Filtros: Todo · Tareas · Bloques · Eventos y actividades.
+     - Se cargan de 60 en 60, con «Ver más».
+     - Cada entrada abre su ficha con «‹ Volver al Historial». Una tarea eliminada se abre desde el archivo (sus datos al eliminarla, lo trabajado con sus bloques, «Eliminada el …» y su historia).
+   - **Ficha de cada tarea** (también desde Tareas, Calendario o Ahora): tarjeta **«Historia»** con todo lo de esa tarea (cambios y bloques). Si la tarea ya existía al empezar el historial, lo indica.
+   - **Lectura** (`sync.js`): `syncReadLog` (por páginas, por `at`), `syncTaskLog` (por `key`, sin índice compuesto) y `syncArchive`. Comprobado con el emulador que el supervisor puede hacer estas consultas y que otros no.
 4. **Análisis:** Estado de las tareas (totales → lista → ficha) e indicadores.
 5. **Avisos y resúmenes:** notificaciones (FCM), `checkAlerts`, novedades, resúmenes de las 22:00, campana y Config de avisos.
 6. **Mensajes:** envío, aviso emergente o notificación a Martina, respuesta «OK» o texto, y lista de mensajes en las dos apps.

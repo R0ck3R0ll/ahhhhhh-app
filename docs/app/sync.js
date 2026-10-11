@@ -22,7 +22,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  doc, getDoc, setDoc, updateDoc, collection, query, where, limit, getDocs, onSnapshot,
+  doc, getDoc, setDoc, updateDoc, collection, query, where, limit, getDocs, onSnapshot, orderBy, startAfter,
   serverTimestamp, arrayUnion, arrayRemove, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
@@ -276,6 +276,36 @@ async function start(){
     await updateDoc(doc(db, 'plans', planId), { memberEmails: arrayUnion(email) });
     return true;
   };
+  // ---- Historial del plan (lo escribe el servidor; lo leen miembros y supervisores) ----
+  // Entradas de la más reciente a la más antigua, de n en n: syncReadLog(n) y luego syncReadLog(n, true) para seguir
+  let logCursor = null;
+  function logEntry(d){ const x = d.data(); x.id = d.id; x.at = x.at && x.at.toDate ? x.at.toDate() : null; return x; }
+  window.syncReadLog = async function(n, more){
+    if(!planId){ return null; }
+    if(!more){ logCursor = null; }
+    const parts = [collection(db, 'plans', planId, 'log'), orderBy('at', 'desc')];
+    if(logCursor){ parts.push(startAfter(logCursor)); }
+    parts.push(limit(n));
+    const snap = await getDocs(query.apply(null, parts));
+    if(snap.docs.length){ logCursor = snap.docs[snap.docs.length - 1]; }
+    return snap.docs.map(logEntry);
+  };
+  // Todo lo de una tarea (sus cambios y sus bloques), de lo más reciente a lo más antiguo
+  window.syncTaskLog = async function(key){
+    if(!planId){ return null; }
+    const snap = await getDocs(query(collection(db, 'plans', planId, 'log'), where('key', '==', key)));
+    return snap.docs.map(logEntry).sort(function(p, q){ return (q.at || 0) - (p.at || 0); });
+  };
+  // Archivo de una tarea (también de las eliminadas) y desde cuándo se lleva el historial
+  window.syncArchive = async function(key){
+    if(!planId){ return null; }
+    const d = await getDoc(doc(db, 'plans', planId, 'archive', key));
+    if(!d.exists()){ return null; }
+    const x = d.data();
+    ['createdAt', 'existedAt', 'deletedAt', 'updatedAt'].forEach(function(k){ if(x[k] && x[k].toDate){ x[k] = x[k].toDate(); } });
+    return x;
+  };
+
   // Supervisor: solo lo pone el dueño. Si ya era miembro, deja de serlo en el mismo cambio
   window.syncAddViewer = async function(email){
     email = String(email || '').trim().toLowerCase();
