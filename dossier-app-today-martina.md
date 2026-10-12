@@ -5,7 +5,7 @@ Este documento resume el estudio y las decisiones tomadas en la fase de planific
 
 > **Estado (11/10/2026)**
 > - **App publicada** en https://ahhhhhh-today.web.app desde **`main`** (9/10/2026: todo el trabajo está en `main` y solo `main` publica). Las sesiones nuevas trabajan en su rama y lo pasan a `main` para publicarlo.
-> - **GitHub Pages** (páginas de inicio, privacidad y condiciones que usa la pantalla de permisos de Google) aún se publica desde `claude/hopeful-lovelace-18fa2k`: hay que cambiar su origen a `main` / `docs` (GitHub > Settings > Pages) y después ya se puede borrar esa rama.
+> - **GitHub Pages** (páginas de inicio, privacidad y condiciones que usa la pantalla de permisos de Google) se publica desde **`main` / `docs`** (cambiado por Carlo el 12/10/2026). La rama antigua `claude/hopeful-lovelace-18fa2k` ya no se usa y se puede borrar (GitHub > Branches).
 > - **Hecho y probado por Carlo:** pantallas, tareas y bloques de trabajo, avisos de riesgo, sincronización entre móviles (Firebase), traslados con Google Maps (coche y a pie, ubicación por GPS), lectura del calendario escolar con IA (Gemini en Vertex AI, con preguntas cuando el calendario depende de la alumna).
 > - **Pendiente:** conexión con Classroom y Gmail (bloqueada por el colegio, punto 3), extracción con IA de correos y publicaciones con su pantalla de revisión (punto 4).
 > - **Exportación a Google Calendar (12/10/2026): hecha, publicada y probada por Carlo.** Martina (con su Gmail personal) y Carlo (como supervisor, con su cuenta) tienen cada uno su calendario «AHHHHHH · Martina». Pendiente solo de ver con el uso los avisos a la hora de salida.
@@ -696,7 +696,6 @@ Todos se pueden cambiar en Config del supervisor:
 **Fase 7:** por definir con Carlo.
 
 **Otros pendientes que vienen de antes:**
-- GitHub Pages aún publica desde `claude/hopeful-lovelace-18fa2k` (ver el estado al principio).
 - Conexión con Classroom y Gmail (bloqueada por el colegio).
 - Alerta de presupuesto de Google Cloud, y pasar la facturación a cuenta de pago antes del 6/1/2027 (punto 2 ter).
 
