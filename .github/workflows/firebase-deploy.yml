@@ -72,18 +72,28 @@ jobs:
         if: steps.changed.outputs.deploy == 'true'
         env:
           SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GCAL_CLIENT_ID: ${{ secrets.GCAL_CLIENT_ID }}
+          GCAL_CLIENT_SECRET: ${{ secrets.GCAL_CLIENT_SECRET }}
         run: |
+          # Cliente OAuth de Google para la exportación a Google Calendar (secretos de GitHub del mismo nombre).
+          # Sin ellos, la exportación dice «aún no está preparada» y lo demás funciona igual.
+          if [ -n "$GCAL_CLIENT_ID" ] && [ -n "$GCAL_CLIENT_SECRET" ]; then
+            printf 'GCAL_CLIENT_ID=%s\nGCAL_CLIENT_SECRET=%s\n' "$GCAL_CLIENT_ID" "$GCAL_CLIENT_SECRET" > functions/.env.ahhhhhh-today
+          else
+            echo "::warning::Faltan los secretos GCAL_CLIENT_ID y GCAL_CLIENT_SECRET: la exportación a Google Calendar no funcionará"
+          fi
           printf '%s' "$SA_KEY" > "$RUNNER_TEMP/sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
           # La lectura con IA usa Gemini en Vertex AI y lee los enlaces de Drive con la API de Drive;
           # el historial del plan (onPlanChange) se dispara con los cambios de Firestore a través de Eventarc;
-          # los avisos usan Cloud Scheduler (cada 15 min y a las 22:00) y Firebase Cloud Messaging:
+          # los avisos usan Cloud Scheduler (cada 15 min y a las 22:00) y Firebase Cloud Messaging;
+          # la exportación usa la API de Google Calendar:
           # todas esas APIs tienen que estar activadas en el proyecto
           gcloud auth activate-service-account --key-file="$RUNNER_TEMP/sa.json" --quiet
-          gcloud services enable aiplatform.googleapis.com drive.googleapis.com eventarc.googleapis.com pubsub.googleapis.com cloudscheduler.googleapis.com fcm.googleapis.com fcmregistrations.googleapis.com --project ahhhhhh-today --quiet \
+          gcloud services enable aiplatform.googleapis.com drive.googleapis.com eventarc.googleapis.com pubsub.googleapis.com cloudscheduler.googleapis.com fcm.googleapis.com fcmregistrations.googleapis.com calendar-json.googleapis.com --project ahhhhhh-today --quiet \
             || echo "::warning::No se pudieron activar las APIs de Vertex AI, Drive y Eventarc; actívalas a mano en Google Cloud"
           # La primera vez que se publica una función disparada por Firestore, Google tarda unos minutos
           # en preparar los permisos de Eventarc: si falla, se reintenta una vez pasados 3 minutos
           npx --yes firebase-tools@15 deploy --only functions --project ahhhhhh-today --non-interactive --force \
             || { echo "Reintento en 3 minutos"; sleep 180; npx --yes firebase-tools@15 deploy --only functions --project ahhhhhh-today --non-interactive --force; }
-          rm -f "$RUNNER_TEMP/sa.json"
+          rm -f "$RUNNER_TEMP/sa.json" functions/.env.ahhhhhh-today

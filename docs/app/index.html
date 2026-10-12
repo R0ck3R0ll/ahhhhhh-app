@@ -576,9 +576,13 @@
             <p class="card-hint" data-i18n="hint.gcalLeave"></p>
             <div class="config-line">
               <span class="config-label" data-i18n="gcal.status"></span>
-              <span class="status-chip off" data-i18n="gcal.needsGoogle"></span>
+              <span class="status-chip off" id="gcal-chip"></span>
             </div>
-            <button class="btn-primary" style="align-self:flex-start" onclick="toast(t('toast.gcal'))" data-i18n="gcal.create"></button>
+            <p class="card-hint" id="gcal-info"></p>
+            <div class="gcal-actions">
+              <button type="button" class="btn-primary" id="gcal-connect" onclick="gcalConnect()" data-i18n="gcal.connect"></button>
+              <button type="button" class="btn-ghost" id="gcal-stop" onclick="gcalAskStop()" data-i18n="gcal.stop" hidden></button>
+            </div>
           </div>
         </div>
         </div>
@@ -739,6 +743,15 @@
 </div>
 
 <!-- Borrar una categoría con elementos activos: aviso y doble confirmación -->
+<dialog class="confirm-dialog" id="gcal-stop-dialog" aria-labelledby="gcal-stop-title">
+  <h2 id="gcal-stop-title" data-i18n="gcal.stopTitle"></h2>
+  <p id="gcal-stop-body"></p>
+  <div class="form-actions">
+    <button type="button" class="btn-ghost" onclick="el('gcal-stop-dialog').close()" data-i18n="btn.cancel"></button>
+    <button type="button" class="btn-danger" id="gcal-stop-go" onclick="gcalStop()" data-i18n="gcal.stop"></button>
+  </div>
+</dialog>
+
 <dialog class="confirm-dialog" id="cat-del-dialog" aria-labelledby="cat-del-title">
   <h2 id="cat-del-title"></h2>
   <p id="cat-del-body"></p>

@@ -1278,3 +1278,6 @@
   .sm-state{ font-size:12px; color:var(--text-muted); }
   .sm-state.is-seen{ color:var(--text); }
   .sm-state.is-replied{ color:var(--cat-tarea-ink); font-weight:600; }
+
+/* Google Calendar: botones de conectar y desconectar */
+.gcal-actions{ display:flex; flex-wrap:wrap; gap:8px; }

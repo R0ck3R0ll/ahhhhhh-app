@@ -238,6 +238,7 @@
     refreshRoutes(items);
     // Las horas de salida se calculan para todos: se ven en el próximo y en los siguientes
     items.forEach(applyRoute);
+    if(typeof publishLeave === 'function'){ publishLeave(items); }
     TODAY_LATER_ALL = items.slice(1);
     TODAY_LATER = TODAY_LATER_ALL.slice(0, TODAY_MAX - 1);
   }
@@ -903,6 +904,8 @@
     if(hint){ hint.hidden = S.status !== 'out'; }
     // La lectura del calendario escolar con IA necesita la sesión iniciada
     renderSchoolCal();
+    // Exportación a Google Calendar: también necesita la sesión
+    if(typeof watchGcal === 'function'){ watchGcal(); renderGcal(); }
     // Mensajes del supervisor (solo quien usa la App; el modo supervisor tiene los suyos)
     if(!IS_SUPERVISOR && S.status === 'in' && !MSG.watching && window.syncWatchMessages){ MSG.watching = true; window.syncWatchMessages(onMessages); }
   }
@@ -2200,6 +2203,110 @@
   }
   document.getElementById('category-list').addEventListener('input', renderExportCats);
 
+  /* ---- Conexión con Google Calendar ----
+     «Conectar con Google» abre la pantalla de permiso de Google (gcalStart, en el servidor). Quien usa
+     la App elige su cuenta (p. ej. su Gmail personal) y Google vuelve a la App con ?gcal=ok (o el
+     motivo del fallo). Desde ahí el servidor copia el plan en el calendario «AHHHHHH · nombre» y lo
+     mantiene al día solo. El estado (plans/{id}/gcal/status) llega por syncWatchGcal.
+     Aviso a la hora de salida: este móvil publica los tiempos de trayecto de hoy (publishLeave). */
+  var GCAL = { status: null, watching: false, busy: false, back: null, leave: null, leaveSig: '' };
+  try{
+    GCAL.back = new URLSearchParams(location.search).get('gcal');
+    if(GCAL.back){ history.replaceState(null, '', location.pathname); }
+  }catch(e){}
+  function exportOn(){ return el('export-switch').getAttribute('aria-checked') === 'true'; }
+  function gcalConnected(){ return !!(GCAL && GCAL.status && GCAL.status.connected); }
+  function renderGcal(){
+    if(!GCAL){ return; }   // aún no se ha cargado esta parte
+    var S = window.SYNC || {}, st = GCAL.status, chip = el('gcal-chip'), info = el('gcal-info');
+    var sum = el('sum-gcal');
+    if(sum){ sum.textContent = !exportOn() ? t('sum.gcalOff') : gcalConnected() ? t('sum.gcalOn') : t('gcal.st.off'); }
+    if(!chip){ return; }
+    var state = gcalConnected() ? (st.state || 'pending') : 'off';
+    chip.textContent = t('gcal.st.' + state);
+    chip.className = 'status-chip ' + (state === 'ok' ? 'ok' : state === 'off' || state === 'paused' ? 'off' : 'pending');
+    var lines = [];
+    if(gcalConnected()){
+      lines.push(esc(t('gcal.account', { email: st.email || '' })) +
+        (st.syncedAt ? ' · ' + esc(t('gcal.synced', { when: msgWhen(st.syncedAt) })) : '') +
+        (st.count ? ' · ' + esc(t('gcal.count', { n: st.count })) : ''));
+      lines.push(t('hint.gcalOn'));
+    } else if(IS_SUPERVISOR){
+      lines.push(t('gcal.supervisor'));
+    } else if(S.status !== 'in'){
+      lines.push(t('gcal.needSignIn'));
+    } else {
+      if(st && st.error && (st.error === 'revoked' || st.error === 'gone')){ lines.push(t('gcal.why.' + st.error)); }
+      lines.push(t('hint.gcalConnect'));
+    }
+    info.innerHTML = lines.join('<br>');
+    var connect = el('gcal-connect'), stop = el('gcal-stop');
+    connect.hidden = IS_SUPERVISOR || gcalConnected() || S.status !== 'in';
+    connect.disabled = GCAL.busy;
+    connect.textContent = t(GCAL.busy ? 'gcal.opening' : 'gcal.connect');
+    stop.hidden = IS_SUPERVISOR || !gcalConnected();
+    stop.disabled = GCAL.busy;
+  }
+  function gcalError(e){
+    var m = String(e && e.message || '');
+    return t(m === 'notReady' ? 'gcal.err.notReady' : m === 'signIn' || m === 'noPlan' ? 'gcal.needSignIn' : 'gcal.err.error');
+  }
+  // Se abre la pantalla de permiso de Google (en esta misma ventana: también va bien en la App instalada)
+  function gcalConnect(){
+    if(IS_SUPERVISOR || GCAL.busy){ return; }
+    if(!window.SYNC || window.SYNC.status !== 'in' || !window.syncCall){ toast(t('gcal.needSignIn')); return; }
+    GCAL.busy = true; renderGcal();
+    // Que el servidor ya tenga la exportación activada y las categorías elegidas al volver
+    saveSettings();
+    Promise.resolve(window.syncFlush ? window.syncFlush() : null).then(function(){
+      return window.syncCall('gcalStart', { lang: LANG });
+    }).then(function(r){ location.href = r.url; })
+      .catch(function(e){ GCAL.busy = false; renderGcal(); toast(gcalError(e)); });
+  }
+  function gcalAskStop(){
+    el('gcal-stop-body').textContent = t('gcal.stopBody', { cal: 'AHHHHHH' + (KID ? ' · ' + KID : '') });
+    el('gcal-stop-dialog').showModal();
+  }
+  function gcalStop(){
+    el('gcal-stop-dialog').close();
+    GCAL.busy = true; renderGcal();
+    window.syncCall('gcalStop', {}).then(function(){ toast(t('toast.gcalStopped')); })
+      .catch(function(e){ toast(gcalError(e)); })
+      .then(function(){ GCAL.busy = false; renderGcal(); });
+  }
+  // Con la sesión iniciada: se sigue el estado y, al volver de Google, se pide la primera copia
+  function watchGcal(){
+    var S = window.SYNC || {};
+    if(!GCAL || S.status !== 'in' || !window.syncWatchGcal){ return; }
+    if(!GCAL.watching){
+      GCAL.watching = true;
+      window.syncWatchGcal(function(st){ GCAL.status = st; renderGcal(); if(!IS_SUPERVISOR && gcalConnected()){ publishLeave(todayItems()); } });
+    }
+    if(GCAL.back && !IS_SUPERVISOR){
+      var code = GCAL.back; GCAL.back = null;
+      toast(t('gcal.back.' + (/^(ok|denied|scope|expired)$/.test(code) ? code : 'error')));
+      if(code === 'ok'){ window.syncCall('gcalSyncNow', {}).catch(function(){}); }
+    }
+  }
+  // Tiempos de trayecto de hoy (min) para el aviso a la hora de salida; 0 si no hay trayecto.
+  // Se guarda lo último que se supo de cada elemento aunque ya haya empezado.
+  renderGcal();
+  function publishLeave(items){
+    if(!GCAL || IS_SUPERVISOR || !window.syncGcalLeave || !gcalConnected() || !exportOn() || el('leave-switch').getAttribute('aria-checked') !== 'true'){ return; }
+    var iso = isoOf(TODAY_DATE);
+    if(!GCAL.leave || GCAL.leave.date !== iso){ GCAL.leave = { date: iso, items: {} }; }
+    items.forEach(function(e){
+      if((e.kind !== 'activity' && e.kind !== 'event') || e.t <= NOW){ return; }
+      if(!e.place || !travelOrigin(e, TODAY_DATE, NOW)){ GCAL.leave.items[e.id] = 0; return; }
+      var r = ROUTES.day === iso && ROUTES.items[e.id];
+      if(r && r.car){ GCAL.leave.items[e.id] = Math.max(r.car.min, r.walk ? r.walk.min : 0); }
+    });
+    var sig = JSON.stringify(GCAL.leave);
+    if(sig === GCAL.leaveSig || !Object.keys(GCAL.leave.items).length){ return; }
+    GCAL.leaveSig = sig;
+    window.syncGcalLeave(iso, GCAL.leave.items).catch(function(){ GCAL.leaveSig = ''; });
+  }
+
   // Acordeón: abrir un bloque de Configuración cierra el que estuviera abierto
   document.querySelectorAll('.cfg-group').forEach(function(g){
     g.addEventListener('toggle', function(){
@@ -2221,7 +2328,7 @@
     put('hours', !boundsSet() ? t('sum.notSet') : b.start + '–' + b.end + (schoolSet() ? ' · ' + t('sum.school') + '\u00a0' + SCHOOL.week.entry + '\u2011' + SCHOOL.week.exit : ''));
     put('links', t('sum.links', { n: (SCHOOL_MODE === 'manual' ? NSD_MANUAL.length : SCHOOL_CAL) ? 1 : 0 }));
     put('cats', t('sum.cats', { n: document.querySelectorAll('#category-list .cat-row').length }));
-    put('gcal', t(document.getElementById('export-switch').getAttribute('aria-checked') === 'true' ? 'sum.gcalOn' : 'sum.gcalOff'));
+    renderGcal();
   }
 
 

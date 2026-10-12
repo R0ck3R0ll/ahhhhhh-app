@@ -5,6 +5,8 @@ rules_version = '2';
 //    supervisores (viewerEmails: solo leen, para la App de seguimiento)
 //  - plans/{planId}/kv/{clave}: los datos del plan (actividades, eventos, ajustes…)
 //  - plans/{planId}/log y archive: historial y archivo de tareas; solo los escribe el servidor
+//  - plans/{planId}/gcal: exportación a Google Calendar (estado y tiempos de trayecto de hoy)
+//  - gcalStates: permisos de Google a medias; solo el servidor
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null && request.auth.token.email != null; }
@@ -82,6 +84,16 @@ service cloud.firestore {
       }
       match /private/{id} {
         allow read, write: if false;
+      }
+      // Exportación a Google Calendar: el estado (status) lo escribe el servidor; los miembros publican
+      // los tiempos de trayecto de hoy (leave: { date, items: { elemento: minutos } }) para el aviso de salida
+      match /gcal/{id} {
+        allow read: if reader();
+        allow write: if member() && id == 'leave'
+          && request.resource.data.keys().hasOnly(['date', 'items', 'at', 'by'])
+          && request.resource.data.date is string && request.resource.data.date.size() == 10
+          && request.resource.data.items is map && request.resource.data.items.size() <= 60
+          && request.resource.data.by == request.auth.uid;
       }
       // Mensajes del supervisor a quien usa la App: el supervisor los escribe; los miembros solo marcan
       // que los han visto y responden («OK» o un texto). No se borran.

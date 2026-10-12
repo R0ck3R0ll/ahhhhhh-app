@@ -251,6 +251,7 @@ async function start(){
     if(setRole(role)){ location.reload(); return; }
     SYNC.status = 'in';
     watchMessages();
+    watchGcal();
     // Notificaciones ya activadas: se renueva el registro de este móvil (el token puede cambiar)
     if(window.Notification && Notification.permission === 'granted' && localStorage.getItem('push-token')){ registerPush().catch(function(){}); }
     // Quien usa la App, si tiene supervisor y ya dio permiso de notificaciones: recibe los mensajes con la App cerrada
@@ -290,6 +291,7 @@ async function start(){
   window.syncSignOut = async function(){
     await flushPush();
     if(unsubMsgs){ unsubMsgs(); unsubMsgs = null; }
+    if(unsubGcal){ unsubGcal(); unsubGcal = null; }
     if(unsubKv){ unsubKv(); unsubKv = null; }
     if(unsubPlan){ unsubPlan(); unsubPlan = null; }
     planId = null;
@@ -392,6 +394,27 @@ async function start(){
     }, function(e){ SYNC.error = String(e.code || e); changed(); });
   }
   window.syncWatchMessages = function(cb){ msgCb = cb; if(SYNC.status === 'in'){ watchMessages(); } };
+
+  // ---- Exportación a Google Calendar (plans/{id}/gcal) ----
+  // syncWatchGcal(cb): cb(estado o null) cada vez que cambia (lo escribe el servidor)
+  let unsubGcal = null, gcalCb = null;
+  function watchGcal(){
+    if(unsubGcal){ unsubGcal(); unsubGcal = null; }
+    if(!planId || !gcalCb){ return; }
+    unsubGcal = onSnapshot(doc(db, 'plans', planId, 'gcal', 'status'), function(s){
+      const x = s.exists() ? s.data() : null;
+      if(x){ ['at', 'syncedAt'].forEach(function(k){ if(x[k] && x[k].toDate){ x[k] = x[k].toDate(); } }); }
+      gcalCb(x);
+    }, function(){ gcalCb(null); });
+  }
+  window.syncWatchGcal = function(cb){ gcalCb = cb; if(SYNC.status === 'in'){ watchGcal(); } };
+  // Tiempos de trayecto de hoy para el aviso a la hora de salida: { 'act-…' | 'evt-…': minutos }
+  window.syncGcalLeave = async function(date, items){
+    if(!planId || !user || SYNC.role === 'viewer'){ return; }
+    await setDoc(doc(db, 'plans', planId, 'gcal', 'leave'), { date: date, items: items, at: serverTimestamp(), by: user.uid });
+  };
+  // Sube ya lo que esté pendiente (p. ej. antes de salir de la App hacia Google)
+  window.syncFlush = function(){ clearTimeout(pushTimer); return pushQueue.size ? flushPush() : Promise.resolve(); };
   window.syncSendMessage = async function(m){
     if(!planId || !user || SYNC.role !== 'viewer'){ return false; }
     const data = { from: user.uid, fromEmail: user.email.toLowerCase(), fromName: user.displayName || '', text: String(m.text || '').slice(0, 1000), createdAt: serverTimestamp() };

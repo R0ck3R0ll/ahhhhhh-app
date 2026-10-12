@@ -7,7 +7,8 @@ Este documento resume el estudio y las decisiones tomadas en la fase de planific
 > - **App publicada** en https://ahhhhhh-today.web.app desde **`main`** (9/10/2026: todo el trabajo está en `main` y solo `main` publica). Las sesiones nuevas trabajan en su rama y lo pasan a `main` para publicarlo.
 > - **GitHub Pages** (páginas de inicio, privacidad y condiciones que usa la pantalla de permisos de Google) aún se publica desde `claude/hopeful-lovelace-18fa2k`: hay que cambiar su origen a `main` / `docs` (GitHub > Settings > Pages) y después ya se puede borrar esa rama.
 > - **Hecho y probado por Carlo:** pantallas, tareas y bloques de trabajo, avisos de riesgo, sincronización entre móviles (Firebase), traslados con Google Maps (coche y a pie, ubicación por GPS), lectura del calendario escolar con IA (Gemini en Vertex AI, con preguntas cuando el calendario depende de la alumna).
-> - **Pendiente:** conexión con Classroom y Gmail (bloqueada por el colegio, punto 3), extracción con IA de correos y publicaciones con su pantalla de revisión (punto 4), exportación a Google Calendar.
+> - **Pendiente:** conexión con Classroom y Gmail (bloqueada por el colegio, punto 3), extracción con IA de correos y publicaciones con su pantalla de revisión (punto 4).
+> - **Exportación a Google Calendar (12/10/2026): programada**, a falta de que Carlo prepare Google Cloud (pasos en «Exportación a Google Calendar: puesta en marcha», punto 5) y de probarla.
 > - **Mejoras en la App de Martina (10/10/2026):** anotar trabajo hecho sin planificar, festivos nacionales en las actividades y «Hoy no voy» (puntos 2.2 y 2.3 bis).
 > - **App de seguimiento para Carlo** (punto 7 bis): fases 1 a 6 hechas y publicadas (10-11/10/2026). Carlo ya entra como supervisor. Prueba de avisos y mensajes en los móviles (7 bis.9) **hecha y correcta** (11/10/2026). **Pendiente: la fase 7 (por definir).**
 
@@ -78,10 +79,16 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - **Exportación a Google Calendar (solo en un sentido: App → Google Calendar).**
   - La App **no importa** eventos del calendario: solo lleva actividades, tareas y eventos que inciden en el tiempo disponible de Martina, y muchos eventos del calendario personal no interesan (cumpleaños, trabajo…).
   - La App crea en Google Calendar un **calendario propio y separado** ("AHHHHHH · Martina") y escribe ahí sus eventos; se ve en el móvil junto a los demás y se puede ocultar o borrar sin tocar el resto.
-  - Usa la misma cuenta de Google conectada para Classroom y Gmail.
+  - **Cuenta (decidido 12/10/2026): una Gmail personal de Martina**, no la del colegio (bloqueada para apps externas). Se elige en la pantalla de Google al pulsar **«Conectar con Google»** (Config > Google Calendar, con «Exportar eventos a Google Calendar» activado y la sesión iniciada). Google avisa de que la App no está verificada: «Configuración avanzada» > «Ir a AHHHHHH Today».
+  - **Automática, por el servidor** (decidido 12/10/2026): se da permiso una vez y el servidor mantiene el calendario al día en unos segundos tras cada cambio, aunque la App esté cerrada. Permiso de Google: `calendar.app.created` (solo los calendarios que crea la App).
   - Se elige qué categorías se exportan (una casilla por categoría definida).
-  - Las tareas se exportan como aviso a su hora de entrega, no como bloque de tiempo.
-  - Opción de aviso a la **hora de salida** calculada cuando el evento implica traslado.
+  - Qué se exporta:
+    - **actividades**: cada sesión, de hace 7 días a 8 semanas vista, sin festivos ni sesiones quitadas con «Hoy no voy»; la tarea de práctica va en la descripción («✓» si está hecha para esa sesión), no como aviso aparte;
+    - **eventos**: desde hace 7 días, con su duración y lugar; si tienen tarea, se nombra en la descripción;
+    - **tareas** (sueltas, de Classroom y de eventos): un aviso de 15 min a la hora de entrega, que no ocupa tiempo («Entrega: …»); las hechas llevan «✓» y no avisan. Es la casilla de la categoría **Tarea**.
+  - Avisos: 10 min antes; con lugar y **aviso a la hora de salida** activado, a la hora de salir. El móvil de Martina publica los tiempos de trayecto de hoy (los mismos de «Hoy», la salida más temprana si hay coche y a pie); mientras no se sabe el trayecto (otros días), 30 min antes. Sin traslado (mismo sitio que lo anterior), 10 min antes.
+  - Lo de hace más de 7 días que ya no está en la App se deja en el calendario (es pasado); lo demás que se borra en la App se borra también en Google.
+  - Desactivar la exportación la pone **en pausa** (el calendario se queda como está). **«Desconectar»** borra de Google el calendario de la App y retira el permiso. Si se borra el calendario en Google o se quita el permiso, la App lo dice y deja volver a conectar.
 
 ### 2.2 Actividades extraescolares
 - Actividades recurrentes semanales: **todo lo inserta el usuario**. Misma lógica que Eventos: con la App nueva solo aparece el botón **Añadir actividad**; después, la lista; **cada actividad se abre pulsando encima** (ficha de consulta con Editar y Eliminar).
@@ -286,7 +293,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - **Lugares** (casa, actividades, eventos): al escribir salen primero los ya usados; a partir de 10 caracteres, si no se ha elegido ninguno, se busca el texto en Google Maps (**Places API (New)**, Autocomplete) al dejar de escribir 0,7 s, máximo 150 búsquedas por móvil y día. Al elegir una sugerencia de Google se guarda su identificador (`places`, compartido por el plan) y las rutas van a ese sitio exacto. En Perfil, «Usar mi ubicación actual» guarda el punto exacto de casa.
   - **Calle sin número** (8/10/2026): si la sugerencia elegida es solo la calle, el cursor se queda tras el nombre de la calle y un aviso pide el número; se añade ahí mismo, sin reescribir la dirección. Al dejar el campo con el texto cambiado, se busca en Google el sitio exacto de lo escrito y, si es una dirección con número o un sitio concreto **y contiene todas las palabras y números de lo escrito** (para no tomar una calle con el mismo nombre en otro pueblo), se guarda su identificador. Las últimas búsquedas se recuerdan para no repetirlas.
   - Requiere **Places API (New)** activada y añadida a las restricciones de la clave «Maps App».
-- Pendiente: el aviso a la hora de salida (Config > Google Calendar > «Aviso a la hora de salida») todavía no usa estos tiempos.
+- El aviso a la hora de salida de Google Calendar usa estos tiempos (12/10/2026): el móvil de Martina los publica en `plans/{id}/gcal/leave` para los elementos de hoy.
 
 ## 3. Flujo de sincronización con Google (Classroom + Gmail)
 
@@ -320,8 +327,26 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 | Gmail API | Mismo proyecto de Google Cloud, API activada, mismo OAuth | Se usa tanto para leer contenido relevante como para la extracción con IA |
 | Geolocalización del dispositivo | Ninguna cuenta ni API — función estándar del navegador con permiso del usuario | Trivial |
 | Google Maps Platform (cálculo de traslados reales) | Clave de API de Google Maps — **requiere asociar una tarjeta de crédito a la cuenta de Google Cloud**, aunque el uso se mantenga dentro del nivel gratuito | **Decidido: Google Maps** (Routes API, con tráfico). Se pone un **tope de gasto** (límite de cuota diaria y alerta de presupuesto en Google Cloud) para que el uso familiar se quede siempre en el nivel gratuito. Descartados: Waze (sin API pública de rutas), TomTom (alternativa sin tarjeta) y la estimación en línea recta |
-| Google Calendar API (exportación) | Mismo proyecto de Google Cloud y mismo OAuth; API de Google Calendar activada. Permiso limitado `calendar.app.created` (solo puede gestionar calendarios creados por la App, no lee los demás) | Decidido: exportar a Google Calendar. Solo escritura en el calendario propio de la App |
+| Google Calendar API (exportación) | Mismo proyecto de Google Cloud; API de Google Calendar activada; un cliente OAuth web propio. Permiso limitado `calendar.app.created` (solo puede gestionar calendarios creados por la App, no lee los demás) | Programada el 12/10/2026, con la Gmail personal de Martina. Solo escritura en el calendario propio de la App. Ver «Exportación a Google Calendar: puesta en marcha» |
 | Extracción de contenido con IA (**Gemini en Vertex AI**, decidido 8/10/2026) | Vertex AI API activada en el mismo proyecto de Google Cloud; sin clave (cuenta de servicio de la función) | Se paga con la facturación del proyecto (crédito de prueba; después, céntimos al mes). Google no usa los datos para entrenar. Ver punto 2 ter |
+
+
+### Exportación a Google Calendar: puesta en marcha (12/10/2026)
+
+**Cómo funciona por dentro** (`functions/gcal.js` y el final de `functions/index.js`):
+- `gcalStart` (la App) da la dirección de la pantalla de permiso de Google; `gcalCallback` recibe el permiso, crea el calendario «AHHHHHH · nombre» y vuelve a la App con `?gcal=ok` (o el motivo del fallo).
+- El permiso, el calendario y lo ya escrito se guardan en `plans/{id}/private/gcal` (solo el servidor); el estado que ve la App, en `plans/{id}/gcal/status`.
+- Sincronizan: los cambios del plan (`gcalOnKv`), los tiempos de trayecto de hoy (`gcalOnLeave`), la App al volver de Google (`gcalSyncNow`) y una pasada cada hora (`gcalSweep`, que avanza las semanas). Solo se escribe en Google lo que ha cambiado y nunca hay dos sincronizaciones a la vez.
+- Cada evento tiene un id fijo en Google: si algo se repite, no se duplica.
+- Pruebas: `npm test` en `functions/` (`test/gcal.test.js`).
+
+**Pasos que tiene que hacer Carlo** (una sola vez, en el proyecto «AHHHHHH Today» de Google Cloud):
+1. **Pantalla de consentimiento** (Google Auth Platform > Acceso a datos): añadir el permiso `.../auth/calendar.app.created`.
+2. **Cliente OAuth** (Google Auth Platform > Clientes > Crear cliente): tipo «Aplicación web», nombre «AHHHHHH Calendar», con este **URI de redireccionamiento autorizado**: `https://europe-west1-ahhhhhh-today.cloudfunctions.net/gcalCallback`. Copiar el ID de cliente y el secreto.
+3. **GitHub** (repositorio > Settings > Secrets and variables > Actions): crear los secretos `GCAL_CLIENT_ID` y `GCAL_CLIENT_SECRET` con esos valores. El flujo de publicación los pasa a las funciones (archivo `functions/.env.ahhhhhh-today`, que no se guarda en el repositorio) y activa la API de Google Calendar.
+4. Volver a publicar las funciones: Actions > «Publicar en Firebase» > «Run workflow» (rama `main`).
+
+**Prueba pendiente:** Martina conecta su Gmail desde Config > Google Calendar y comprueba en el móvil el calendario, los avisos a la hora de entrega y a la hora de salida, y que los cambios llegan solos.
 
 ---
 
