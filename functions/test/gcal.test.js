@@ -85,3 +85,10 @@ test('ids de Google y dirección de permiso', function(){
   assert.ok(u.searchParams.get('scope').split(' ').includes(SCOPE));
   assert.equal(localStamp(new Date('2026-03-29T03:05')), '2026-03-29T03:05:00');
 });
+
+test('ajustes propios (supervisor): mandan sobre los de app-settings', function(){
+  const tasks = [{ id: 't1', source: 'manual', name: 'Mates', date: '2026-10-15', time: '09:00' }];
+  const base = kv({ 'app-tasks': J(tasks), 'app-settings': J({ exportOn: true, exportCats: { tarea: false } }) });
+  assert.ok(!desiredEvents(base, null, now, 'es')['task|s:t1']);
+  assert.ok(desiredEvents(base, null, now, 'es', { exportOn: true })['task|s:t1']);
+});

@@ -376,16 +376,20 @@ export const dailySummaryJob = onSchedule({ schedule: '0 22 * * *', region: ALER
 export const weeklySummaryJob = onSchedule({ schedule: '1 22 * * 0', region: ALERT_REGION, timeZone: 'Europe/Madrid' }, function(){ return sendSummary('weekly'); });
 
 /* ================= EXPORTACIÓN A GOOGLE CALENDAR (gcal.js) =================
-   - gcalStart (la App): devuelve la dirección de la pantalla de permiso de Google. Quien usa la App
-     elige ahí su cuenta (p. ej. una Gmail personal: las del colegio están bloqueadas).
+   Cada conexión es de un plan y de una persona: la de quien usa la App (una por plan, con los ajustes
+   de su Config: app-settings) o la de cada supervisor (con sus propios ajustes: users/{uid}.gcal =
+   { exportOn, exportCats, leaveAlert }). Cada una tiene su cuenta de Google y su calendario.
+   - gcalStart (la App): devuelve la dirección de la pantalla de permiso de Google; ahí se elige la
+     cuenta (p. ej. una Gmail personal: las del colegio están bloqueadas).
    - gcalCallback: Google vuelve aquí con el código; se guarda el permiso (refresh token), se crea el
      calendario «AHHHHHH · nombre» y se vuelve a la App con ?gcal=ok (o el motivo del fallo).
-   - gcalSyncNow (la App, al volver) y los cambios del plan (gcalOnKv), los tiempos de trayecto de hoy
-     que publica el móvil (gcalOnLeave) y una pasada cada hora (gcalSweep, para avanzar las semanas):
-     piden una sincronización (requestSync). Solo se escribe en Google lo que ha cambiado.
+   - Piden una sincronización (requestSync): gcalSyncNow (la App, al volver), los cambios del plan
+     (gcalOnKv), los tiempos de trayecto de hoy que publica el móvil (gcalOnLeave), los ajustes del
+     supervisor (gcalOnUser) y una pasada cada hora (gcalSweep, que avanza las semanas). Solo se
+     escribe en Google lo que ha cambiado.
    - gcalStop (la App): desconecta, borra el calendario de la App en Google y retira el permiso.
-   Datos: plans/{id}/private/gcal (permiso, calendario y lo ya escrito; solo el servidor) y
-   plans/{id}/gcal/status (lo que ve la App: conectado, cuenta, última sincronización, error).
+   Datos: plans/{id}/private/gcal o gcal-{uid} (permiso, calendario y lo ya escrito; solo el servidor)
+   y plans/{id}/gcal/status o status-{uid} (lo que ve la App: conectado, cuenta, sincronización, error).
    El ID y el secreto del cliente OAuth de Google van en GCAL_CLIENT_ID y GCAL_CLIENT_SECRET (los
    escribe el flujo de publicación a partir de los secretos de GitHub del mismo nombre). */
 const GCAL_CLIENT_ID = defineString('GCAL_CLIENT_ID', { default: '' });
@@ -397,31 +401,49 @@ const GCAL_KEYS = ['app-tasks', 'app-events', 'app-activities', 'app-settings', 
 const GCAL_LOCK_MS = 5 * 60000, GCAL_MAX_OPS = 300;
 
 function gcalReady(){ return !!(GCAL_CLIENT_ID.value() && GCAL_CLIENT_SECRET.value()); }
-function gcalPrivate(plan){ return plan.collection('private').doc('gcal'); }
-function gcalStatus(plan){ return plan.collection('gcal').doc('status'); }
-// Plan en el que la persona es miembro (quien usa la App; el supervisor no exporta)
-async function memberPlan(auth){
+// Conexión: { plan, who } (who: '' quien usa la App; el uid de un supervisor)
+function gcalPrivate(c){ return c.plan.collection('private').doc(c.who ? 'gcal-' + c.who : 'gcal'); }
+function gcalStatus(c){ return c.plan.collection('gcal').doc(c.who ? 'status-' + c.who : 'status'); }
+function gcalTag(c){ return c.plan.id + (c.who ? '|' + c.who : ''); }
+// Conexión de quien llama: el plan con el que entra la App (users/{uid}.planId), como miembro o como
+// supervisor. Así no cuenta un plan antiguo en el que solo esté esa persona (ver sync.js, connect).
+async function callerConn(auth){
   if(!auth || !auth.token.email){ throw new HttpsError('unauthenticated', 'signIn'); }
-  const q = await db.collection('plans').where('memberEmails', 'array-contains', auth.token.email.toLowerCase()).limit(1).get();
-  if(q.empty){ throw new HttpsError('permission-denied', 'noPlan'); }
-  return q.docs[0].ref;
+  const email = auth.token.email.toLowerCase();
+  const planId = ((await db.collection('users').doc(auth.uid).get()).data() || {}).planId;
+  if(planId){
+    const pd = await db.collection('plans').doc(planId).get(), d = pd.exists ? pd.data() : {};
+    if((d.memberEmails || []).includes(email)){ return { plan: pd.ref, who: '' }; }
+    if((d.viewerEmails || []).includes(email)){ return { plan: pd.ref, who: auth.uid }; }
+  }
+  throw new HttpsError('permission-denied', 'noPlan');
 }
-async function setStatus(plan, data){ await gcalStatus(plan).set(Object.assign({ at: new Date() }, data), { merge: true }); }
+// Conexiones de un plan
+async function connsOf(plan){
+  return (await plan.collection('private').get()).docs
+    .filter(function(d){ return d.id === 'gcal' || d.id.indexOf('gcal-') === 0; })
+    .map(function(d){ return { plan, who: d.id === 'gcal' ? '' : d.id.slice(5) }; });
+}
+async function settingsOf(c, kv){
+  if(c.who){ return ((await db.collection('users').doc(c.who).get()).data() || {}).gcal || {}; }
+  try{ return JSON.parse(kv['app-settings'] || '{}') || {}; }catch(e){ return {}; }
+}
+async function setStatus(c, data){ await gcalStatus(c).set(Object.assign({ at: new Date() }, data), { merge: true }); }
 // Sin permiso o sin calendario: se olvida la conexión (la App lo explica y deja volver a conectar)
-async function dropConnection(plan, reason){
+async function dropConnection(c, reason){
   // Ya desconectado a mano (gcalStop) mientras se sincronizaba: no se cambia nada
-  if(!(await gcalPrivate(plan).get()).exists){ return; }
-  await gcalPrivate(plan).delete().catch(function(){});
-  await gcalStatus(plan).set({ connected: false, state: 'off', error: reason, email: null, at: new Date() });
+  if(!(await gcalPrivate(c).get()).exists){ return; }
+  await gcalPrivate(c).delete().catch(function(){});
+  await gcalStatus(c).set({ connected: false, state: 'off', error: reason, email: null, at: new Date() });
 }
 function gone(e){ return e instanceof G.GoogleError && (e.status === 404 || e.status === 410); }
 function revoked(e){ return e instanceof G.GoogleError && (e.reason === 'invalid_grant' || e.status === 401); }
 
 export const gcalStart = onCall({ region: GCAL_REGION }, async function(request){
-  const plan = await memberPlan(request.auth);
+  const c = await callerConn(request.auth);
   if(!gcalReady()){ throw new HttpsError('failed-precondition', 'notReady'); }
   const state = randomBytes(24).toString('hex');
-  await db.collection('gcalStates').doc(state).set({ uid: request.auth.uid, plan: plan.id, lang: String((request.data || {}).lang || 'es').slice(0, 5), at: new Date() });
+  await db.collection('gcalStates').doc(state).set({ uid: request.auth.uid, plan: c.plan.id, who: c.who, lang: String((request.data || {}).lang || 'es').slice(0, 5), at: new Date() });
   return { url: G.authUrl(GCAL_CLIENT_ID.value(), GCAL_REDIRECT, state) };
 });
 
@@ -434,11 +456,11 @@ export const gcalCallback = onRequest({ region: GCAL_REGION, timeoutSeconds: 120
     if(sref){ await sref.delete().catch(function(){}); }
     if(!st || !st.exists || Date.now() - st.data().at.toDate().getTime() > 30 * 60000){ return back('expired'); }
     if(q.error || !q.code){ return back(q.error === 'access_denied' ? 'denied' : 'error'); }
-    const s = st.data(), plan = db.collection('plans').doc(s.plan);
+    const s = st.data(), c = { plan: db.collection('plans').doc(s.plan), who: s.who || '' };
     const tok = await G.exchangeCode(GCAL_CLIENT_ID.value(), GCAL_CLIENT_SECRET.value(), GCAL_REDIRECT, String(q.code));
     // En la pantalla de Google se puede desmarcar el permiso del calendario
     if(tok.scopes.indexOf(G.SCOPE) < 0 || !tok.refresh){ await G.revoke(tok.refresh || tok.access); return back('scope'); }
-    const prev = (await gcalPrivate(plan).get()).data() || null;
+    const prev = (await gcalPrivate(c).get()).data() || null;
     // La misma cuenta que antes: se sigue con su calendario (si aún existe)
     let calendarId = prev && prev.email === tok.email ? prev.calendarId : null, map = {};
     if(calendarId){
@@ -446,12 +468,12 @@ export const gcalCallback = onRequest({ region: GCAL_REGION, timeoutSeconds: 120
       catch(e){ if(!gone(e)){ throw e; } calendarId = null; }
     }
     if(prev && prev.refresh && prev.refresh !== tok.refresh){ await G.revoke(prev.refresh); }
-    const kid = (await plan.collection('kv').doc('kid-name').get()).data();
+    const kid = (await c.plan.collection('kv').doc('kid-name').get()).data();
     const name = G.calendarName(kid && kid.v || '');
     if(!calendarId){ calendarId = (await G.createCalendar(tok.access, name)).id; }
-    await gcalPrivate(plan).set({ refresh: tok.refresh, email: tok.email, calendarId, calName: name, lang: s.lang, by: s.uid, connectedAt: new Date(), map, dirty: Date.now(), lockUntil: 0 });
-    await gcalStatus(plan).set({ connected: true, email: tok.email, state: 'pending', error: null, syncedAt: null, count: 0, at: new Date() });
-    logger.info('gcalCallback: conectado', { plan: plan.id });
+    await gcalPrivate(c).set({ refresh: tok.refresh, email: tok.email, calendarId, calName: name, lang: s.lang, by: s.uid, connectedAt: new Date(), map, dirty: Date.now(), lockUntil: 0 });
+    await gcalStatus(c).set({ connected: true, email: tok.email, state: 'pending', error: null, syncedAt: null, count: 0, at: new Date() });
+    logger.info('gcalCallback: conectado', { plan: c.plan.id, supervisor: !!c.who });
     back('ok');
   } catch(e){
     logger.error('gcalCallback', { error: String(e && e.message || e), status: e && e.status, reason: e && e.reason });
@@ -460,22 +482,20 @@ export const gcalCallback = onRequest({ region: GCAL_REGION, timeoutSeconds: 120
 });
 
 // Escribe en Google lo que ha cambiado. Devuelve true si quedan cosas por hacer (más de GCAL_MAX_OPS).
-async function syncOnce(plan){
-  const ref = gcalPrivate(plan), snap = await ref.get();
+async function syncOnce(c){
+  const ref = gcalPrivate(c), snap = await ref.get();
   if(!snap.exists || !snap.data().refresh){ return false; }
-  const d = snap.data(), kv = await loadKv(plan);
-  let settings = {};
-  try{ settings = JSON.parse(kv['app-settings'] || '{}') || {}; }catch(e){}
-  if(settings.exportOn !== true){ await setStatus(plan, { connected: true, email: d.email, state: 'paused', error: null }); return false; }
+  const d = snap.data(), kv = await loadKv(c.plan), settings = await settingsOf(c, kv);
+  if(settings.exportOn !== true){ await setStatus(c, { connected: true, email: d.email, state: 'paused', error: null }); return false; }
   let access;
   try{ access = await G.accessToken(GCAL_CLIENT_ID.value(), GCAL_CLIENT_SECRET.value(), d.refresh); }
-  catch(e){ if(revoked(e)){ await dropConnection(plan, 'revoked'); return false; } throw e; }
-  const now = minuteOf(new Date()), cal = d.calendarId;
+  catch(e){ if(revoked(e)){ await dropConnection(c, 'revoked'); return false; } throw e; }
+  const now = minuteOf(new Date()), cal = d.calendarId, tag = gcalTag(c);
   try{
     const name = G.calendarName(kv['kid-name'] || '');
     if(name !== d.calName){ await G.renameCalendar(access, cal, name); await ref.update({ calName: name }); }
-    const leave = (await plan.collection('gcal').doc('leave').get()).data() || null;
-    const want = G.desiredEvents(kv, leave, now, d.lang);
+    const leave = (await c.plan.collection('gcal').doc('leave').get()).data() || null;
+    const want = G.desiredEvents(kv, leave, now, d.lang, settings);
     const ops = G.planSync(d.map || {}, want, now), map = Object.assign({}, d.map || {});
     let failed = 0, done = 0;
     for(const o of ops){
@@ -483,29 +503,29 @@ async function syncOnce(plan){
       if(o.op === 'forget'){ delete map[o.key]; continue; }
       done++;
       try{
-        if(o.op === 'delete'){ await G.removeEvent(access, cal, G.eventId(plan.id, o.key)); delete map[o.key]; }
-        else { await G.putEvent(access, cal, G.eventId(plan.id, o.key), want[o.key].body, o.op === 'insert'); map[o.key] = { h: o.h, d: o.d }; }
+        if(o.op === 'delete'){ await G.removeEvent(access, cal, G.eventId(tag, o.key)); delete map[o.key]; }
+        else { await G.putEvent(access, cal, G.eventId(tag, o.key), want[o.key].body, o.op === 'insert'); map[o.key] = { h: o.h, d: o.d }; }
       } catch(e){
         if(gone(e) || revoked(e)){ throw e; }
         failed++;
-        logger.warn('gcal: evento', { plan: plan.id, key: o.key, status: e.status, reason: e.reason, error: String(e.message || e) });
+        logger.warn('gcal: evento', { plan: c.plan.id, key: o.key, status: e.status, reason: e.reason, error: String(e.message || e) });
       }
     }
     if(ops.length){ await ref.update({ map, syncedAt: new Date() }); }
-    await setStatus(plan, { connected: true, email: d.email, state: failed ? 'partial' : 'ok', error: null, syncedAt: new Date(), count: Object.keys(map).length });
+    await setStatus(c, { connected: true, email: d.email, state: failed ? 'partial' : 'ok', error: null, syncedAt: new Date(), count: Object.keys(map).length });
     return done >= GCAL_MAX_OPS;
   } catch(e){
     // Calendario borrado en Google o permiso retirado: se desconecta
-    if(gone(e)){ await G.revoke(d.refresh); await dropConnection(plan, 'gone'); return false; }
-    if(revoked(e)){ await dropConnection(plan, 'revoked'); return false; }
+    if(gone(e)){ await G.revoke(d.refresh); await dropConnection(c, 'gone'); return false; }
+    if(revoked(e)){ await dropConnection(c, 'revoked'); return false; }
     throw e;
   }
 }
 
 /* Pide una sincronización. Si ya hay una en marcha (lockUntil), solo lo apunta (dirty) y la que está
    en marcha vuelve a empezar al acabar: así nunca hay dos a la vez escribiendo en Google. */
-async function requestSync(plan){
-  const ref = gcalPrivate(plan), mark = Date.now();
+async function requestSync(c){
+  const ref = gcalPrivate(c), mark = Date.now();
   const go = await db.runTransaction(async function(tx){
     const s = await tx.get(ref);
     if(!s.exists || !s.data().refresh){ return false; }
@@ -517,11 +537,11 @@ async function requestSync(plan){
   for(let round = 0; round < 4; round++){
     const started = Date.now();
     let more = false;
-    try{ more = await syncOnce(plan); }
+    try{ more = await syncOnce(c); }
     catch(e){
-      logger.error('gcal: sincronización', { plan: plan.id, status: e && e.status, reason: e && e.reason, error: String(e && e.message || e) });
+      logger.error('gcal: sincronización', { plan: c.plan.id, status: e && e.status, reason: e && e.reason, error: String(e && e.message || e) });
       // (si mientras tanto se ha desconectado, el estado se queda como está)
-      if((await ref.get()).exists){ await setStatus(plan, { state: 'partial', error: 'sync' }).catch(function(){}); }
+      if((await ref.get()).exists){ await setStatus(c, { state: 'partial', error: 'sync' }).catch(function(){}); }
     }
     const again = await db.runTransaction(async function(tx){
       const s = await tx.get(ref);
@@ -533,41 +553,53 @@ async function requestSync(plan){
     if(!again){ return; }
   }
 }
+// Todas las conexiones del plan (quien usa la App y los supervisores)
+async function requestPlanSync(plan){
+  for(const c of await connsOf(plan)){
+    try{ await requestSync(c); }catch(e){ logger.error('gcal: plan', { plan: plan.id, error: String(e) }); }
+  }
+}
 
 export const gcalSyncNow = onCall({ region: GCAL_REGION, timeoutSeconds: 300 }, async function(request){
-  const plan = await memberPlan(request.auth);
-  await requestSync(plan);
-  return (await gcalStatus(plan).get()).data() || { connected: false };
+  const c = await callerConn(request.auth);
+  await requestSync(c);
+  return (await gcalStatus(c).get()).data() || { connected: false };
 });
 
 export const gcalStop = onCall({ region: GCAL_REGION, timeoutSeconds: 120 }, async function(request){
-  const plan = await memberPlan(request.auth);
-  const d = (await gcalPrivate(plan).get()).data();
-  await gcalPrivate(plan).delete();
+  const c = await callerConn(request.auth);
+  const d = (await gcalPrivate(c).get()).data();
+  await gcalPrivate(c).delete();
   if(d && d.refresh && gcalReady()){
     try{
       const access = await G.accessToken(GCAL_CLIENT_ID.value(), GCAL_CLIENT_SECRET.value(), d.refresh);
       if(d.calendarId){ await G.deleteCalendar(access, d.calendarId).catch(function(e){ if(!gone(e)){ throw e; } }); }
-    } catch(e){ logger.warn('gcalStop: no se pudo borrar el calendario', { plan: plan.id, error: String(e && e.message || e) }); }
+    } catch(e){ logger.warn('gcalStop: no se pudo borrar el calendario', { plan: c.plan.id, error: String(e && e.message || e) }); }
     await G.revoke(d.refresh);
   }
-  await gcalStatus(plan).set({ connected: false, state: 'off', error: null, email: null, at: new Date() });
+  await gcalStatus(c).set({ connected: false, state: 'off', error: null, email: null, at: new Date() });
   return { ok: true };
 });
 
 export const gcalOnKv = onDocumentWritten({ document: 'plans/{planId}/kv/{key}', region: LOG_REGION, timeoutSeconds: 300 }, async function(event){
   if(!GCAL_KEYS.includes(event.params.key)){ return; }
-  await requestSync(db.collection('plans').doc(event.params.planId));
+  await requestPlanSync(db.collection('plans').doc(event.params.planId));
 });
 export const gcalOnLeave = onDocumentWritten({ document: 'plans/{planId}/gcal/leave', region: LOG_REGION, timeoutSeconds: 300 }, async function(event){
-  await requestSync(db.collection('plans').doc(event.params.planId));
+  await requestPlanSync(db.collection('plans').doc(event.params.planId));
+});
+// Ajustes de exportación de un supervisor (Config de la App de seguimiento)
+export const gcalOnUser = onDocumentWritten({ document: 'users/{uid}', region: LOG_REGION, timeoutSeconds: 300 }, async function(event){
+  const b = event.data.before.exists ? event.data.before.data().gcal : null;
+  const a = event.data.after.exists ? event.data.after.data().gcal : null;
+  if(JSON.stringify(b || null) === JSON.stringify(a || null)){ return; }
+  const planId = event.data.after.exists ? event.data.after.data().planId : null;
+  // Si no hay conexión de este supervisor en ese plan, requestSync no hace nada
+  if(planId){ await requestSync({ plan: db.collection('plans').doc(planId), who: event.params.uid }); }
 });
 // Cada hora: avanza las semanas que se exportan y recoge lo que haya fallado
 export const gcalSweep = onSchedule({ schedule: 'every 60 minutes', region: GCAL_REGION, timeZone: 'Europe/Madrid', timeoutSeconds: 540 }, async function(){
-  for(const pd of (await db.collection('plans').get()).docs){
-    if(!(await gcalPrivate(pd.ref).get()).exists){ continue; }
-    try{ await requestSync(pd.ref); }catch(e){ logger.error('gcalSweep', { plan: pd.id, error: String(e) }); }
-  }
+  for(const pd of (await db.collection('plans').get()).docs){ await requestPlanSync(pd.ref); }
   // Permisos empezados y no terminados
   const old = await db.collection('gcalStates').where('at', '<', new Date(Date.now() - 60 * 60000)).get();
   for(const s of old.docs){ await s.ref.delete().catch(function(){}); }

@@ -7,7 +7,7 @@
    Este archivo tiene la parte pura (qué eventos tiene que haber, con sus avisos) y las llamadas a
    la API de Google. index.js decide cuándo se sincroniza y guarda el estado en Firestore.
 
-   desiredEvents(kv, leave, now, lang) → { clave: { date, body } }
+   desiredEvents(kv, leave, now, lang, ajustes) → { clave: { date, body } }
    - Actividades: una entrada por sesión, de hace 7 días a 8 semanas vista (sin festivos ni «Hoy no
      voy»). Si tienen tarea de práctica, va en la descripción («✓» si ya está hecha para esa sesión).
    - Eventos: desde hace 7 días, con su duración.
@@ -55,9 +55,10 @@ function leadFor(id, iso, place, leaveOn, leave){
   return known > 0 ? known : DEFAULT_LEAD;
 }
 
-export function desiredEvents(kv, leave, now, lang){
+// settings: los ajustes de exportación ({ exportCats, leaveAlert }); si no se dan, los de app-settings
+export function desiredEvents(kv, leave, now, lang, settings){
   const T = texts(lang);
-  const settings = json(kv['app-settings'], {}) || {};
+  settings = settings || json(kv['app-settings'], {}) || {};
   const cats = settings.exportCats || {};
   const on = function(cat){ return cats[cat] !== false; };
   const leaveOn = settings.leaveAlert !== false;

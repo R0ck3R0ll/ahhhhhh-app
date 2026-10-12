@@ -88,6 +88,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
     - **tareas** (sueltas, de Classroom y de eventos): un aviso de 15 min a la hora de entrega, que no ocupa tiempo («Entrega: …»); las hechas llevan «✓» y no avisan. Es la casilla de la categoría **Tarea**.
   - Avisos: 10 min antes; con lugar y **aviso a la hora de salida** activado, a la hora de salir. El móvil de Martina publica los tiempos de trayecto de hoy (los mismos de «Hoy», la salida más temprana si hay coche y a pie); mientras no se sabe el trayecto (otros días), 30 min antes. Sin traslado (mismo sitio que lo anterior), 10 min antes.
   - Lo de hace más de 7 días que ya no está en la App se deja en el calendario (es pasado); lo demás que se borra en la App se borra también en Google.
+  - **Supervisor (12/10/2026):** en la Config de la App de seguimiento hay la misma tarjeta (interruptor «Exportar eventos a Google Calendar», qué se exporta, aviso a la hora de salida y «Conectar con Google»). Es una exportación **propia**: su cuenta de Google, su calendario «AHHHHHH · Martina» y sus ajustes (`users/{uid}.gcal`), que no cambian los de Martina. Los avisos de salida usan los tiempos que publica el móvil de Martina.
   - Desactivar la exportación la pone **en pausa** (el calendario se queda como está). **«Desconectar»** borra de Google el calendario de la App y retira el permiso. Si se borra el calendario en Google o se quita el permiso, la App lo dice y deja volver a conectar.
 
 ### 2.2 Actividades extraescolares
@@ -338,6 +339,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - El permiso, el calendario y lo ya escrito se guardan en `plans/{id}/private/gcal` (solo el servidor); el estado que ve la App, en `plans/{id}/gcal/status`.
 - Sincronizan: los cambios del plan (`gcalOnKv`), los tiempos de trayecto de hoy (`gcalOnLeave`), la App al volver de Google (`gcalSyncNow`) y una pasada cada hora (`gcalSweep`, que avanza las semanas). Solo se escribe en Google lo que ha cambiado y nunca hay dos sincronizaciones a la vez.
 - Cada evento tiene un id fijo en Google: si algo se repite, no se duplica.
+- Cada conexión es de un plan y una persona: la de Martina (`private/gcal`, `gcal/status`, ajustes de su Config) y la de cada supervisor (`private/gcal-{uid}`, `gcal/status-{uid}`, ajustes en `users/{uid}.gcal`; `gcalOnUser` sincroniza al cambiarlos). El plan de quien llama sale de `users/{uid}.planId`, como en la App (así no cuenta el plan antiguo de Carlo).
 - Pruebas: `npm test` en `functions/` (`test/gcal.test.js`).
 
 **Pasos que tiene que hacer Carlo** (una sola vez, en el proyecto «AHHHHHH Today» de Google Cloud):
@@ -346,7 +348,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 3. **GitHub** (repositorio > Settings > Secrets and variables > Actions): crear los secretos `GCAL_CLIENT_ID` y `GCAL_CLIENT_SECRET` con esos valores. El flujo de publicación los pasa a las funciones (archivo `functions/.env.ahhhhhh-today`, que no se guarda en el repositorio) y activa la API de Google Calendar.
 4. Volver a publicar las funciones: Actions > «Publicar en Firebase» > «Run workflow» (rama `main`).
 
-**Prueba pendiente:** Martina conecta su Gmail desde Config > Google Calendar y comprueba en el móvil el calendario, los avisos a la hora de entrega y a la hora de salida, y que los cambios llegan solos.
+**Prueba pendiente:** Martina conecta su Gmail desde Config > Google Calendar (y Carlo la suya desde la Config del supervisor) y comprueban en el móvil el calendario, los avisos a la hora de entrega y a la hora de salida, y que los cambios llegan solos.
 
 ---
 
@@ -467,7 +469,7 @@ Un **único instrumento** sirve para todo: sugerencias, ánimos, proponer un eve
 - Activar o desactivar cada resumen.
 - Cuenta: cerrar sesión.
 
-**No se incluye** (decidido): logística y horas de salida, «¿la llevo yo?», material aparte, el Google Calendar de Carlo, aviso de salida, inactividad, uso de la App, rachas, horas de silencio, varios supervisores y varios planes.
+**No se incluye** (decidido): logística y horas de salida, «¿la llevo yo?», material aparte, aviso de salida, inactividad, uso de la App, rachas, horas de silencio, varios supervisores y varios planes.
 
 ### 7 bis.3 Alta del supervisor (en la App de Martina)
 

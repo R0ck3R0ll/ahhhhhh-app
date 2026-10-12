@@ -57,7 +57,7 @@
       : tab.id === 'log' ? '<div class="sup-filters" id="sup-log-filters" role="radiogroup"></div><div id="sup-log-body"></div>'
       : tab.id === 'stats' ? '<div id="sup-stats-body" class="an-body"></div>'
       : tab.phase ? '<div class="config-card sup-soon"><p class="card-hint" data-sup-soon="' + tab.phase + '"></p></div>'
-      : '<div class="config-card" id="sup-account"></div><div class="config-card" id="sup-alerts-cfg"></div><div class="config-card" id="sup-lang"></div>';
+      : '<div class="config-card" id="sup-account"></div><div class="config-card" id="sup-alerts-cfg"></div><div class="config-card" id="sup-gcal"></div><div class="config-card" id="sup-lang"></div>';
     main.appendChild(sec);
   });
   // Fichas de actividades y eventos (desde Ahora o el Calendario) y la lista de avisos: pestañas ocultas
@@ -95,6 +95,16 @@
   // Config: la cuenta (la dibuja renderAccount en #account-body) y el idioma: se traen aquí de la Config de la App
   var account = document.getElementById('account-body');
   if(account){ document.getElementById('sup-account').replaceWith(account); }
+  // Exportación a Google Calendar: la misma tarjeta que en la App, con la conexión y los ajustes del
+  // supervisor (app.js). Hasta que llegan sus ajustes, apagada (los de la App son de quien la usa)
+  var gcalSwitch = document.getElementById('export-switch');
+  if(gcalSwitch){
+    var gcalCard = gcalSwitch.closest('.config-card');
+    gcalCard.insertAdjacentHTML('afterbegin', '<span class="field-label">Google Calendar</span>');
+    gcalSwitch.setAttribute('aria-checked', 'false');
+    document.getElementById('export-options').hidden = true;
+    document.getElementById('sup-gcal').replaceWith(gcalCard);
+  }
   var lang = document.getElementById('lang-select');
   if(lang){ document.getElementById('sup-lang').appendChild(lang.closest('.config-line')); }
 

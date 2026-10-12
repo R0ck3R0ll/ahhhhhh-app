@@ -401,7 +401,9 @@ async function start(){
   function watchGcal(){
     if(unsubGcal){ unsubGcal(); unsubGcal = null; }
     if(!planId || !gcalCb){ return; }
-    unsubGcal = onSnapshot(doc(db, 'plans', planId, 'gcal', 'status'), function(s){
+    // Cada supervisor tiene su propia conexión (status-{uid}); la de quien usa la App es «status»
+    const id = SYNC.role === 'viewer' ? 'status-' + user.uid : 'status';
+    unsubGcal = onSnapshot(doc(db, 'plans', planId, 'gcal', id), function(s){
       const x = s.exists() ? s.data() : null;
       if(x){ ['at', 'syncedAt'].forEach(function(k){ if(x[k] && x[k].toDate){ x[k] = x[k].toDate(); } }); }
       gcalCb(x);
@@ -412,6 +414,17 @@ async function start(){
   window.syncGcalLeave = async function(date, items){
     if(!planId || !user || SYNC.role === 'viewer'){ return; }
     await setDoc(doc(db, 'plans', planId, 'gcal', 'leave'), { date: date, items: items, at: serverTimestamp(), by: user.uid });
+  };
+  // Ajustes de exportación del supervisor (users/{uid}.gcal: { exportOn, exportCats, leaveAlert }):
+  // los suyos, no los de quien usa la App
+  window.syncGcalPrefs = async function(){
+    if(!user){ return null; }
+    const me = await getDoc(doc(db, 'users', user.uid));
+    return me.exists() ? me.data().gcal || null : null;
+  };
+  window.syncSaveGcalPrefs = async function(p){
+    if(!user){ return; }
+    await setDoc(doc(db, 'users', user.uid), { gcal: p }, { merge: true });
   };
   // Sube ya lo que esté pendiente (p. ej. antes de salir de la App hacia Google)
   window.syncFlush = function(){ clearTimeout(pushTimer); return pushQueue.size ? flushPush() : Promise.resolve(); };

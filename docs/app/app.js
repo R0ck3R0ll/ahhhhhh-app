@@ -2208,8 +2208,10 @@
      la App elige su cuenta (p. ej. su Gmail personal) y Google vuelve a la App con ?gcal=ok (o el
      motivo del fallo). Desde ahí el servidor copia el plan en el calendario «AHHHHHH · nombre» y lo
      mantiene al día solo. El estado (plans/{id}/gcal/status) llega por syncWatchGcal.
-     Aviso a la hora de salida: este móvil publica los tiempos de trayecto de hoy (publishLeave). */
-  var GCAL = { status: null, watching: false, busy: false, back: null, leave: null, leaveSig: '' };
+     Aviso a la hora de salida: este móvil publica los tiempos de trayecto de hoy (publishLeave).
+     Supervisor: tiene su propia conexión (su cuenta de Google y su calendario) y sus propios ajustes
+     (users/{uid}.gcal), que no cambian los de quien usa la App. La tarjeta está en su Config. */
+  var GCAL = { status: null, watching: false, busy: false, back: null, leave: null, leaveSig: '', prefs: false, prefsTimer: null };
   try{
     GCAL.back = new URLSearchParams(location.search).get('gcal');
     if(GCAL.back){ history.replaceState(null, '', location.pathname); }
@@ -2231,8 +2233,6 @@
         (st.syncedAt ? ' · ' + esc(t('gcal.synced', { when: msgWhen(st.syncedAt) })) : '') +
         (st.count ? ' · ' + esc(t('gcal.count', { n: st.count })) : ''));
       lines.push(t('hint.gcalOn'));
-    } else if(IS_SUPERVISOR){
-      lines.push(t('gcal.supervisor'));
     } else if(S.status !== 'in'){
       lines.push(t('gcal.needSignIn'));
     } else {
@@ -2241,10 +2241,10 @@
     }
     info.innerHTML = lines.join('<br>');
     var connect = el('gcal-connect'), stop = el('gcal-stop');
-    connect.hidden = IS_SUPERVISOR || gcalConnected() || S.status !== 'in';
+    connect.hidden = gcalConnected() || S.status !== 'in';
     connect.disabled = GCAL.busy;
     connect.textContent = t(GCAL.busy ? 'gcal.opening' : 'gcal.connect');
-    stop.hidden = IS_SUPERVISOR || !gcalConnected();
+    stop.hidden = !gcalConnected();
     stop.disabled = GCAL.busy;
   }
   function gcalError(e){
@@ -2253,12 +2253,14 @@
   }
   // Se abre la pantalla de permiso de Google (en esta misma ventana: también va bien en la App instalada)
   function gcalConnect(){
-    if(IS_SUPERVISOR || GCAL.busy){ return; }
+    if(GCAL.busy){ return; }
     if(!window.SYNC || window.SYNC.status !== 'in' || !window.syncCall){ toast(t('gcal.needSignIn')); return; }
     GCAL.busy = true; renderGcal();
     // Que el servidor ya tenga la exportación activada y las categorías elegidas al volver
-    saveSettings();
-    Promise.resolve(window.syncFlush ? window.syncFlush() : null).then(function(){
+    var saved;
+    if(IS_SUPERVISOR){ clearTimeout(GCAL.prefsTimer); saved = saveGcalPrefs(); }
+    else { saveSettings(); saved = window.syncFlush ? window.syncFlush() : null; }
+    Promise.resolve(saved).then(function(){
       return window.syncCall('gcalStart', { lang: LANG });
     }).then(function(r){ location.href = r.url; })
       .catch(function(e){ GCAL.busy = false; renderGcal(); toast(gcalError(e)); });
@@ -2281,12 +2283,42 @@
     if(!GCAL.watching){
       GCAL.watching = true;
       window.syncWatchGcal(function(st){ GCAL.status = st; renderGcal(); if(!IS_SUPERVISOR && gcalConnected()){ publishLeave(todayItems()); } });
+      if(IS_SUPERVISOR){ loadGcalPrefs(); }
     }
-    if(GCAL.back && !IS_SUPERVISOR){
+    if(GCAL.back){
       var code = GCAL.back; GCAL.back = null;
       toast(t('gcal.back.' + (/^(ok|denied|scope|expired)$/.test(code) ? code : 'error')));
       if(code === 'ok'){ window.syncCall('gcalSyncNow', {}).catch(function(){}); }
     }
+  }
+  // Ajustes del supervisor: se ponen en la tarjeta al entrar y se guardan en cuanto cambian
+  function gcalPrefs(){
+    var cats = {}, rows = document.querySelectorAll('#category-list .cat-row');
+    document.querySelectorAll('#export-cats input').forEach(function(i, idx){ if(rows[idx]){ cats[rows[idx].dataset.cat] = i.checked; } });
+    return { exportOn: exportOn(), exportCats: cats, leaveAlert: el('leave-switch').getAttribute('aria-checked') === 'true' };
+  }
+  function loadGcalPrefs(){
+    window.syncGcalPrefs().then(function(p){
+      p = p || {};
+      el('export-switch').setAttribute('aria-checked', String(!!p.exportOn));
+      el('export-options').hidden = !p.exportOn;
+      el('leave-switch').setAttribute('aria-checked', String(p.leaveAlert !== false));
+      renderExportCats();
+      var rows = document.querySelectorAll('#category-list .cat-row');
+      document.querySelectorAll('#export-cats input').forEach(function(i, idx){ i.checked = !(rows[idx] && p.exportCats && p.exportCats[rows[idx].dataset.cat] === false); });
+      GCAL.prefs = true;
+      renderGcal();
+    }).catch(function(){});
+  }
+  function saveGcalPrefs(){ return GCAL.prefs && window.syncSaveGcalPrefs ? window.syncSaveGcalPrefs(gcalPrefs()) : null; }
+  if(IS_SUPERVISOR){
+    ['click', 'change'].forEach(function(type){
+      el('export-switch').closest('.config-card').addEventListener(type, function(ev){
+        if(ev.target.closest('.gcal-actions')){ return; }
+        clearTimeout(GCAL.prefsTimer);
+        GCAL.prefsTimer = setTimeout(function(){ Promise.resolve(saveGcalPrefs()).catch(function(e){ toast(t('sync.error', { code: e && e.code || e })); }); }, 400);
+      });
+    });
   }
   // Tiempos de trayecto de hoy (min) para el aviso a la hora de salida; 0 si no hay trayecto.
   // Se guarda lo último que se supo de cada elemento aunque ya haya empezado.
