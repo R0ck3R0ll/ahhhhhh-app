@@ -8,7 +8,7 @@ Este documento resume el estudio y las decisiones tomadas en la fase de planific
 > - **GitHub Pages** (páginas de inicio, privacidad y condiciones que usa la pantalla de permisos de Google) aún se publica desde `claude/hopeful-lovelace-18fa2k`: hay que cambiar su origen a `main` / `docs` (GitHub > Settings > Pages) y después ya se puede borrar esa rama.
 > - **Hecho y probado por Carlo:** pantallas, tareas y bloques de trabajo, avisos de riesgo, sincronización entre móviles (Firebase), traslados con Google Maps (coche y a pie, ubicación por GPS), lectura del calendario escolar con IA (Gemini en Vertex AI, con preguntas cuando el calendario depende de la alumna).
 > - **Pendiente:** conexión con Classroom y Gmail (bloqueada por el colegio, punto 3), extracción con IA de correos y publicaciones con su pantalla de revisión (punto 4).
-> - **Exportación a Google Calendar (12/10/2026): programada**, a falta de que Carlo prepare Google Cloud (pasos en «Exportación a Google Calendar: puesta en marcha», punto 5) y de probarla.
+> - **Exportación a Google Calendar (12/10/2026): hecha, publicada y probada por Carlo.** Martina (con su Gmail personal) y Carlo (como supervisor, con su cuenta) tienen cada uno su calendario «AHHHHHH · Martina». Pendiente solo de ver con el uso los avisos a la hora de salida.
 > - **Mejoras en la App de Martina (10/10/2026):** anotar trabajo hecho sin planificar, festivos nacionales en las actividades y «Hoy no voy» (puntos 2.2 y 2.3 bis).
 > - **App de seguimiento para Carlo** (punto 7 bis): fases 1 a 6 hechas y publicadas (10-11/10/2026). Carlo ya entra como supervisor. Prueba de avisos y mensajes en los móviles (7 bis.9) **hecha y correcta** (11/10/2026). **Pendiente: la fase 7 (por definir).**
 
@@ -348,7 +348,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 3. **GitHub** (repositorio > Settings > Secrets and variables > Actions): crear los secretos `GCAL_CLIENT_ID` y `GCAL_CLIENT_SECRET` con esos valores. El flujo de publicación los pasa a las funciones (archivo `functions/.env.ahhhhhh-today`, que no se guarda en el repositorio) y activa la API de Google Calendar.
 4. Volver a publicar las funciones: Actions > «Publicar en Firebase» > «Run workflow» (rama `main`).
 
-**Prueba pendiente:** Martina conecta su Gmail desde Config > Google Calendar (y Carlo la suya desde la Config del supervisor) y comprueban en el móvil el calendario, los avisos a la hora de entrega y a la hora de salida, y que los cambios llegan solos.
+**Hecho (12/10/2026):** cliente OAuth «AHHHHHH Calendar» creado, secretos en GitHub y funciones publicadas. **Probado:** Martina y Carlo conectados, cada uno con su calendario. Queda por ver con el uso el aviso a la hora de salida.
 
 ---
 
