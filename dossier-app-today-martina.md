@@ -343,7 +343,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - Pruebas: `npm test` en `functions/` (`test/gcal.test.js`).
 
 **Pasos que tiene que hacer Carlo** (una sola vez, en el proyecto «AHHHHHH Today» de Google Cloud):
-1. **Pantalla de consentimiento** (Google Auth Platform > Acceso a datos): añadir el permiso `.../auth/calendar.app.created`.
+1. **Pantalla de consentimiento** (Google Auth Platform > Acceso a datos): añadir el permiso `https://www.googleapis.com/auth/calendar.app.created` (la dirección completa: con «...» Google no lo acepta).
 2. **Cliente OAuth** (Google Auth Platform > Clientes > Crear cliente): tipo «Aplicación web», nombre «AHHHHHH Calendar», con este **URI de redireccionamiento autorizado**: `https://europe-west1-ahhhhhh-today.cloudfunctions.net/gcalCallback`. Copiar el ID de cliente y el secreto.
 3. **GitHub** (repositorio > Settings > Secrets and variables > Actions): crear los secretos `GCAL_CLIENT_ID` y `GCAL_CLIENT_SECRET` con esos valores. El flujo de publicación los pasa a las funciones (archivo `functions/.env.ahhhhhh-today`, que no se guarda en el repositorio) y activa la API de Google Calendar.
 4. Volver a publicar las funciones: Actions > «Publicar en Firebase» > «Run workflow» (rama `main`).
