@@ -247,7 +247,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 ## 2 ter. Firebase (paso 3: servidor)
 
-- **Proyecto:** el mismo de Google Cloud, `ahhhhhh-today` (número 356797407017), con Firebase añadido. Plan **Blaze** a través de la **prueba gratuita de Google Cloud** (264 € de crédito, 90 días, hasta el 6/1/2027). **Antes de esa fecha hay que pulsar «Actualizar»** en la tarjeta de facturación de Firebase para pasar a la cuenta de pago normal; si no, los servicios se paran. Con el uso familiar el coste esperado es 0 €. Pendiente: alerta de presupuesto de 5 €.
+- **Proyecto:** el mismo de Google Cloud, `ahhhhhh-today` (número 356797407017), con Firebase añadido. Plan **Blaze**. Empezó con la **prueba gratuita de Google Cloud** (264 € de crédito, hasta el 6/1/2027) y **el 12/10/2026 Carlo la pasó a cuenta de pago** («Actualizar» en Facturación): el crédito restante se sigue gastando primero y los servicios ya no se paran al acabar la prueba. Gasto hasta entonces: 0,24 € (cubierto por el crédito). Con el uso familiar el coste esperado es 0 € o céntimos al mes. Pendiente: alerta de presupuesto de 5 €.
 - **App web registrada** («AHHHHHH Today web»): su `firebaseConfig` es público y va dentro de la App.
 - **Firestore** (base de datos) en `europe-southwest1` (Madrid), en modo producción.
 - **Authentication:** inicio de sesión con Google.
@@ -697,7 +697,7 @@ Todos se pueden cambiar en Config del supervisor:
 
 **Otros pendientes que vienen de antes:**
 - Conexión con Classroom y Gmail (bloqueada por el colegio).
-- Alerta de presupuesto de Google Cloud, y pasar la facturación a cuenta de pago antes del 6/1/2027 (punto 2 ter).
+- Alerta de presupuesto de 5 € en Google Cloud (punto 2 ter). La facturación ya es de pago (12/10/2026).
 
 ---
 
