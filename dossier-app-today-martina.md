@@ -173,6 +173,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 ### Prioridades y edición (común a Actividades, Eventos y Tareas)
 - Todo formulario tiene **«✕ Cancelar»** arriba (y «Cancelar» abajo), que vuelve al punto de partida (ficha, lista, Calendario u «Hoy»). Si se sale de un formulario abierto pulsando otra pestaña, la App pregunta **«¿Anular?»** («Seguir editando» / «Anular»).
+- **Fichas y barra de pestañas** (12/10/2026): al irse a otra pestaña con la barra, la ficha que estuviera abierta (evento, actividad o tarea) se cierra; al volver a esa pestaña se ve su lista, con «Añadir…». «‹ Volver a Hoy» o «‹ Volver al Calendario» solo sale al abrir la ficha desde allí. Antes la ficha se quedaba abierta y su «Volver» seguía llevando a donde se abrió, aunque se hubiera llegado con la pestaña. Igual en la App de supervisor.
 - Pulsar un elemento de la lista abre su **ficha de consulta** (todos los detalles, solo lectura, con «‹ Volver»). En la ficha están los botones **Editar** (abre el formulario) y **Eliminar** (pide una segunda pulsación de confirmación). Al guardar se vuelve a la ficha; al cancelar la edición, también.
 - Cada elemento toma **por defecto la prioridad de su categoría** (las tareas de eventos y actividades, la de su evento o actividad; las de Classroom, la de la categoría Tarea). Se puede cambiar **solo para ese elemento** al insertarlo o al editarlo en su pantalla, **sin cambiar la prioridad de la categoría**.
 

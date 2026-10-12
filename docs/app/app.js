@@ -125,12 +125,15 @@
     // Con un formulario abierto, cambiar de pestaña pide confirmación
     if(openForm() && !btn.classList.contains('is-active')){ pendingTab = btn; el('discard-dialog').showModal(); return; }
     PRESS_BACK = null;
+    // Al cambiar de pestaña, las fichas abiertas se cierran: al volver se ve la lista (con «Añadir…»).
+    // Si se abre una ficha desde «Hoy» o el Calendario, se abre después de esto, con su «Volver a…»
+    ['evt', 'act', 'task'].forEach(function(f){ if(!el(f + '-detail').hidden){ showView(f, 'list'); } });
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('is-active'));
     btn.classList.add('is-active');
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById('screen-'+btn.dataset.screen).classList.add('active');
     setScreenHeading(btn);
-    DETAIL_BACK = null;   // al cambiar de pestaña, las fichas vuelven a su lista
+    DETAIL_BACK = null;
     // «Hoy» lleva la cabecera compacta (sin la marca y con la fecha en la misma línea)
     document.querySelector('.app-shell').classList.toggle('is-today', btn.dataset.screen === 'today');
     if(btn.dataset.screen === 'calendar'){ fitCalendar(); }
