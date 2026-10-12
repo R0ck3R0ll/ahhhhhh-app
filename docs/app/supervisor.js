@@ -57,7 +57,7 @@
       : tab.id === 'log' ? '<div class="sup-filters" id="sup-log-filters" role="radiogroup"></div><div id="sup-log-body"></div>'
       : tab.id === 'stats' ? '<div id="sup-stats-body" class="an-body"></div>'
       : tab.phase ? '<div class="config-card sup-soon"><p class="card-hint" data-sup-soon="' + tab.phase + '"></p></div>'
-      : '<div class="config-card" id="sup-account"></div><div class="config-card" id="sup-alerts-cfg"></div><div class="config-card" id="sup-gcal"></div><div class="config-card" id="sup-lang"></div>';
+      : '<div class="cfg-groups" id="sup-cfg"></div>';
     main.appendChild(sec);
   });
   // Fichas de actividades y eventos (desde Ahora o el Calendario) y la lista de avisos: pestañas ocultas
@@ -92,26 +92,34 @@
     if(btn.dataset.screen === 'sup-config'){ renderAlertCfg(); }
   };
 
-  // Config: la cuenta (la dibuja renderAccount en #account-body) y el idioma: se traen aquí de la Config de la App
-  var account = document.getElementById('account-body');
-  if(account){ document.getElementById('sup-account').replaceWith(account); }
-  // Exportación a Google Calendar: la misma tarjeta que en la App, con la conexión y los ajustes del
+  // Config: bloques desplegables como en la Config de la App (se abre uno y se cierran los demás), cada
+  // uno con su resumen en la cabecera. Cuenta, Google Calendar e Idioma son los mismos bloques de la
+  // App; Avisos es propio del supervisor
+  var cfgBox = document.getElementById('sup-cfg');
+  function moveGroup(name){ var g = document.querySelector('.cfg-group[data-group="' + name + '"]'); if(g){ g.open = false; cfgBox.appendChild(g); } }
+  moveGroup('account');
+  cfgBox.insertAdjacentHTML('beforeend', '<details class="cfg-group" data-group="sup-alerts"><summary><span class="cfg-group-title" data-i18n="al.cfgTitle"></span>' +
+    '<span class="cfg-group-sum" id="sum-sup-alerts"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>' +
+    '<div class="cfg-group-body"><div class="config-card" id="sup-alerts-cfg"></div></div></details>');
+  var alertsGroup = cfgBox.querySelector('[data-group="sup-alerts"]');
+  alertsGroup.addEventListener('toggle', function(){
+    if(!alertsGroup.open){ return; }
+    document.querySelectorAll('.cfg-group[open]').forEach(function(o){ if(o !== alertsGroup){ o.open = false; } });
+  });
+  // Exportación a Google Calendar: el mismo bloque que en la App, con la conexión y los ajustes del
   // supervisor (app.js). Hasta que llegan sus ajustes, apagada (los de la App son de quien la usa)
   var gcalSwitch = document.getElementById('export-switch');
   if(gcalSwitch){
-    var gcalCard = gcalSwitch.closest('.config-card');
-    gcalCard.insertAdjacentHTML('afterbegin', '<span class="field-label">Google Calendar</span>');
     gcalSwitch.setAttribute('aria-checked', 'false');
     document.getElementById('export-options').hidden = true;
-    document.getElementById('sup-gcal').replaceWith(gcalCard);
+    moveGroup('gcal');
   }
   // «Próximos días» (tareas grandes de los 5 días siguientes): la misma tarjeta de «Hoy» de la App,
   // abajo del todo en «Ahora». Pulsar una tarea abre su ficha con «‹ Volver a Ahora»
   var loadCard = document.querySelector('.load-card');
   if(loadCard){ document.getElementById('screen-sup-now').appendChild(loadCard); }
   window.openLoadTask = function(key){ window.supOpen('task', key); };
-  var lang = document.getElementById('lang-select');
-  if(lang){ document.getElementById('sup-lang').appendChild(lang.closest('.config-line')); }
+  moveGroup('language');
 
   /* ---- Ahora ---- */
   // Lo que hay hoy: cole, sesiones de actividades, eventos, bloques de trabajo y entregas de tareas.
@@ -445,19 +453,24 @@
   var CFG = { data: null, push: null, saving: false };
   var DEF = { overdue: true, risk: true, dueSoon: true, big: true, noEst: true, unlogged: true, skipped: true, news: true, daily: true, weekly: true,
               dueHours: [24, 3], amberMargin: 60, bigMin: 180, bigDays: 3, unloggedH: 2 };
+  // Resumen en la cabecera del bloque: cuántos tipos de aviso están activados
+  function renderAlertSum(){
+    var el = document.getElementById('sum-sup-alerts');
+    if(el){ el.textContent = CFG.data ? t('sum.alerts', { n: ALERT_TYPES.filter(function(k){ return CFG.data[k]; }).length, m: ALERT_TYPES.length }) : ''; }
+  }
   function renderAlertCfg(){
     var box = document.getElementById('sup-alerts-cfg');
     if(!box){ return; }
-    if(!(window.SYNC && window.SYNC.status === 'in')){ box.innerHTML = '<span class="field-label">' + t('al.cfgTitle') + '</span><p class="card-hint">' + t('log.loading') + '</p>'; return; }
+    if(!(window.SYNC && window.SYNC.status === 'in')){ box.innerHTML = '<p class="card-hint">' + t('log.loading') + '</p>'; return; }
     if(CFG.data == null){
-      box.innerHTML = '<span class="field-label">' + t('al.cfgTitle') + '</span><p class="card-hint">' + t('log.loading') + '</p>';
+      box.innerHTML = '<p class="card-hint">' + t('log.loading') + '</p>';
       Promise.all([window.syncAlertConfig(), window.syncPushState()]).then(function(r){ CFG.data = Object.assign({}, DEF, r[0] || {}); CFG.push = r[1]; renderAlertCfg(); })
         .catch(function(e){ box.innerHTML = '<p class="card-hint sync-error">' + esc(t('sync.error', { code: e && e.code || e })) + '</p>'; });
       return;
     }
     var c = CFG.data, num = function(id, v, step){ return '<input class="txt-input al-num" type="number" inputmode="decimal" min="0" step="' + (step || 1) + '" id="al-' + id + '" value="' + v + '">'; };
-    box.innerHTML = '<span class="field-label">' + t('al.cfgTitle') + '</span>' +
-      '<div class="al-push"><p class="card-hint">' + t('al.push.' + CFG.push) + '</p>' +
+    renderAlertSum();
+    box.innerHTML = '<div class="al-push"><p class="card-hint">' + t('al.push.' + CFG.push) + '</p>' +
         (CFG.push === 'off' ? '<button type="button" class="btn-primary" onclick="supEnablePush(this)">' + t('al.enable') + '</button>' : '') + '</div>' +
       '<ul class="al-types">' + ALERT_TYPES.map(function(k){
         return '<li><label><input type="checkbox" id="al-t-' + k + '"' + (c[k] ? ' checked' : '') + '> <span>' + t('al.t.' + k) + '</span></label></li>';
@@ -585,6 +598,8 @@
       p.textContent = t(n === 3 ? 'sup.soonLog' : 'sup.soon', { n: n });
     });
     nav.setAttribute('aria-label', t('aria.nav'));
+    alertsGroup.querySelector('.cfg-group-title').textContent = t('al.cfgTitle');
+    renderAlertSum();
     nav.querySelectorAll('[data-i18n]').forEach(function(s){ s.textContent = t(s.getAttribute('data-i18n')); });
     var active = nav.querySelector('.tab.is-active');
     if(active){ setScreenHeading(active); }

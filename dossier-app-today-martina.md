@@ -466,6 +466,7 @@ Un **único instrumento** sirve para todo: sugerencias, ánimos, proponer un eve
 - Martina tiene en su App una lista con los mensajes recibidos.
 
 **8. Configuración del supervisor**
+- **Bloques desplegables** como en la Config de la App (12/10/2026): **Cuenta · Avisos · Google Calendar · Idioma**, cerrados al entrar, con su resumen en la cabecera (correo, «8 de 10 activados», «Exportando», idioma); al abrir uno se cierra el que estuviera abierto. Cuenta, Google Calendar e Idioma son los mismos bloques de la App.
 - Activar o desactivar cada aviso y cambiar sus umbrales: X horas antes de la entrega (varios valores), margen del ámbar, tamaño de «tarea grande» y días antes, y horas para «sin registrar».
 - Activar o desactivar cada resumen.
 - Cuenta: cerrar sesión.

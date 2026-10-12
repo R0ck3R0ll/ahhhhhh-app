@@ -279,7 +279,7 @@
       'sum.links':'{n} de 2 enlazados',
       'sum.cats':'{n} categorías',
       'sum.gcalOn':'Exportando',
-      'sum.gcalOff':'Sin exportar',
+      'sum.gcalOff':'Sin exportar', 'sum.alerts':'{n} de {m} activados',
       'aria.catEdit':'Editar categoría', 'aria.catDone':'Hecho',
       'aria.school':'Colegio', 'aria.nav':'Navegación principal'
     },
@@ -557,7 +557,7 @@
       'sum.links':'{n} of 2 linked',
       'sum.cats':'{n} categories',
       'sum.gcalOn':'Exporting',
-      'sum.gcalOff':'Off',
+      'sum.gcalOff':'Off', 'sum.alerts':'{n} of {m} on',
       'aria.catEdit':'Edit category', 'aria.catDone':'Done',
       'aria.school':'School', 'aria.nav':'Main navigation'
     },
@@ -835,7 +835,7 @@
       'sum.links':'{n} di 2 collegati',
       'sum.cats':'{n} categorie',
       'sum.gcalOn':'Attiva',
-      'sum.gcalOff':'Disattivata',
+      'sum.gcalOff':'Disattivata', 'sum.alerts':'{n} di {m} attivi',
       'aria.catEdit':'Modifica categoria', 'aria.catDone':'Fatto',
       'aria.school':'Scuola', 'aria.nav':'Navigazione principale'
     },
@@ -1113,7 +1113,7 @@
       'sum.links':'{n} sur 2 liés',
       'sum.cats':'{n} catégories',
       'sum.gcalOn':'Active',
-      'sum.gcalOff':'Désactivée',
+      'sum.gcalOff':'Désactivée', 'sum.alerts':'{n} sur {m} activées',
       'aria.catEdit':'Modifier la catégorie', 'aria.catDone':'Terminé',
       'aria.school':'École', 'aria.nav':'Navigation principale'
     },
@@ -1391,7 +1391,7 @@
       'sum.links':'{n} von 2 verknüpft',
       'sum.cats':'{n} Kategorien',
       'sum.gcalOn':'Aktiv',
-      'sum.gcalOff':'Aus',
+      'sum.gcalOff':'Aus', 'sum.alerts':'{n} von {m} an',
       'aria.catEdit':'Kategorie bearbeiten', 'aria.catDone':'Fertig',
       'aria.school':'Schule', 'aria.nav':'Hauptnavigation'
     }
