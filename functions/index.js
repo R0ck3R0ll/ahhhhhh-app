@@ -392,8 +392,10 @@ export const weeklySummaryJob = onSchedule({ schedule: '1 22 * * 0', region: ALE
    y plans/{id}/gcal/status o status-{uid} (lo que ve la App: conectado, cuenta, sincronización, error).
    El ID y el secreto del cliente OAuth de Google van en GCAL_CLIENT_ID y GCAL_CLIENT_SECRET (los
    escribe el flujo de publicación a partir de los secretos de GitHub del mismo nombre). */
-const GCAL_CLIENT_ID = defineString('GCAL_CLIENT_ID', { default: '' });
-const GCAL_CLIENT_SECRET = defineString('GCAL_CLIENT_SECRET', { default: '' });
+// Se leen tal cual del entorno (no como parámetros de Firebase): así, mientras no estén, las funciones
+// se publican igual y la exportación dice que aún no está preparada
+const GCAL_CLIENT_ID = { value: function(){ return process.env.GCAL_CLIENT_ID || ''; } };
+const GCAL_CLIENT_SECRET = { value: function(){ return process.env.GCAL_CLIENT_SECRET || ''; } };
 const GCAL_REGION = 'europe-west1';
 const GCAL_REDIRECT = 'https://' + GCAL_REGION + '-ahhhhhh-today.cloudfunctions.net/gcalCallback';
 const APP_URL = 'https://ahhhhhh-today.web.app/';
