@@ -247,7 +247,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 
 ## 2 ter. Firebase (paso 3: servidor)
 
-- **Proyecto:** el mismo de Google Cloud, `ahhhhhh-today` (número 356797407017), con Firebase añadido. Plan **Blaze**. Empezó con la **prueba gratuita de Google Cloud** (264 € de crédito, hasta el 6/1/2027) y **el 12/10/2026 Carlo la pasó a cuenta de pago** («Actualizar» en Facturación): el crédito restante se sigue gastando primero y los servicios ya no se paran al acabar la prueba. Gasto hasta entonces: 0,24 € (cubierto por el crédito). Con el uso familiar el coste esperado es 0 € o céntimos al mes. Pendiente: alerta de presupuesto de 5 €.
+- **Proyecto:** el mismo de Google Cloud, `ahhhhhh-today` (número 356797407017), con Firebase añadido. Plan **Blaze**. Empezó con la **prueba gratuita de Google Cloud** (264 € de crédito, hasta el 6/1/2027) y **el 12/10/2026 Carlo la pasó a cuenta de pago** («Actualizar» en Facturación): el crédito restante se sigue gastando primero y los servicios ya no se paran al acabar la prueba. Gasto hasta entonces: 0,24 € (cubierto por el crédito). Con el uso familiar el coste esperado es 0 € o céntimos al mes. **Alerta de presupuesto**: «Firebase Project ahhhhhh-today», 5 €/mes, avisos al 50, 90 y 100 % (creada al activar Blaze; sin restar créditos, para ver el gasto real). Sin límite de inversión que pause servicios (decidido: la App se pararía).
 - **App web registrada** («AHHHHHH Today web»): su `firebaseConfig` es público y va dentro de la App.
 - **Firestore** (base de datos) en `europe-southwest1` (Madrid), en modo producción.
 - **Authentication:** inicio de sesión con Google.
@@ -279,7 +279,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 ## 2 quater. Google Maps (paso 2: traslados con tráfico)
 
 - **Routes API** activada en el proyecto `ahhhhhh-today`. Clave «Maps App» restringida a los sitios `https://ahhhhhh-today.web.app/*` y `https://ahhhhhh-today.firebaseapp.com/*` y solo a Routes API; va dentro de la App (es pública por naturaleza, la protege la restricción).
-- **Alerta de presupuesto** de 5 € en Facturación > Budgets & caps (avisa por correo, no corta el gasto).
+- **Alerta de presupuesto** de 5 € en Facturación > Budgets & caps (avisa por correo, no corta el gasto). Hecha.
 - **En la App** (`refreshRoutes` / `applyRoute` en `app.js`): cada elemento de hoy con lugar y traslado tiene su tiempo en coche (con tráfico previsto) y, si el trayecto en coche es de **1,5 km o menos**, a pie (si son 45 min o menos). (9/10/2026: decidido 1,5 km; antes era 2,5 km, demasiado.) La pantalla Hoy muestra las horas de salida y la distancia del próximo.
   - Punto de partida según las reglas del punto de traslados (ubicación del móvil desde 1 h antes de la hora de salida; si no se puede saber, casa).
   - **Cuándo se calcula** (decidido 7/10/2026):
@@ -697,7 +697,6 @@ Todos se pueden cambiar en Config del supervisor:
 
 **Otros pendientes que vienen de antes:**
 - Conexión con Classroom y Gmail (bloqueada por el colegio).
-- Alerta de presupuesto de 5 € en Google Cloud (punto 2 ter). La facturación ya es de pago (12/10/2026).
 
 ---
 
