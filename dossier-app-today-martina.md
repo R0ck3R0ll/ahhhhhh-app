@@ -389,6 +389,7 @@ Organizada en bloques plegables (cerrados al entrar; se despliegan al pulsar y, 
 - **Dónde está o estará Martina:** lo que tiene en este momento (cole, actividad, evento o bloque de trabajo) y lo siguiente, con su hora.
 - **Barra de tiempo del día**, como la de «Hoy» pero más sencilla: los deadlines y los bloques de trabajo de hoy, sin traslados ni horas de salida.
 - Pulsar cualquier elemento abre su ficha, de solo lectura y con todos los detalles: lugar, descripción, material… No hay sección aparte de preparativos.
+- **«Próximos días»** (12/10/2026): abajo del todo, la misma tarjeta que en «Hoy» de la App de Martina (tareas sin hacer de 1,5 h o más que vencen en los 5 días siguientes, plegable). Pulsar una tarea abre su ficha con «‹ Volver a Ahora».
 
 **2. Calendario** (semana y día, como el de Martina)
 - **Qué se ve:** actividades, eventos, entregas de tareas, **bloques de trabajo planificados**, **días sin cole** y **huecos libres**.

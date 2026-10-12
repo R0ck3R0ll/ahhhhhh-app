@@ -170,7 +170,7 @@
   }
   .today-empty{ margin:24px 0; font-size:15px; color:var(--text-muted); text-align:center; }
   .today-more{ margin:0; font-size:12.5px; color:var(--text-muted); text-align:center; }
-  #screen-today.active{ min-height:100%; }
+  #screen-today.active, #screen-sup-now.active{ min-height:100%; }
   /* Próximos días: abajo del todo, pegada a la barra de pestañas aunque el resto se desplace */
   :root{ --load-border:#f2b27a; --load-bg:#fff4c7; --load-title:#8a4b12; }
   .load-card{

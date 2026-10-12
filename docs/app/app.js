@@ -687,8 +687,9 @@
   }
   // Regla: si con la tarjeta desplegada la pantalla no da para todo sin taparse, se queda plegada
   function fitLoad(){
-    var card = document.querySelector('.load-card'), screen = el('screen-today');
-    if(!card || card.hidden || !screen.classList.contains('active')){ return; }
+    // (en el modo supervisor la tarjeta está en «Ahora»)
+    var card = document.querySelector('.load-card'), screen = card && card.closest('.screen');
+    if(!card || card.hidden || !screen || !screen.classList.contains('active')){ return; }
     setLoadOpen(true);
     var main = screen.parentElement;
     if(main.scrollHeight > main.clientHeight + 1){ setLoadOpen(false); }

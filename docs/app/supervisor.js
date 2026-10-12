@@ -86,7 +86,7 @@
     var prev = nav.querySelector('.tab.is-active:not(.sup-hidden-tab)');
     showScreenBase(btn);
     if(btn.classList.contains('sup-hidden-tab') && prev){ prev.classList.add('is-active'); }
-    if(btn.dataset.screen === 'sup-now'){ renderNow(); }
+    if(btn.dataset.screen === 'sup-now'){ renderNow(); renderLoad(); fitLoad(); }
     if(btn.dataset.screen === 'sup-log' && !LOG.loaded){ loadLog(false); }
     if(btn.dataset.screen === 'sup-stats' && window.renderStats){ window.renderStats(); }
     if(btn.dataset.screen === 'sup-config'){ renderAlertCfg(); }
@@ -105,6 +105,11 @@
     document.getElementById('export-options').hidden = true;
     document.getElementById('sup-gcal').replaceWith(gcalCard);
   }
+  // «Próximos días» (tareas grandes de los 5 días siguientes): la misma tarjeta de «Hoy» de la App,
+  // abajo del todo en «Ahora». Pulsar una tarea abre su ficha con «‹ Volver a Ahora»
+  var loadCard = document.querySelector('.load-card');
+  if(loadCard){ document.getElementById('screen-sup-now').appendChild(loadCard); }
+  window.openLoadTask = function(key){ window.supOpen('task', key); };
   var lang = document.getElementById('lang-select');
   if(lang){ document.getElementById('sup-lang').appendChild(lang.closest('.config-line')); }
 
