@@ -904,6 +904,30 @@
   <div class="form-actions"><button type="button" class="btn-primary" onclick="el('msgs-dialog').close()" data-i18n="risk.close"></button></div>
 </dialog>
 
+<!-- Tareas importadas de Classroom y del correo: confirmarlas y ajustar el tiempo estimado -->
+<dialog class="confirm-dialog review-dialog" id="review-dialog" aria-labelledby="review-title">
+  <h2 id="review-title" data-i18n="rev.title"></h2>
+  <p id="review-body"></p>
+  <div class="review-list" id="review-list"></div>
+  <div class="form-actions">
+    <button type="button" class="btn-ghost" onclick="reviewLater()" data-i18n="end.later"></button>
+    <button type="button" class="btn-primary" id="review-go" onclick="confirmReview()"></button>
+  </div>
+</dialog>
+
+<!-- Importación de tareas (App abierta con #importar): la usa Claude desde Chrome -->
+<dialog class="confirm-dialog import-dialog" id="import-dialog" aria-labelledby="import-title">
+  <h2 id="import-title" data-i18n="imp.title"></h2>
+  <p id="import-status" role="status"></p>
+  <label class="field-label" for="import-json" data-i18n="imp.hint"></label>
+  <textarea class="txt-input import-json" id="import-json" rows="8" spellcheck="false"></textarea>
+  <pre class="import-result" id="import-result" role="status"></pre>
+  <div class="form-actions">
+    <button type="button" class="btn-ghost" onclick="closeImport()" data-i18n="risk.close"></button>
+    <button type="button" class="btn-primary" id="import-go" onclick="doImport()" data-i18n="imp.go" disabled></button>
+  </div>
+</dialog>
+
 <!-- Salir de un formulario abierto con la barra de pestañas -->
 <dialog class="confirm-dialog" id="discard-dialog" aria-labelledby="discard-title">
   <h2 id="discard-title" data-i18n="discard.title"></h2>

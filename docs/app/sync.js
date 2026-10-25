@@ -47,7 +47,7 @@ const firebaseConfig = {
 };
 
 // Estado que lee la App: status = 'unavailable' | 'loading' | 'out' | 'in'
-const SYNC = window.SYNC = { status: ALLOWED ? 'loading' : 'unavailable', email: '', isOwner: false, members: [], viewers: [], owner: '', pendingOwner: '', role: '', error: '' };
+const SYNC = window.SYNC = { status: ALLOWED ? 'loading' : 'unavailable', fresh: false, email: '', isOwner: false, members: [], viewers: [], owner: '', pendingOwner: '', role: '', error: '' };
 // Rol en este móvil: si cambia (p. ej. el dueño pasa a alguien de miembro a supervisor), la App se recarga
 function setRole(role){
   const was = localStorage.getItem('sync-role') || '';
@@ -122,7 +122,8 @@ async function start(){
     tryReload();
   }
   function busy(){
-    return !!document.querySelector('.screen.active form.evt-form:not([hidden])') || !!document.querySelector('dialog[open]');
+    // La pantalla de importación de tareas no frena la recarga: espera a tener los datos al día
+    return !!document.querySelector('.screen.active form.evt-form:not([hidden])') || !!document.querySelector('dialog[open]:not(#import-dialog)');
   }
   // Freno: si la App se ha recargado 3 veces en el último minuto, no se recarga más (se avisa)
   function reloadLoop(){
@@ -147,7 +148,8 @@ async function start(){
   function listen(){
     if(unsubKv){ unsubKv(); }
     if(unsubPlan){ unsubPlan(); }
-    unsubKv = onSnapshot(collection(db, 'plans', planId, 'kv'), function(snap){
+    // Con los cambios de metadatos: así se sabe cuándo llegan los datos del servidor y no solo los guardados en el móvil
+    unsubKv = onSnapshot(collection(db, 'plans', planId, 'kv'), { includeMetadataChanges: true }, function(snap){
       let any = false;
       snap.docChanges().forEach(function(ch){
         if(ch.doc.metadata.hasPendingWrites){ return; }   // es nuestro propio cambio
@@ -160,6 +162,8 @@ async function start(){
         if(applyRemote(k, v)){ any = true; }
       });
       if(any){ scheduleReload(); }
+      // Datos al día: ya ha llegado lo del servidor y no hay que recargar (lo necesita la importación de tareas)
+      else if(!snap.metadata.fromCache && !SYNC.fresh){ SYNC.fresh = true; changed(); }
     }, function(e){ SYNC.error = String(e.code || e); changed(); });
     unsubPlan = onSnapshot(doc(db, 'plans', planId), function(snap){
       const d = snap.data() || {};
