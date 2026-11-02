@@ -122,7 +122,8 @@
   }
   function showScreen(btn){
     // Sin configurar lo mínimo, solo se puede usar Configuración
-    if(!IS_SUPERVISOR && btn.dataset.screen !== 'config' && !setupDone()){ toast(t('setup.locked')); renderSetup(); return; }
+    // (Tareas siempre se puede abrir: para ver o borrar las que ya hay, p. ej. las importadas)
+    if(!IS_SUPERVISOR && !SETUP_FREE[btn.dataset.screen] && !setupDone()){ toast(t('setup.locked')); renderSetup(); return; }
     // Con un formulario abierto, cambiar de pestaña pide confirmación
     if(openForm() && !btn.classList.contains('is-active')){ pendingTab = btn; el('discard-dialog').showModal(); return; }
     PRESS_BACK = null;
@@ -808,7 +809,7 @@
      Para usar la App hacen falta, como mínimo, el nombre, la franja horaria y el horario escolar.
      Mientras falte algo, la App se abre en Configuración, las demás pestañas están bloqueadas y
      una tarjeta arriba dice qué falta (cada punto abre su bloque). */
-  var SETUP_WAS_DONE = null;
+  var SETUP_WAS_DONE = null, SETUP_FREE = { config:true, tasks:true };
   function setupMissing(){
     var m = [];
     if(!KID){ m.push({ key:'setup.name', group:'profile' }); }
@@ -826,7 +827,7 @@
       return '<li><button type="button" class="setup-link" onclick="openCfgGroup(\'' + m.group + '\')">' + esc(t(m.key)) + '</button></li>';
     }).join('');
     document.querySelectorAll('.tab').forEach(function(tab){
-      var locked = !done && tab.dataset.screen !== 'config';
+      var locked = !done && !SETUP_FREE[tab.dataset.screen];
       tab.classList.toggle('is-locked', locked);
       if(locked){ tab.setAttribute('aria-disabled', 'true'); } else { tab.removeAttribute('aria-disabled'); }
     });
@@ -1542,7 +1543,9 @@
       exportCats: exportCats,
       leaveAlert: el('leave-switch').getAttribute('aria-checked') === 'true'
     };
-    try{ localStorage.setItem('app-settings', JSON.stringify(data)); }catch(e){}
+    // Solo si algo ha cambiado: cualquier pulsación en Configuración llega aquí
+    var v = JSON.stringify(data);
+    try{ if(localStorage.getItem('app-settings') !== v){ localStorage.setItem('app-settings', v); } }catch(e){}
   }
   function loadSettings(){
     var data = null;
@@ -3220,6 +3223,7 @@
       rows: [
         [t('d.origin'), TASK_SVG + esc(x.origin)],
         [t('task.dueDate'), x.kind === 'activity' ? t('task.dueNextAt', { t: dueTxt }) : dueTxt],
+        [t('task.realDue'), x.ref.due ? fmtWhen(atTime(x.ref.due.slice(0, 10), x.ref.due.slice(11))) : ''],
         [t('task.est'), x.est ? fmtEst(x.est) : '<span class="est-missing">' + t('task.noEst') + '</span>'],
         [t('f.prio'), prioHtml(x.prio, !!x.own)],
         [t('f.desc'), x.desc ? esc(x.desc) : ''],
@@ -3345,7 +3349,7 @@
       btn.textContent = t(x.parent ? 'task.deleteConfirmLinked' : 'task.deleteConfirm', { name: x.parent ? x.parent.name : '' });
       return;
     }
-    if(x.parent){ x.parent.task = null; } else { OWN_TASKS.splice(OWN_TASKS.indexOf(x.ref), 1); }
+    if(x.parent){ x.parent.task = null; } else { markGone(x.ref, 'deleted'); OWN_TASKS.splice(OWN_TASKS.indexOf(x.ref), 1); }
     WORK_BLOCKS = WORK_BLOCKS.filter(function(b){ return b.task !== x.key; });
     storeTasks(); storeEvents(); storeActivities(); storeBlocks();
     editingTask = null;
@@ -3357,58 +3361,102 @@
   /* ================= TAREAS IMPORTADAS (Classroom y correo) =================
      Las tareas que encuentra Claude (Cowork, en el Chrome con la sesión del colegio abierta) entran
      por una pantalla oculta: la App abierta con #importar. Ahí se pega la lista en JSON
-     ({ tasks: [{ ref, source, course, name, date, time, est, desc, link }] }) y la App la añade a la
-     lista de tareas, marcadas como «por confirmar» (review). Antes de añadir espera a tener los datos
-     del plan al día (SYNC.fresh) para no pisar lo que haya cambiado en otro móvil, y al terminar los
-     sube a la nube (syncFlush).
-     No se repite nada: cada tarea importada deja su «ref» (p. ej. la dirección de la tarea en
-     Classroom) en import-seen, aunque luego se descarte o se borre; tampoco entra si ya hay una tarea
-     con el mismo nombre y la misma entrega (p. ej. añadida a mano).
+     ({ tasks: [{ ref, source, course, name, date, time, due, est, desc, link }] }) y la App la añade a
+     la lista de tareas, marcadas como «por confirmar» (review). Antes de añadir espera a tener los
+     datos del plan al día (SYNC.fresh) para no pisar lo que haya cambiado en otro móvil, y al terminar
+     los sube a la nube (syncFlush).
+     - «ref» identifica la tarea (p. ej. su dirección en Classroom). Si ya hay una tarea con ese ref y
+       sigue por confirmar, se actualiza con lo que llega (sin duplicarla); si ya está confirmada, hecha
+       o con tiempo anotado, no se toca.
+     - Las que se descartan en el aviso o se borran quedan en import-seen ({ ref: { s, at } }, s =
+       'discarded' | 'deleted') y no vuelven a entrar, salvo con "restore": true.
+     - Tampoco entra una tarea con el mismo nombre y la misma entrega que otra (p. ej. añadida a mano).
+     - En Classroom, "due" es la entrega real ("AAAA-MM-DDTHH:MM"): la App pone como límite las 22:00 del
+       día anterior y guarda la real para enseñarla en la ficha.
      La primera vez que se abre la App después, un aviso las enseña para confirmarlas: se puede
-     ajustar el tiempo estimado de cada una y desmarcar las que no interesan (se quitan). */
-  var IMPORT_SEEN = [];
-  try{ IMPORT_SEEN = JSON.parse(localStorage.getItem('import-seen') || '[]') || []; }catch(e){ IMPORT_SEEN = []; }
+     ajustar el tiempo estimado de cada una y desmarcar las que no interesan (se descartan). */
+  var IMPORT_SEEN = {};
+  (function(){
+    var v = null;
+    try{ v = JSON.parse(localStorage.getItem('import-seen') || 'null'); }catch(e){}
+    if(Array.isArray(v)){
+      // Formato anterior: lista de refs importados. Los que ya no están en la lista de tareas se
+      // descartaron o se borraron (no se sabe cuál)
+      v.forEach(function(ref){ if(!OWN_TASKS.some(function(tk){ return tk.ref === ref; })){ IMPORT_SEEN[ref] = { s:'gone' }; } });
+    } else if(v && typeof v === 'object'){ IMPORT_SEEN = v; }
+  })();
   var IMPORT_SEEN_MAX = 2000, IMPORT_MODE = location.hash === '#importar';
-  function storeImportSeen(){ try{ localStorage.setItem('import-seen', JSON.stringify(IMPORT_SEEN.slice(-IMPORT_SEEN_MAX))); }catch(e){} }
+  function storeImportSeen(){
+    var keys = Object.keys(IMPORT_SEEN);
+    keys.slice(0, Math.max(0, keys.length - IMPORT_SEEN_MAX)).forEach(function(k){ delete IMPORT_SEEN[k]; });
+    try{ localStorage.setItem('import-seen', JSON.stringify(IMPORT_SEEN)); }catch(e){}
+  }
+  // Tarea importada que se descarta en el aviso o se borra: no vuelve a entrar
+  function markGone(tk, s){ if(tk && tk.ref){ IMPORT_SEEN[tk.ref] = { s:s, at:new Date().toISOString() }; storeImportSeen(); } }
   function normText(v){ return String(v || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
   function sameTask(tk, r){ return normText(tk.name) === normText(r.name) && tk.date === r.date; }
+  function validDate(v){ return /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(isoDate(v)) && isoOf(isoDate(v)) === v; }
+  function validTime(v){ return /^([01]\d|2[0-3]):[0-5]\d$/.test(v); }
 
   // Comprueba una tarea de la lista: devuelve la tarea lista para guardar o el motivo por el que no vale
   function importItem(it){
     if(!it || typeof it !== 'object'){ return { err:'imp.r.format' }; }
     var name = String(it.name || '').trim().slice(0, 200);
     if(!name){ return { err:'imp.r.name' }; }
-    var date = String(it.date || '');
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(isoDate(date))){ return { err:'imp.r.date', name:name }; }
-    var time = it.time ? String(it.time) : '23:59';
-    if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){ return { err:'imp.r.time', name:name }; }
+    var source = it.source === 'gmail' ? 'gmail' : 'classroom';
+    var date = String(it.date || ''), time = it.time ? String(it.time) : '23:59', due = '';
+    // Classroom con su entrega real: límite a las 22:00 del día anterior
+    if(source === 'classroom' && it.due){
+      var m = /^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}))?$/.exec(String(it.due));
+      if(!m || !validDate(m[1]) || (m[2] && !validTime(m[2]))){ return { err:'imp.r.due', name:name }; }
+      due = m[1] + 'T' + (m[2] || '23:59');
+      date = addDays(m[1], -1); time = '22:00';
+    }
+    if(!validDate(date)){ return { err:'imp.r.date', name:name }; }
+    if(!validTime(time)){ return { err:'imp.r.time', name:name }; }
     var est = Math.round(+it.est || 0);
     est = est > 0 ? Math.min(est, 1440) : 0;
-    var source = it.source === 'gmail' ? 'gmail' : 'classroom';
     var course = String(it.course || '').trim().slice(0, 80);
     var link = /^https:\/\/\S+$/.test(String(it.link || '')) ? String(it.link).slice(0, 500) : '';
     var ref = String(it.ref || link || '').trim().slice(0, 300) || source + '|' + normText(course) + '|' + normText(name) + '|' + date;
-    return { task: { source:source, course:course, name:name, date:date, time:time, est:est, desc:String(it.desc || '').trim().slice(0, 2000), link:link, ref:ref } };
+    var tk = { source:source, course:course, name:name, date:date, time:time, est:est, desc:String(it.desc || '').trim().slice(0, 2000), link:link, ref:ref };
+    if(due){ tk.due = due; }
+    return { task:tk, restore: it.restore === true };
   }
+  // Campos que se actualizan al volver a importar una tarea por confirmar
+  var IMPORT_FIELDS = ['name', 'course', 'date', 'time', 'est', 'desc', 'link', 'due'];
   function runImport(text){
     var data;
     try{ data = JSON.parse(text); }catch(e){ return { error:'imp.badJson' }; }
     var list = Array.isArray(data) ? data : data && Array.isArray(data.tasks) ? data.tasks : null;
     if(!list){ return { error:'imp.badJson' }; }
-    var res = { added:[], dup:[], bad:[] }, now = Date.now();
+    var restoreAll = !!(data && data.restore === true);
+    var res = { added:[], updated:[], same:[], locked:[], gone:[], dup:[], bad:[] }, now = Date.now(), changed = false;
     list.forEach(function(it, i){
       var r = importItem(it);
       if(r.err){ res.bad.push((r.name || '#' + (i + 1)) + ' — ' + t(r.err)); return; }
-      var tk = r.task;
-      if(IMPORT_SEEN.indexOf(tk.ref) >= 0 || OWN_TASKS.some(function(o){ return o.ref === tk.ref || sameTask(o, tk); })){ res.dup.push(tk.name); return; }
+      var tk = r.task, old = OWN_TASKS.filter(function(o){ return o.ref === tk.ref; })[0];
+      if(old){
+        var diff = IMPORT_FIELDS.filter(function(f){ return (old[f] || '') !== (tk[f] || ''); });
+        if(!diff.length){ res.same.push(tk.name); return; }
+        // Ya confirmada, hecha o con trabajo anotado: es de Martina, no se toca
+        if(!old.review || old.done || doneMin('s:' + old.id)){ res.locked.push(tk.name + ' (' + t(old.done ? 'imp.st.done' : 'imp.st.confirmed') + ')'); return; }
+        diff.forEach(function(f){ if(tk[f] == null || tk[f] === ''){ delete old[f]; } else { old[f] = tk[f]; } });
+        changed = true;
+        res.updated.push(tk.name + ' — ' + diff.map(function(f){ return t('imp.f.' + f); }).join(', '));
+        return;
+      }
+      if(IMPORT_SEEN[tk.ref] && !(r.restore || restoreAll)){ res.gone.push(tk.name + ' (' + t('imp.st.' + IMPORT_SEEN[tk.ref].s) + ')'); return; }
+      if(OWN_TASKS.some(function(o){ return sameTask(o, tk); })){ res.dup.push(tk.name); return; }
+      delete IMPORT_SEEN[tk.ref];
       tk.id = 'i' + now + '-' + i;
       tk.review = true;
       tk.importedAt = new Date().toISOString();
       OWN_TASKS.push(tk);
-      IMPORT_SEEN.push(tk.ref);
+      changed = true;
       res.added.push(tk.name + ' (' + fmtDay(tk.date) + ' ' + tk.time + (tk.est ? ' · ' + fmtEst(tk.est) : '') + ')');
     });
-    if(res.added.length){
+    if(changed){
       storeImportSeen(); storeTasks();
       renderTasks(); renderCalendar(calView); renderToday();
     }
@@ -3422,6 +3470,7 @@
     if(!d || !d.open){ return; }
     var S = window.SYNC || {}, ready = importReady(), go = el('import-go');
     var state = IS_SUPERVISOR || S.status === 'out' || S.status === 'unavailable' ? 'signin' : ready ? 'ready' : 'wait';
+    el('import-data').textContent = ready ? importDataText() : '';
     if(d.dataset.state === 'done' || d.dataset.state === 'saving'){ go.disabled = true; return; }
     d.dataset.state = state;
     el('import-status').textContent = t(state === 'signin' ? 'imp.needSignIn' : state === 'ready' ? 'imp.ready' : 'imp.wait');
@@ -3434,14 +3483,35 @@
     el('import-result').textContent = '';
     renderImport();
   }
+  // Solo lectura: lo que hay guardado en el plan y la franja horaria, para comprobarlo desde fuera
+  function importDataText(){
+    var b = { start: el('day-start').value, end: el('day-end').value }, out = [];
+    out.push(t('imp.d.window') + ': ' + (b.start && b.end ? b.start + '–' + b.end : t('imp.d.unset')));
+    out.push(t('imp.d.school') + ': ' + (schoolSet() ? SCHOOL.week.entry + '–' + SCHOOL.week.exit : t('imp.d.unset')) +
+      (SCHOOL.sat.on && SCHOOL.sat.entry ? ' · ' + t('imp.d.sat') + ' ' + SCHOOL.sat.entry + '–' + SCHOOL.sat.exit : ''));
+    var tasks = OWN_TASKS.slice().sort(function(p, q){ return ((p.date || '') + p.time).localeCompare((q.date || '') + q.time); });
+    out.push('', t('imp.d.tasks', { n: tasks.length }));
+    tasks.forEach(function(tk){
+      var st = tk.done ? 'imp.st.done' : tk.review ? 'imp.st.review' : tk.source === 'manual' ? 'imp.st.manual' : 'imp.st.confirmed';
+      out.push('  · [' + t(st) + '] ' + tk.date + ' ' + tk.time + ' · ' + tk.name + (tk.course ? ' (' + tk.course + ')' : '') +
+        ' · ' + (tk.est ? fmtEst(tk.est) : t('task.noEst')) + (tk.due ? ' · ' + t('imp.d.realDue') + ' ' + tk.due.replace('T', ' ') : '') + (tk.ref ? '\n      ref: ' + tk.ref : ''));
+    });
+    var gone = Object.keys(IMPORT_SEEN);
+    out.push('', t('imp.d.gone', { n: gone.length }));
+    gone.forEach(function(ref){ var g = IMPORT_SEEN[ref]; out.push('  · [' + t('imp.st.' + g.s) + ']' + (g.at ? ' ' + g.at.slice(0, 10) : '') + ' ref: ' + ref); });
+    return out.join('\n');
+  }
   function doImport(){
     if(!importReady()){ renderImport(); return; }
     var d = el('import-dialog'), out = el('import-result');
     var res = runImport(el('import-json').value);
     if(res.error){ out.textContent = t(res.error); d.dataset.state = 'error'; return; }
-    function block(key, list){ return t(key, { n: list.length }) + (list.length ? '\n  · ' + list.join('\n  · ') : ''); }
-    var txt = [block('imp.added', res.added), block('imp.dup', res.dup), block('imp.bad', res.bad)].join('\n');
+    function block(key, list){ return list.length ? t(key, { n: list.length }) + '\n  · ' + list.join('\n  · ') : ''; }
+    var txt = [t('imp.added', { n: res.added.length }) + (res.added.length ? '\n  · ' + res.added.join('\n  · ') : ''),
+      block('imp.updated', res.updated), block('imp.same', res.same), block('imp.locked', res.locked),
+      block('imp.gone', res.gone), block('imp.dup', res.dup), block('imp.bad', res.bad)].filter(Boolean).join('\n');
     out.textContent = txt;
+    el('import-data').textContent = importDataText();
     d.dataset.state = 'saving';
     el('import-go').disabled = true;
     var S = window.SYNC;
@@ -3491,8 +3561,8 @@
     el('review-dialog').showModal();
   }
   function updateReviewBtn(){
-    var n = reviewTasks().filter(function(tk){ return REVIEW.sel[tk.id]; }).length;
-    el('review-go').textContent = n ? t('rev.confirm', { n: n }) : t('rev.discardAll');
+    var all = reviewTasks(), n = all.filter(function(tk){ return REVIEW.sel[tk.id]; }).length, off = all.length - n;
+    el('review-go').textContent = !n ? t('rev.discardAll') : off ? t('rev.confirmDiscard', { n: n, m: off }) : t('rev.confirm', { n: n });
     el('review-go').className = n ? 'btn-primary' : 'btn-danger';
   }
   function confirmReview(){
@@ -3505,6 +3575,7 @@
         kept++;
       } else {
         dropped.push('s:' + tk.id);
+        markGone(tk, 'discarded');
         OWN_TASKS.splice(OWN_TASKS.indexOf(tk), 1);
       }
     });
@@ -3518,6 +3589,11 @@
   function reviewLater(){ REVIEW.later = true; el('review-dialog').close(); }
   el('review-dialog').addEventListener('cancel', function(ev){ ev.preventDefault(); reviewLater(); });
   el('import-dialog').addEventListener('cancel', function(ev){ ev.preventDefault(); closeImport(); });
+  // Otra lista después de importar: al cambiar el texto se puede volver a importar
+  el('import-json').addEventListener('input', function(){
+    var d = el('import-dialog');
+    if(d.dataset.state === 'done' || d.dataset.state === 'error'){ d.dataset.state = ''; el('import-result').textContent = ''; renderImport(); }
+  });
   window.addEventListener('hashchange', function(){ if(location.hash === '#importar'){ IMPORT_MODE = true; openImport(); } });
   // Si había otro aviso abierto, sale después
   setInterval(nextReview, 20000);

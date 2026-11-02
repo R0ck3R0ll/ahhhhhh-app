@@ -922,6 +922,10 @@
   <label class="field-label" for="import-json" data-i18n="imp.hint"></label>
   <textarea class="txt-input import-json" id="import-json" rows="8" spellcheck="false"></textarea>
   <pre class="import-result" id="import-result" role="status"></pre>
+  <details class="import-saved" open>
+    <summary data-i18n="imp.d.title"></summary>
+    <pre class="import-result" id="import-data"></pre>
+  </details>
   <div class="form-actions">
     <button type="button" class="btn-ghost" onclick="closeImport()" data-i18n="risk.close"></button>
     <button type="button" class="btn-primary" id="import-go" onclick="doImport()" data-i18n="imp.go" disabled></button>

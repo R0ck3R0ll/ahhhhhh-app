@@ -74,17 +74,28 @@ async function start(){
   let pushTimer = null;
 
   // ---- Cambios locales → nube ----
+  // Dos frenos para que una pantalla con datos viejos no pise los del plan:
+  // - Con datos nuevos del servidor ya guardados y la recarga pendiente, lo que se ve en pantalla es
+  //   lo de antes: lo que la App escriba entonces (p. ej. Configuración guarda los ajustes con
+  //   cualquier pulsación) no se guarda ni se sube.
+  // - Un navegador que nunca ha recibido los datos de este plan (acaba de iniciar sesión) no sube
+  //   nada hasta recibirlos ('sync-plan' = plan cuyos datos ya tiene).
   const rawSet = Storage.prototype.setItem, rawRemove = Storage.prototype.removeItem;
+  function staleWrite(st, k){ return st === window.localStorage && !applyingRemote && reloadPending && SHARED_KEYS.includes(k); }
   Storage.prototype.setItem = function(k, v){
+    if(staleWrite(this, k)){ return; }
     rawSet.call(this, k, v);
     if(this === window.localStorage && !applyingRemote && SHARED_KEYS.includes(k)){ queuePush(k); }
   };
   Storage.prototype.removeItem = function(k){
+    if(staleWrite(this, k)){ return; }
     rawRemove.call(this, k);
     if(this === window.localStorage && !applyingRemote && SHARED_KEYS.includes(k)){ queuePush(k); }
   };
+  function hasPlanData(){ return !!planId && localStorage.getItem('sync-plan') === planId; }
+  function markPlanData(){ if(planId){ rawSet.call(localStorage, 'sync-plan', planId); } }
   function queuePush(k){
-    if(!planId || SYNC.role === 'viewer'){ return; }
+    if(!planId || SYNC.role === 'viewer' || !hasPlanData()){ return; }
     pushQueue.add(k);
     clearTimeout(pushTimer);
     pushTimer = setTimeout(flushPush, 600);
@@ -161,6 +172,8 @@ async function start(){
         const v = ch.type === 'removed' ? null : ch.doc.data().v;
         if(applyRemote(k, v)){ any = true; }
       });
+      // Lo del servidor ya está en este navegador: desde ahora sus cambios se suben
+      if(!snap.metadata.fromCache){ markPlanData(); }
       if(any){ scheduleReload(); }
       // Datos al día: ya ha llegado lo del servidor y no hay que recargar (lo necesita la importación de tareas)
       else if(!snap.metadata.fromCache && !SYNC.fresh){ SYNC.fresh = true; changed(); }
@@ -242,6 +255,7 @@ async function start(){
         const kv = await getDocs(collection(db, 'plans', planId, 'kv'));
         SHARED_KEYS.forEach(function(k){ applyRemote(k, null); });
         kv.forEach(function(s){ if(SHARED_KEYS.includes(s.id)){ applyRemote(s.id, s.data().v); } });
+        markPlanData();
         location.reload();
         return;
       }
@@ -251,6 +265,7 @@ async function start(){
       await setDoc(ref, { owner: user.uid, ownerEmail: email, memberEmails: [email], createdAt: serverTimestamp() });
       await setDoc(doc(db, 'users', user.uid), { planId: planId }, { merge: true });
       await uploadAll();
+      markPlanData();
     }
     if(setRole(role)){ location.reload(); return; }
     SYNC.status = 'in';
