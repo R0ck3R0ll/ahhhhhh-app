@@ -3471,6 +3471,7 @@
     var S = window.SYNC || {}, ready = importReady(), go = el('import-go');
     var state = IS_SUPERVISOR || S.status === 'out' || S.status === 'unavailable' ? 'signin' : ready ? 'ready' : 'wait';
     el('import-data').textContent = ready ? importDataText() : '';
+    el('import-reset').disabled = !ready;
     if(d.dataset.state === 'done' || d.dataset.state === 'saving'){ go.disabled = true; return; }
     d.dataset.state = state;
     el('import-status').textContent = t(state === 'signin' ? 'imp.needSignIn' : state === 'ready' ? 'imp.ready' : 'imp.wait');
@@ -3515,6 +3516,40 @@
     d.dataset.state = 'saving';
     el('import-go').disabled = true;
     var S = window.SYNC;
+    S.error = '';
+    (window.syncFlush ? window.syncFlush() : Promise.resolve()).then(function(){
+      if(S.error){ throw { code: S.error }; }
+      out.textContent = txt + '\n\n' + t('imp.saved');
+      d.dataset.state = 'done';
+    }).catch(function(e){
+      out.textContent = txt + '\n\n' + t('imp.saveErr', { code: e && e.code || e });
+      d.dataset.state = 'error';
+    });
+  }
+  /* Vaciar el registro de tareas (para empezar de cero): quita las tareas sueltas, de Classroom y del
+     correo, las tareas de los eventos (los eventos se quedan), sus bloques de trabajo y la lista de
+     importadas; las actividades y sus tareas de práctica no se tocan. Pide una segunda pulsación y
+     antes guarda una copia en este navegador ('reset-backup', con fecha) para poder deshacerlo. */
+  function resetTasks(btn){
+    if(!importReady()){ renderImport(); return; }
+    if(!btn.classList.contains('is-confirm')){ btn.classList.add('is-confirm'); btn.textContent = t('imp.resetConfirm'); return; }
+    btn.classList.remove('is-confirm'); btn.textContent = t('imp.reset');
+    var keys = ['app-tasks', 'app-events', 'app-blocks', 'import-seen'], backup = { at: new Date().toISOString() };
+    keys.forEach(function(k){ backup[k] = localStorage.getItem(k); });
+    try{ localStorage.setItem('reset-backup', JSON.stringify(backup)); }catch(e){ toast(t('imp.resetNoBackup')); return; }
+    var nTasks = OWN_TASKS.length, nEvt = USER_EVENTS.filter(function(e){ return e.task; }).length;
+    var keep = WORK_BLOCKS.filter(function(b){ return b.task.indexOf('a:') === 0; }), nBlocks = WORK_BLOCKS.length - keep.length;
+    OWN_TASKS.length = 0;
+    USER_EVENTS.forEach(function(e){ if(e.task){ e.task = null; } });
+    WORK_BLOCKS = keep;
+    IMPORT_SEEN = {};
+    storeTasks(); storeEvents(); storeBlocks(); storeImportSeen();
+    renderTasks(); renderEvents(); renderCalendar(calView); renderToday();
+    var out = el('import-result'), d = el('import-dialog'), S = window.SYNC;
+    var txt = t('imp.resetDone', { n: nTasks, e: nEvt, b: nBlocks });
+    out.textContent = txt;
+    el('import-data').textContent = importDataText();
+    d.dataset.state = 'saving';
     S.error = '';
     (window.syncFlush ? window.syncFlush() : Promise.resolve()).then(function(){
       if(S.error){ throw { code: S.error }; }
