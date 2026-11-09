@@ -18,7 +18,9 @@
    - Mensajes (fase 6): el sobre de arriba abre la pantalla de mensajes: escribir (con atajos «¿Cómo vas?»,
      «¡Bien hecho!», «Propongo un evento:») y ver los enviados con su estado (enviado · visto · respondido).
      Desde la ficha de una tarea, «Enviar mensaje sobre esta tarea».
-   - Config: la cuenta, los avisos y el idioma. */
+   - Config: la cuenta, los avisos y el idioma; y «Vaciar registros»: dejar las tareas o las actividades como
+     la primera vez, también en el historial (función del servidor resetPlanData, que solo acepta al
+     supervisor; la App de Martina no tiene estos botones). */
 (function(){
   var ICONS = {
     now: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
@@ -106,6 +108,50 @@
     if(!alertsGroup.open){ return; }
     document.querySelectorAll('.cfg-group[open]').forEach(function(o){ if(o !== alertsGroup){ o.open = false; } });
   });
+  // Vaciar registros (tareas o actividades desde cero): pide una segunda pulsación y una confirmación.
+  // Lo hace el servidor; los datos nuevos llegan como cualquier cambio del plan (la App se recarga) y el
+  // resultado se enseña después
+  var CHEV = '<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  cfgBox.insertAdjacentHTML('beforeend', '<details class="cfg-group" data-group="sup-reset"><summary><span class="cfg-group-title" data-i18n="sup.resetTitle"></span>' + CHEV + '</summary>' +
+    '<div class="cfg-group-body"><div class="config-card sup-reset">' +
+      '<p class="card-hint" data-i18n="sup.resetHint"></p>' +
+      '<div class="sup-reset-item"><p class="card-hint" data-i18n="sup.resetTasksHint"></p>' +
+        '<button type="button" class="btn-danger" data-scope="tasks" data-i18n="sup.resetTasks"></button></div>' +
+      '<div class="sup-reset-item"><p class="card-hint" data-i18n="sup.resetActsHint"></p>' +
+        '<button type="button" class="btn-danger" data-scope="activities" data-i18n="sup.resetActs"></button></div>' +
+      '<pre class="import-result" id="sup-reset-result" role="status"></pre>' +
+    '</div></div></details>');
+  var resetGroup = cfgBox.querySelector('[data-group="sup-reset"]');
+  resetGroup.addEventListener('toggle', function(){
+    if(!resetGroup.open){ return; }
+    document.querySelectorAll('.cfg-group[open]').forEach(function(o){ if(o !== resetGroup){ o.open = false; } });
+  });
+  var RESET_CONFIRM = { tasks: 'VACIAR TAREAS', activities: 'VACIAR ACTIVIDADES' };
+  resetGroup.querySelectorAll('button[data-scope]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var scope = btn.dataset.scope, out = document.getElementById('sup-reset-result');
+      var label = scope === 'tasks' ? 'sup.resetTasks' : 'sup.resetActs';
+      if(!btn.classList.contains('is-confirm')){ btn.classList.add('is-confirm'); btn.textContent = t('sup.resetAgain'); return; }
+      btn.classList.remove('is-confirm'); btn.textContent = t(label);
+      if(!window.confirm(t(scope === 'tasks' ? 'sup.resetAskTasks' : 'sup.resetAskActs'))){ return; }
+      if(!window.syncCall){ out.textContent = t('sup.resetErr', { code: 'offline' }); return; }
+      resetGroup.querySelectorAll('button[data-scope]').forEach(function(b){ b.disabled = true; });
+      out.textContent = t('sup.resetWorking');
+      window.syncCall('resetPlanData', { scope: scope, confirm: RESET_CONFIRM[scope] }).then(function(r){
+        var c = r.counts || {};
+        var txt = t(scope === 'tasks' ? 'sup.resetDoneTasks' : 'sup.resetDoneActs',
+          { n: c.tasks || 0, e: c.eventTasks || 0, a: c.activities || 0, b: c.blocks || 0, l: c.log || 0, r: c.archive || 0, w: c.alerts || 0, id: r.backup || '' });
+        try{ sessionStorage.setItem('sup-reset-result', txt); }catch(e){}
+        out.textContent = txt;
+      }).catch(function(e){
+        out.textContent = t('sup.resetErr', { code: e && (e.message || e.code) || e });
+      }).then(function(){ resetGroup.querySelectorAll('button[data-scope]').forEach(function(b){ b.disabled = false; }); });
+    });
+  });
+  // Resultado de antes de recargarse la App: se enseña en Config
+  var RESET_DONE = null;
+  try{ RESET_DONE = sessionStorage.getItem('sup-reset-result'); sessionStorage.removeItem('sup-reset-result'); }catch(e){}
+  if(RESET_DONE){ document.getElementById('sup-reset-result').textContent = RESET_DONE; resetGroup.open = true; }
   // Exportación a Google Calendar: el mismo bloque que en la App, con la conexión y los ajustes del
   // supervisor (app.js). Hasta que llegan sus ajustes, apagada (los de la App son de quien la usa)
   var gcalSwitch = document.getElementById('export-switch');
@@ -599,6 +645,7 @@
     });
     nav.setAttribute('aria-label', t('aria.nav'));
     alertsGroup.querySelector('.cfg-group-title').textContent = t('al.cfgTitle');
+    resetGroup.querySelectorAll('[data-i18n]').forEach(function(x){ x.classList.remove('is-confirm'); x.textContent = t(x.getAttribute('data-i18n')); });
     renderAlertSum();
     nav.querySelectorAll('[data-i18n]').forEach(function(s){ s.textContent = t(s.getAttribute('data-i18n')); });
     var active = nav.querySelector('.tab.is-active');
@@ -615,7 +662,7 @@
   }
 
   if(typeof window.renderAccount === 'function'){ window.renderAccount(); }
-  showScreen(nav.querySelector('.tab'));
+  showScreen(RESET_DONE ? nav.querySelector('.tab[data-screen="sup-config"]') || nav.querySelector('.tab') : nav.querySelector('.tab'));
   texts();
   openFromUrl();
   var an = document.createElement('script');

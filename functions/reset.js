@@ -1,41 +1,50 @@
-/* ================= REGISTRO DE TAREAS DESDE CERO =================
-   Lo que no depende de Firebase para resetTasks (index.js): qué datos del plan quedan y qué
-   entradas del historial, del archivo y de los avisos del supervisor son de tareas.
+/* ================= REGISTRO DESDE CERO (TAREAS O ACTIVIDADES) =================
+   Lo que no depende de Firebase para resetPlanData (index.js): qué datos del plan quedan y qué
+   entradas del historial, del archivo y de los avisos del supervisor se borran.
 
-   Se quitan las tareas sueltas, de Classroom y del correo (claves 's:') y las de los eventos
-   ('e:'), sus bloques de trabajo y la lista de importadas. Las actividades y sus tareas de
-   práctica ('a:') se quedan, igual que los eventos (sin su tarea). */
+   - 'tasks': las tareas sueltas, de Classroom y del correo (claves 's:') y las de los eventos ('e:'),
+     sus bloques de trabajo y la lista de importadas. Los eventos se quedan, sin su tarea.
+   - 'activities': las actividades con sus tareas de práctica ('a:') y sus bloques de trabajo.
+   Lo demás no se toca. */
 
 import { parse } from './planlog.js';
 
-export const RESET_KEYS = ['app-tasks', 'app-events', 'app-blocks', 'import-seen'];
+export const SCOPES = {
+  tasks: { prefixes: ['s', 'e'], keys: ['app-tasks', 'app-events', 'app-blocks', 'import-seen'], confirm: 'VACIAR TAREAS' },
+  activities: { prefixes: ['a'], keys: ['app-activities', 'app-blocks'], confirm: 'VACIAR ACTIVIDADES' }
+};
 
-// Clave de una tarea que se borra (no las de práctica de las actividades)
-export function isTaskKey(k){ return typeof k === 'string' && /^[se]:/.test(k); }
+// Clave de una tarea (o tarea de práctica) que se borra con ese reset
+export function isScopeKey(k, scope){
+  return typeof k === 'string' && SCOPES[scope].prefixes.some(function(p){ return k.indexOf(p + ':') === 0; });
+}
 
 // Datos del plan después del reset: { values: { clave: texto }, counts }
-export function resetKv(kv){
-  const tasks = parse(kv['app-tasks']), events = parse(kv['app-events']), blocks = parse(kv['app-blocks']);
-  const keep = blocks.filter(function(b){ return !(b && isTaskKey(b.task)); });
-  const counts = {
-    tasks: tasks.length,
-    eventTasks: events.filter(function(e){ return e && e.task; }).length,
-    blocks: blocks.length - keep.length
-  };
-  const values = {
-    'app-tasks': '[]',
-    'app-events': JSON.stringify(events.map(function(e){ return e && e.task ? Object.assign({}, e, { task: null }) : e; })),
-    'app-blocks': JSON.stringify(keep),
-    'import-seen': '{}'
-  };
-  // Lo que no existía en el plan sigue sin existir (no se crean datos nuevos)
-  ['app-events', 'app-blocks'].forEach(function(k){ if(kv[k] == null){ delete values[k]; } });
+export function resetKv(kv, scope){
+  const blocks = parse(kv['app-blocks']);
+  const keep = blocks.filter(function(b){ return !(b && isScopeKey(b.task, scope)); });
+  const values = {}, counts = { blocks: blocks.length - keep.length };
+  if(kv['app-blocks'] != null){ values['app-blocks'] = JSON.stringify(keep); }
+  if(scope === 'tasks'){
+    const events = parse(kv['app-events']);
+    counts.tasks = parse(kv['app-tasks']).length;
+    counts.eventTasks = events.filter(function(e){ return e && e.task; }).length;
+    values['app-tasks'] = '[]';
+    values['import-seen'] = '{}';
+    if(kv['app-events'] != null){ values['app-events'] = JSON.stringify(events.map(function(e){ return e && e.task ? Object.assign({}, e, { task: null }) : e; })); }
+  } else {
+    counts.activities = parse(kv['app-activities']).length;
+    values['app-activities'] = '[]';
+  }
   return { values, counts };
 }
 
-// Entrada del historial (plans/{id}/log) que es de una tarea o de sus bloques
-export function isTaskLog(d){ return !!d && isTaskKey(d.key); }
-// Aviso del supervisor (users/{uid}/alerts) que abre una tarea
-export function isTaskAlert(d){ return !!d && typeof d.open === 'string' && d.open.indexOf('task:') === 0 && isTaskKey(d.open.slice(5)); }
-// Aviso ya enviado (plans/{id}/sent/{uid|clave}) de una tarea: la clave lleva «|s:…» o «|e:…»
-export function isTaskSent(id){ return /\|[se]:/.test(id); }
+// Entrada del historial (plans/{id}/log): de una tarea o sus bloques y, con las actividades, también
+// las de las actividades mismas (creada, cambiada, «hoy no voy»…)
+export function isScopeLog(d, scope){
+  return !!d && (isScopeKey(d.key, scope) || (scope === 'activities' && /^activity\./.test(d.type || '')));
+}
+// Aviso del supervisor (users/{uid}/alerts) que abre una de esas tareas
+export function isScopeAlert(d, scope){ return !!d && typeof d.open === 'string' && d.open.indexOf('task:') === 0 && isScopeKey(d.open.slice(5), scope); }
+// Aviso ya enviado (plans/{id}/sent/{uid|clave}): la clave lleva «|s:…», «|e:…» o «|a:…»
+export function isScopeSent(id, scope){ return SCOPES[scope].prefixes.some(function(p){ return id.indexOf('|' + p + ':') >= 0; }); }

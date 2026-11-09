@@ -3471,7 +3471,6 @@
     var S = window.SYNC || {}, ready = importReady(), go = el('import-go');
     var state = IS_SUPERVISOR || S.status === 'out' || S.status === 'unavailable' ? 'signin' : ready ? 'ready' : 'wait';
     el('import-data').textContent = ready ? importDataText() : '';
-    el('import-reset').disabled = !ready;
     if(d.dataset.state === 'done' || d.dataset.state === 'saving'){ go.disabled = true; return; }
     d.dataset.state = state;
     el('import-status').textContent = t(state === 'signin' ? 'imp.needSignIn' : state === 'ready' ? 'imp.ready' : 'imp.wait');
@@ -3482,8 +3481,6 @@
     if(!d.open){ d.showModal(); }
     d.dataset.state = '';
     el('import-result').textContent = '';
-    // Resultado de «Vaciar tareas» de antes de recargarse la App
-    try{ var rr = sessionStorage.getItem('reset-result'); if(rr){ sessionStorage.removeItem('reset-result'); el('import-result').textContent = rr; } }catch(e){}
     renderImport();
   }
   // Solo lectura: lo que hay guardado en el plan y la franja horaria, para comprobarlo desde fuera
@@ -3527,27 +3524,6 @@
       out.textContent = txt + '\n\n' + t('imp.saveErr', { code: e && e.code || e });
       d.dataset.state = 'error';
     });
-  }
-  /* Vaciar el registro de tareas (para empezar de cero, como la primera vez): lo hace el servidor
-     (resetTasks). Quita las tareas sueltas, de Classroom y del correo, las de los eventos (los eventos
-     se quedan), sus bloques de trabajo y la lista de importadas, y también lo que quedaba de ellas en
-     el historial, el archivo y los avisos del supervisor. Las actividades y sus tareas de práctica no
-     se tocan. Antes guarda una copia en el servidor. Pide una segunda pulsación; los datos nuevos
-     llegan como cualquier cambio del plan (la App se recarga) y el resultado se enseña después. */
-  function resetTasks(btn){
-    if(!importReady() || !window.syncCall){ renderImport(); return; }
-    if(!btn.classList.contains('is-confirm')){ btn.classList.add('is-confirm'); btn.textContent = t('imp.resetConfirm'); return; }
-    btn.classList.remove('is-confirm'); btn.textContent = t('imp.resetWorking'); btn.disabled = true;
-    var out = el('import-result');
-    out.textContent = t('imp.resetWorking');
-    window.syncCall('resetTasks', { confirm: 'VACIAR' }).then(function(r){
-      var c = r.counts || {};
-      var txt = t('imp.resetDone', { n: c.tasks || 0, e: c.eventTasks || 0, b: c.blocks || 0, l: c.log || 0, a: c.archive || 0, w: c.alerts || 0, id: r.backup || '' });
-      try{ sessionStorage.setItem('reset-result', txt); }catch(e){}
-      out.textContent = txt;
-    }).catch(function(e){
-      out.textContent = t('imp.resetErr', { code: e && (e.message || e.code) || e });
-    }).then(function(){ btn.disabled = false; btn.textContent = t('imp.reset'); });
   }
   function closeImport(){
     el('import-dialog').close();
