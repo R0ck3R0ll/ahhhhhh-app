@@ -3482,6 +3482,8 @@
     if(!d.open){ d.showModal(); }
     d.dataset.state = '';
     el('import-result').textContent = '';
+    // Resultado de «Vaciar tareas» de antes de recargarse la App
+    try{ var rr = sessionStorage.getItem('reset-result'); if(rr){ sessionStorage.removeItem('reset-result'); el('import-result').textContent = rr; } }catch(e){}
     renderImport();
   }
   // Solo lectura: lo que hay guardado en el plan y la franja horaria, para comprobarlo desde fuera
@@ -3526,39 +3528,26 @@
       d.dataset.state = 'error';
     });
   }
-  /* Vaciar el registro de tareas (para empezar de cero): quita las tareas sueltas, de Classroom y del
-     correo, las tareas de los eventos (los eventos se quedan), sus bloques de trabajo y la lista de
-     importadas; las actividades y sus tareas de práctica no se tocan. Pide una segunda pulsación y
-     antes guarda una copia en este navegador ('reset-backup', con fecha) para poder deshacerlo. */
+  /* Vaciar el registro de tareas (para empezar de cero, como la primera vez): lo hace el servidor
+     (resetTasks). Quita las tareas sueltas, de Classroom y del correo, las de los eventos (los eventos
+     se quedan), sus bloques de trabajo y la lista de importadas, y también lo que quedaba de ellas en
+     el historial, el archivo y los avisos del supervisor. Las actividades y sus tareas de práctica no
+     se tocan. Antes guarda una copia en el servidor. Pide una segunda pulsación; los datos nuevos
+     llegan como cualquier cambio del plan (la App se recarga) y el resultado se enseña después. */
   function resetTasks(btn){
-    if(!importReady()){ renderImport(); return; }
+    if(!importReady() || !window.syncCall){ renderImport(); return; }
     if(!btn.classList.contains('is-confirm')){ btn.classList.add('is-confirm'); btn.textContent = t('imp.resetConfirm'); return; }
-    btn.classList.remove('is-confirm'); btn.textContent = t('imp.reset');
-    var keys = ['app-tasks', 'app-events', 'app-blocks', 'import-seen'], backup = { at: new Date().toISOString() };
-    keys.forEach(function(k){ backup[k] = localStorage.getItem(k); });
-    try{ localStorage.setItem('reset-backup', JSON.stringify(backup)); }catch(e){ toast(t('imp.resetNoBackup')); return; }
-    var nTasks = OWN_TASKS.length, nEvt = USER_EVENTS.filter(function(e){ return e.task; }).length;
-    var keep = WORK_BLOCKS.filter(function(b){ return b.task.indexOf('a:') === 0; }), nBlocks = WORK_BLOCKS.length - keep.length;
-    OWN_TASKS.length = 0;
-    USER_EVENTS.forEach(function(e){ if(e.task){ e.task = null; } });
-    WORK_BLOCKS = keep;
-    IMPORT_SEEN = {};
-    storeTasks(); storeEvents(); storeBlocks(); storeImportSeen();
-    renderTasks(); renderEvents(); renderCalendar(calView); renderToday();
-    var out = el('import-result'), d = el('import-dialog'), S = window.SYNC;
-    var txt = t('imp.resetDone', { n: nTasks, e: nEvt, b: nBlocks });
-    out.textContent = txt;
-    el('import-data').textContent = importDataText();
-    d.dataset.state = 'saving';
-    S.error = '';
-    (window.syncFlush ? window.syncFlush() : Promise.resolve()).then(function(){
-      if(S.error){ throw { code: S.error }; }
-      out.textContent = txt + '\n\n' + t('imp.saved');
-      d.dataset.state = 'done';
+    btn.classList.remove('is-confirm'); btn.textContent = t('imp.resetWorking'); btn.disabled = true;
+    var out = el('import-result');
+    out.textContent = t('imp.resetWorking');
+    window.syncCall('resetTasks', { confirm: 'VACIAR' }).then(function(r){
+      var c = r.counts || {};
+      var txt = t('imp.resetDone', { n: c.tasks || 0, e: c.eventTasks || 0, b: c.blocks || 0, l: c.log || 0, a: c.archive || 0, w: c.alerts || 0, id: r.backup || '' });
+      try{ sessionStorage.setItem('reset-result', txt); }catch(e){}
+      out.textContent = txt;
     }).catch(function(e){
-      out.textContent = txt + '\n\n' + t('imp.saveErr', { code: e && e.code || e });
-      d.dataset.state = 'error';
-    });
+      out.textContent = t('imp.resetErr', { code: e && (e.message || e.code) || e });
+    }).then(function(){ btn.disabled = false; btn.textContent = t('imp.reset'); });
   }
   function closeImport(){
     el('import-dialog').close();

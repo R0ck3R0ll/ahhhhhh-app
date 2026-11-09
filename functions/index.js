@@ -28,6 +28,7 @@ import {
 } from './schoolcal.js';
 import { TRACKED, parse, taskMap, diffTasks, diffItems, diffBlocks, mergeBlocks } from './planlog.js';
 import { makePlan, minuteOf } from './plancore.js';
+import { RESET_KEYS, resetKv, isTaskLog, isTaskAlert, isTaskSent } from './reset.js';
 import { config, computeAlerts, newsAlert, dailySummary, weeklySummary } from './alerts.js';
 import * as G from './gcal.js';
 import { randomBytes } from 'node:crypto';
@@ -195,6 +196,8 @@ export const onPlanChange = onDocumentWritten({ document: 'plans/{planId}/kv/{ke
   const after = event.data.after.exists ? event.data.after.data() : {};
   const at = after.at instanceof Timestamp ? after.at : Timestamp.fromDate(new Date(event.time));
   const by = after.by || null;
+  // Lo escribe resetTasks (registro de tareas desde cero): no va al historial
+  if(by === RESET_BY){ return; }
   await bootstrap(plan, kvKey, before.v, at);
   const B = parse(before.v), A = parse(after.v);
   const entries = [], ops = [];
@@ -237,6 +240,58 @@ export const onPlanChange = onDocumentWritten({ document: 'plans/{planId}/kv/{ke
       for(const a of news){ await deliverOnce(plan, v, a); }
     }
   }
+});
+
+/* ================= REGISTRO DE TAREAS DESDE CERO =================
+   resetTasks (la App, en #importar, con la sesión de un miembro del plan): deja el plan como si las
+   tareas no hubieran existido nunca. Quita de los datos del plan las tareas sueltas, de Classroom y
+   del correo, las de los eventos, sus bloques y la lista de importadas (reset.js), y borra lo que
+   queda de ellas en el historial (log), el archivo (archive), los avisos del supervisor
+   (users/{uid}/alerts) y los avisos ya enviados (sent). Las actividades, sus tareas de práctica y
+   los eventos se quedan. Esos cambios no van al historial (by = RESET_BY).
+   Antes guarda una copia de todo lo que cambia o borra en plans/{id}/resets/{fecha} (solo el
+   servidor la ve), para poder deshacerlo. */
+const RESET_BY = 'reset';
+async function deleteAll(refs){
+  for(let i = 0; i < refs.length; i += 400){
+    const batch = db.batch();
+    refs.slice(i, i + 400).forEach(function(r){ batch.delete(r); });
+    await batch.commit();
+  }
+}
+export const resetTasks = onCall({ region: 'europe-west1', timeoutSeconds: 300 }, async function(request){
+  const auth = request.auth;
+  if(!auth || !auth.token.email){ throw new HttpsError('unauthenticated', 'signIn'); }
+  if((request.data || {}).confirm !== 'VACIAR'){ throw new HttpsError('invalid-argument', 'confirm'); }
+  const email = auth.token.email.toLowerCase();
+  const me = (await db.collection('users').doc(auth.uid).get()).data() || {};
+  const pd = me.planId ? await db.collection('plans').doc(me.planId).get() : null;
+  if(!pd || !pd.exists || !(pd.data().memberEmails || []).includes(email)){ throw new HttpsError('permission-denied', 'noPlan'); }
+  const plan = pd.ref, at = Timestamp.now(), id = new Date().toISOString();
+  const kv = {};
+  for(const k of RESET_KEYS){ const d = await plan.collection('kv').doc(k).get(); kv[k] = d.exists ? d.data().v : null; }
+  const r = resetKv(kv);
+  const logs = (await plan.collection('log').get()).docs.filter(function(d){ return isTaskLog(d.data()); });
+  const arch = (await plan.collection('archive').get()).docs.filter(function(d){ return isTaskLog({ key: d.id }); });
+  const sent = (await plan.collection('sent').get()).docs.filter(function(d){ return isTaskSent(d.id); });
+  const alerts = [];
+  for(const v of await viewersOf(pd.data())){
+    (await v.ref.collection('alerts').where('plan', '==', plan.id).get()).docs.forEach(function(d){ if(isTaskAlert(d.data())){ alerts.push(d); } });
+  }
+  const counts = Object.assign({ log: logs.length, archive: arch.length, alerts: alerts.length, sent: sent.length }, r.counts);
+  // Copia de todo lo que cambia o se borra
+  const backup = plan.collection('resets').doc(id), ops = [[backup, { at, by: email, counts }]];
+  RESET_KEYS.forEach(function(k){ ops.push([backup.collection('kv').doc(k), { v: kv[k] }]); });
+  logs.forEach(function(d){ ops.push([backup.collection('log').doc(d.id), d.data()]); });
+  arch.forEach(function(d){ ops.push([backup.collection('archive').doc(d.id), d.data()]); });
+  sent.forEach(function(d){ ops.push([backup.collection('sent').doc(d.id), d.data()]); });
+  alerts.forEach(function(d){ ops.push([backup.collection('alerts').doc(d.ref.parent.parent.id + '_' + d.id), Object.assign({ uid: d.ref.parent.parent.id }, d.data())]); });
+  await commitAll(ops);
+  // Datos del plan sin tareas (llegan a los móviles como cualquier cambio) y fuera lo que quedaba de ellas
+  await commitAll(Object.keys(r.values).map(function(k){ return [plan.collection('kv').doc(k), { v: r.values[k], at, by: RESET_BY }]; }));
+  await deleteAll(logs.concat(arch, sent, alerts).map(function(d){ return d.ref; }));
+  logger.info('resetTasks', { plan: plan.id, by: email, counts });
+  return { counts, backup: id };
 });
 
 /* ================= AVISOS Y RESÚMENES PARA EL SUPERVISOR =================

@@ -5,6 +5,7 @@ rules_version = '2';
 //    supervisores (viewerEmails: solo leen, para la App de seguimiento)
 //  - plans/{planId}/kv/{clave}: los datos del plan (actividades, eventos, ajustes…)
 //  - plans/{planId}/log y archive: historial y archivo de tareas; solo los escribe el servidor
+//  - plans/{planId}/resets: copias de lo que borra «Vaciar tareas» (resetTasks); solo el servidor
 //  - plans/{planId}/gcal: exportación a Google Calendar (estado y tiempos de trayecto de hoy)
 //  - gcalStates: permisos de Google a medias; solo el servidor
 service cloud.firestore {
